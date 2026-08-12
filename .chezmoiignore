@@ -70,6 +70,31 @@
 # straight back into the live file, so the next `apply` refused to overwrite and
 # needed `--force`. The file is owned by the app, not by us.
 Library/Application Support/Code/**
+# ~/.vscode too -- it is the extensions directory, but it also held a
+# settings.json pinning an FVM SDK under an absolute home path. Guarded rather
+# than dropped when the directory was deleted, because reinstalling the editor
+# recreates it: the sibling entry above was deleted this morning and was back by
+# 09:37, regenerated with an internal GitLab URL in it.
+.vscode/**
+
+# Cursor, for the same reason and then some. It is the one GUI editor on the
+# keep-list, installed by the Brewfile and configured by whoever owns the
+# machine -- nothing here manages a Cursor setting.
+#
+# These entries exist for `add`, not for `apply`: nothing is managed at these
+# paths, so there is nothing to skip on apply. What they refuse is the accidental
+# capture. Checked, rather than assumed -- `chezmoi add --dry-run ~/.cursor/mcp.json`
+# reported no warning and would have captured an internal GitLab hostname, the
+# same string that cost two history rewrites to remove. The VS Code entry above
+# already refused the equivalent add; these did not exist yet.
+#
+# What lives there today: an MCP server pointing at an employer GitLab instance,
+# a dart server whose command is an absolute path containing a username and a
+# pinned FVM version, and a settings.json carrying a corporate scanner's CLI
+# path, an AI provider and a set of terminal auto-approve decisions. Correct for
+# one machine, wrong for every other.
+.cursor/**
+Library/Application Support/Cursor/**
 
 # Repo documentation and tooling. Without these, chezmoi treats a source-root
 # file as a target and writes it into $HOME -- CHEATSHEET.md showed up as a
