@@ -124,8 +124,17 @@ for the architecture. One binary drives all of it:
 c4-init                  # scaffold docs/architecture/
 c4-local                 # serve it at http://localhost:8081
 c4-export                # every view to Mermaid, fenced for PR review
+c4-render svg            # every view as an image, locally
 c4-validate              # the only diagnostics that exist
 ```
+
+`c4-render` exports PlantUML and lets PlantUML rasterise it, with Graphviz doing
+the layout. That indirection is not a preference: the exporter dropped its
+Graphviz format (`-format dot` now answers *"Unknown export format: dot"*, though
+plenty of guides still say otherwise), and its own PNG/SVG support is not a
+format at all — it needs `-url` and a headless browser, which means the 1.98 GB
+`-playwright` container image. PlantUML gets the same images locally for about
+8 MB. `plantuml -testdot` verifies the pair.
 
 `ide -l arch` (or `ide` in a repo with a `workspace.dsl` and no app manifest)
 builds a tmux session with the preview server already running.

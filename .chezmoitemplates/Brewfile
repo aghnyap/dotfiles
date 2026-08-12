@@ -171,3 +171,20 @@ brew "uv"
 # do not change the global JAVA_HOME to fix it, because the Android toolchain
 # needs 17 exactly.
 brew "structurizr"
+
+# The local image pipeline for C4 views: `c4-render` exports PlantUML and lets
+# PlantUML rasterise it, with Graphviz doing the layout. `plantuml -testdot` is
+# the check that the pair is wired up.
+#
+# This is a workaround for two things the exporter cannot do. `-format dot` is in
+# every older guide and the binary answers "Unknown export format: dot" -- the
+# Graphviz exporter is gone. And its PNG/SVG support is not a format: it needs
+# `-url` and a headless browser, which means the 1.98 GB `-playwright` container
+# variant. PlantUML gets images locally for ~8 MB and no container.
+#
+# graphviz is listed even though plantuml depends on it, so brew records it as
+# installed-on-request and `brew autoremove` cannot take it. It was already on
+# this machine and in no Brewfile, which is exactly how a second Mac ends up
+# quietly different.
+brew "graphviz"
+brew "plantuml"

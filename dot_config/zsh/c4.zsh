@@ -303,6 +303,64 @@ c4-export() {
   print -P "%F{blue}==>%f c4-export: ${n} view(s) -> ${out/#$HOME/~}"
 }
 
+# c4-render [svg|png] -- render every view to an image file, locally.
+#
+# Why this goes through PlantUML rather than anything more direct: the exporter
+# has no Graphviz format. `-format dot` is in plenty of guides and in the old
+# CLI's docs, and this binary answers "Unknown export format: dot" -- the real
+# list is
+#
+#     plantuml[/structurizr|c4plantuml]|websequencediagrams|mermaid|json|theme|static|fqcn
+#
+# and its PNG/SVG support is not a format at all: it needs `-url` pointing at a
+# rendered diagram page, driven by a headless browser. That is the 1.98 GB
+# `-playwright` container variant, which is the whole thing this setup avoids.
+#
+# So: export PlantUML, then let PlantUML rasterise it. Graphviz is what PlantUML
+# lays the boxes out with -- `plantuml -testdot` is the check, and it reports
+# "Installation seems OK" when the pair is wired up.
+#
+# Unlike structurizr, plantuml runs fine on the ambient temurin-17, so it does
+# not need the JVM wrapper.
+#
+# The exporter emits a `-key` file per view as well: that is the diagram legend,
+# and it renders like any other view.
+c4-render() {
+  local fmt=${1:-svg} dir out n
+  case $fmt in
+    svg|png) ;;
+    *) print -u2 "usage: c4-render [svg|png]"; return 1 ;;
+  esac
+
+  _c4_require || return 1
+  dir=$(_c4_workspace) || return 1
+
+  if ! command -v plantuml >/dev/null 2>&1; then
+    print -u2 "c4-render: plantuml is not installed -- brew install plantuml"
+    print -u2 "           (it pulls in graphviz, which does the layout)"
+    return 1
+  fi
+
+  out="$dir/images"
+  mkdir -p "$out" || return 1
+
+  _c4_structurizr export \
+    -workspace "$dir/workspace.dsl" \
+    -format plantuml \
+    -output "$out" || {
+    print -u2 "c4-render: export failed -- try 'c4-validate' for the reason"
+    return 1
+  }
+
+  # -nometadata keeps the source out of the image, so re-rendering an unchanged
+  # view produces an identical file and does not show up as a diff.
+  plantuml -t"$fmt" -nometadata "$out"/*.puml || return 1
+  rm -f -- "$out"/*.puml
+
+  n=$(print -rl -- "$out"/*.$fmt(.N) | wc -l | tr -d ' ')
+  print -P "%F{blue}==>%f c4-render: ${n} ${fmt} -> ${out/#$HOME/~}"
+}
+
 # c4-validate / c4-inspect -- the only diagnostics that exist.
 #
 # There is no Structurizr language server: the nvim-lspconfig PR for one was
@@ -331,3 +389,4 @@ c4-inspect() { _c4_cli inspect }
 alias c4l='c4-local'
 alias c4e='c4-export'
 alias c4v='c4-validate'
+alias c4r='c4-render'

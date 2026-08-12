@@ -377,7 +377,7 @@ and never installed by `chezmoi apply`:
 | `secextra` | trufflehog, grype, dex2jar, ffuf — each overlaps a baseline tool |
 | `extras` | unar + sevenzip (for `extract`), watchman, yq, jless, pre-commit, ghorg |
 
-The baseline is 59 packages and holds only what the config actually calls. If a
+The baseline is 61 packages and holds only what the config actually calls. If a
 command says it needs something, the message names the group.
 
 New machine: `./bootstrap.sh` from the repo root does the whole setup and then
@@ -422,7 +422,13 @@ with debugger on `:5005`.
 `c4-init [dir]` scaffold `docs/architecture/{workspace.dsl,structurizr.properties}` ·
 `c4-local` (`c4l`, or `c4-lite`) serve the model at `http://localhost:8081` ·
 `c4-export` (`c4e`) every view to Mermaid, fenced into `.md` so it renders in a PR ·
+`c4-render [svg|png]` (`c4r`) every view as an image into `images/` ·
 `c4-validate` (`c4v`) · `c4-inspect`.
+
+`c4-render` goes via PlantUML, which lays out with Graphviz. The exporter has no
+`dot` format any more — `-format dot` answers *"Unknown export format"* — and its
+PNG/SVG path needs a headless browser (the 1.98 GB container variant). PlantUML
+does it locally instead. `plantuml -testdot` checks the pair.
 
 Every command finds `workspace.dsl` in `.`, in `docs/architecture/`, or in either
 from the git root — so they work from anywhere in the repo.
