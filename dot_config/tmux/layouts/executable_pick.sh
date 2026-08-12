@@ -2,7 +2,7 @@
 # prefix + P -- pick a layout, then a directory, and build the session.
 set -euo pipefail
 
-layout=$(printf '%s\n' mobile web backend sec \
+layout=$(printf '%s\n' mobile web backend sec arch \
   | fzf-tmux -p 40%,30% --border-label ' layout ' --prompt '  ') || exit 0
 [[ -n $layout ]] || exit 0
 

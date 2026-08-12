@@ -377,7 +377,7 @@ and never installed by `chezmoi apply`:
 | `secextra` | trufflehog, grype, dex2jar, ffuf — each overlaps a baseline tool |
 | `extras` | unar + sevenzip (for `extract`), watchman, yq, jless, pre-commit, ghorg |
 
-The baseline is 58 packages and holds only what the config actually calls. If a
+The baseline is 59 packages and holds only what the config actually calls. If a
 command says it needs something, the message names the group.
 
 New machine: `./bootstrap.sh` from the repo root does the whole setup and then
@@ -417,6 +417,25 @@ with debugger on `:5005`.
 
 > Everything here operates on a local file, a local emulator, or a device you
 > have attached. For applications you are authorized to test.
+
+### Architecture — C4 / Structurizr
+`c4-init [dir]` scaffold `docs/architecture/{workspace.dsl,structurizr.properties}` ·
+`c4-local` (`c4l`, or `c4-lite`) serve the model at `http://localhost:8081` ·
+`c4-export` (`c4e`) every view to Mermaid, fenced into `.md` so it renders in a PR ·
+`c4-validate` (`c4v`) · `c4-inspect`.
+
+Every command finds `workspace.dsl` in `.`, in `docs/architecture/`, or in either
+from the git root — so they work from anywhere in the repo.
+
+Port 8081, not the upstream default of 8080, because `mitm` and the tmux `sec`
+layout hold 8080. Override with `C4_PORT=9000 c4-local`.
+
+`c4-init` turns on auto-refresh (2000 ms), so editing the DSL updates the browser
+without a reload — upstream ships that off. Layout you drag in the UI is saved to
+`workspace.json` beside the DSL; commit it, or you re-drag every box.
+
+There is no Structurizr language server, so `c4-validate` is the only diagnostics
+that exist. In Neovim it is `<leader>Cv`, straight into the quickfix list.
 
 ---
 
@@ -526,7 +545,7 @@ the same commit. The places that hold bindings:
 | `dot_config/tmux/tmux.conf` | prefix, panes, sessions, copy mode |
 | `dot_config/nvim/lua/config/keymaps.lua` | Cmd aliases and core editor maps |
 | `dot_config/nvim/lua/plugins/*.lua` | per-domain groups and `:Commands` |
-| `dot_config/zsh/{aliases,functions,dev,sec,fzf,tools,csiu}.zsh` | shell |
+| `dot_config/zsh/{aliases,functions,dev,sec,fzf,tools,csiu,c4}.zsh` | shell |
 | `dot_config/zsh/git-aliases.zsh` | fallback only — skipped when oh-my-zsh is present |
 | `dot_config/chawan/config.toml` | terminal browser |
 | `dot_config/nvim/KEYBINDINGS.md` | the exhaustive Neovim reference |

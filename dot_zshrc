@@ -212,7 +212,7 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # ~200 aliases; the vendored copy exists so the config still works on a machine
 # where oh-my-zsh is absent or failed to load. Sourcing both would be harmless
 # but pointless, so it is skipped when the framework is present.
-_mods=(aliases functions dev sec fzf tools csiu)
+_mods=(aliases functions dev sec fzf tools csiu c4)
 (( $+functions[omz] )) || _mods=(git-aliases $_mods)
 
 # Each module is byte-compiled on first use and whenever it changes; zsh

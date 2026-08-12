@@ -198,6 +198,33 @@ review like code.
 | `<leader>he` | Pick environment |
 | `<leader>hc` | Copy as curl |
 
+## Architecture — C4 / Structurizr
+
+Open any `workspace.dsl`. Syntax highlighting and the `structurizr` filetype are
+**built into Neovim** -- nothing is installed for this, and the plugin most
+guides name (`jfcherng/vim-structurizr`) does not exist.
+
+> **There is no language server.** The nvim-lspconfig PR for one was rejected and
+> mason has no package, so nothing checks the DSL as you type. `<leader>Cv` is
+> the substitute: it runs `structurizr validate` and puts violations in the
+> quickfix list. Expect to press it.
+
+| Keys | Action |
+| --- | --- |
+| `<leader>Cs` | Serve the model in a terminal split (`c4-local`) |
+| `<leader>Cb` | Open `http://localhost:8081` in the browser |
+| `<leader>Ce` | Export every view to Mermaid |
+| `<leader>Cv` | Validate, violations into the quickfix list |
+| `<leader>Ca` | Toggle Mermaid export on save |
+
+`<leader>C`, not `<leader>c`: LazyVim owns `<leader>c` for code actions, rename
+and inlay hints, and `cp`/`cu` went to package-info. Capital prefixes are how
+this config groups a toolchain -- `<leader>X` Xcode, `<leader>F` Flutter.
+
+Export on save is **off by default**, because each export starts a JVM. Turn it
+on per session with `<leader>Ca` or `:C4AutoExport`; a burst of `:w` is debounced
+into one run.
+
 ## Commands
 
 | Command | Action |

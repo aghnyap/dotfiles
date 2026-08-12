@@ -136,7 +136,7 @@ tm() {
 #
 #   ide                      -- this project, layout guessed from the tree
 #   ide ~/Repositories/foo
-#   ide -l sec .             -- force one (mobile|web|backend|sec)
+#   ide -l sec .             -- force one (mobile|web|backend|sec|arch)
 ide() {
   local layout='' dir
   [[ $1 == -l ]] && { layout="$2"; shift 2; }
@@ -177,6 +177,11 @@ _ide_layout() {
     [[ -d $d/android || -d $d/app/src/main ]] && print mobile || print backend
   elif [[ -f $d/package.json ]]; then
     print web
+  elif [[ -f $d/workspace.dsl || -f $d/docs/architecture/workspace.dsl ]]; then
+    # A dedicated C4 model repo -- checked last on purpose. `c4-init` works in
+    # any repo, so an app repo can hold docs/architecture/workspace.dsl too;
+    # only a repo with no app manifest at all is really an architecture repo.
+    print arch
   else
     print backend
   fi

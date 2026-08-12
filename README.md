@@ -107,13 +107,94 @@ terminal browser (chawan).
 ```sh
 ide                      # this project, layout guessed from the tree
 ide ~/Repositories/foo
-ide -l sec .             # force one (mobile|web|backend|sec)
+ide -l sec .             # force one (mobile|web|backend|sec|arch)
 ```
 
 `ide` builds the tmux session the layouts describe: an `editor` window running
 Neovim, which opens the file tree itself, plus the side windows for that kind
 of project. `tm` is the lower-level one — it gives you a session with a bare
 shell in it. Inside tmux, `prefix + P` picks a layout and a directory instead.
+
+## Architecture as code — C4 / Structurizr
+
+The C4 model lives in a repo as `workspace.dsl` and is the single source of truth
+for the architecture. One binary drives all of it:
+
+```sh
+c4-init                  # scaffold docs/architecture/
+c4-local                 # serve it at http://localhost:8081
+c4-export                # every view to Mermaid, fenced for PR review
+c4-validate              # the only diagnostics that exist
+```
+
+`ide -l arch` (or `ide` in a repo with a `workspace.dsl` and no app manifest)
+builds a tmux session with the preview server already running.
+
+**No Docker.** Nearly every guide you will find says to run Structurizr Lite in
+a container, and Colima with it. Two things changed upstream: the
+`structurizr-cli` Homebrew formula is deprecated and Homebrew disables it on
+2027-02-17, and Structurizr Lite is filed under "End of life". The unified
+`structurizr` binary replaces both — `local` is documented as *"equivalent to the
+previous Structurizr Lite tooling"* — and it runs natively. `colima` and `docker`
+stayed in the optional `backend` group, where they were.
+
+**Port 8081, not 8080.** 8080 is the upstream default and is exactly where
+`mitmweb` and the tmux `sec` layout listen. `C4_PORT=9000 c4-local` overrides it,
+and `c4-local` names the process holding the port rather than letting the JVM
+fail obscurely.
+
+**Commit `workspace.json`.** Layout you drag in the browser is saved there, next
+to the DSL. Lose it and you re-drag every box.
+
+`c4-init` writes a `structurizr.properties` turning on auto-refresh at 2000 ms,
+which upstream ships disabled — so editing the DSL updates the browser without a
+reload. That plus a split-screen browser is the working setup; it is also what
+upstream recommends in place of an editor preview panel.
+
+### In Neovim
+
+Nothing is installed. Structurizr syntax and the `structurizr` filetype are built
+into Neovim, and `jfcherng/vim-structurizr` — the plugin most guides name — does
+not exist. `<leader>C` is the group: `Cs` serve, `Cb` browser, `Ce` export, `Cv`
+validate, `Ca` toggle export-on-save. There is no language server for the DSL
+(the nvim-lspconfig PR was rejected, mason has no package), so `<leader>Cv` into
+the quickfix list is the substitute.
+
+### In Android Studio / IntelliJ
+
+Nothing here is committed for either IDE, the same as for Cursor and VS Code.
+
+Install **Structurizr DSL Language Support** (Dirk Groot, plugin `20606`) — free,
+by far the largest install base, and no upper build bound so it installs on
+current Android Studio. It is syntax and indentation only, which is enough
+because the modelling happens in Neovim. The plugin usually recommended,
+*Structurizr DSL Support* (`21358`), is abandoned: last updated April 2023 and
+capped at build `231.*`, so it will not install at all. If you want in-IDE live
+preview and export, **Structurizr DSL** (Jakub Jirák, `29351`) is the only plugin
+that has them, and it is paid.
+
+The IDE terminal needs no setup — it starts a login shell, which sources
+`~/.zshrc`, which sources `c4.zsh`, so `c4-local` and `c4-export` are there. The
+one gotcha: Toolbox-launched IDEs inherit the GUI environment, so `structurizr`
+is visible only because `/opt/homebrew/bin` is on the login-shell PATH.
+
+There is no embedded-browser option. JetBrains has no general-purpose webview to
+point at `localhost:8081` — the choices are *Open in Browser* or plugin `29351`'s
+own panel.
+
+### The Claude skill
+
+`~/.claude/skills/c4-architect/SKILL.md` is managed here, so `/c4-architect` is
+available in any repo on any machine. It co-designs C1 → C2 → C3 one level per
+exchange, refuses Level 4 and implementation code, enforces the Flutter
+UI/BLoC/Repository split against the Java Controller/Service/Repository split, and
+emits the OpenAPI contract for every relationship that crosses between them.
+
+`.chezmoiignore` denies `.claude/**` and allows back only `.claude/skills/**`.
+That skill is the sole reason this repo touches `~/.claude` at all, and the rest
+of that tree is session transcripts and memory files describing the machine's
+owner. With a public remote, an accidental `chezmoi add` there is published and
+permanent.
 
 ## Things that will bite you
 

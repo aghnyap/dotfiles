@@ -212,7 +212,16 @@ The rule that catches everyone:
 - **lazy.nvim keeps only ONE `config` and one `init` per plugin** across all
   spec files; it does not chain them. That is why every scanner command lives
   in `lua/plugins/scanners.lua` and every task runner in `lua/plugins/tasks.lua`.
-  Splitting them silently drops one set.
+  Splitting them silently drops one set. `lua/plugins/structurizr.lua` is the
+  case to be careful with: it opens a toggleterm split for `c4-local`, but it
+  must never declare `config` or `init` for toggleterm — doing so replaces the
+  block in `tasks.lua` and takes every `<leader>r` runner with it. It `require`s
+  `toggleterm.terminal` inside the keymap callback instead.
+- **A new `dot_config/zsh/*.zsh` module is not picked up automatically.**
+  `dot_zshrc:215` is an explicit `_mods=(…)` array, not a glob; a file dropped
+  in that directory without being listed there never loads, and nothing reports
+  it. The array appends `.zsh`, so the extension is mandatory and a `.sh` file
+  cannot be loaded at all.
 - **In `~/.config/nvim`, `flutter-tools` must keep
   `root_patterns = { 'melos.yaml', '.git' }` with `pubspec.yaml` absent.**
   Restoring `pubspec.yaml` spawns one Dart analysis server per package (~20 on

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Create (or attach to) a tmux session pre-arranged for one kind of work.
 #
-#   layout.sh <mobile|web|backend|sec> [directory]
+#   layout.sh <mobile|web|backend|sec|arch> [directory]
 #
 # Panes are opened with the command typed but NOT executed, so nothing starts
 # building or proxying until you press Enter in that pane. Commands that are
@@ -56,9 +56,18 @@ case "$layout" in
     tmux new-window -t "$name" -n scan -c "$dir"
     type "${name}:scan" 'semgrep --config p/security-audit .'
     ;;
+  arch)
+    # C4 modelling: the preview server runs, the export sits ready.
+    # c4-local is typed and run rather than left on the prompt -- it is a server,
+    # and the point of this layout is having it up while you edit the DSL.
+    tmux new-window -t "$name" -n c4 -c "$dir"
+    tmux split-window -t "${name}:c4" -v -p 30 -c "$dir"
+    tmux send-keys -t "${name}:c4.1" 'c4-local' C-m
+    type "${name}:c4.2" 'c4-export'
+    ;;
   *)
     tmux kill-session -t "=${name}"
-    echo "layout.sh: unknown layout '$layout' (mobile|web|backend|sec)" >&2
+    echo "layout.sh: unknown layout '$layout' (mobile|web|backend|sec|arch)" >&2
     exit 1
     ;;
 esac

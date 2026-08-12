@@ -143,3 +143,31 @@ cask "mitmproxy"   # ships as a cask, not a formula
 # frida-ps/objection with an error pointing nowhere near the cause. uv manages an
 # interpreter per tool, so brew cannot reach them.
 brew "uv"
+
+# ── Architecture ───────────────────────────────────────────────────────────
+# C4 models as code. `structurizr` is the unified binary -- `local` serves the
+# browser UI (it replaces the end-of-life Structurizr Lite), `export` writes
+# Mermaid, and `validate`/`inspect` are the only diagnostics that exist for the
+# DSL. Driven by ~/.config/zsh/c4.zsh.
+#
+# NOT `structurizr-cli`: that formula is deprecated upstream and Homebrew
+# disables it on 2027-02-17. This is its named replacement. Do not "fix" this
+# back.
+#
+# No container runtime is needed. Every guide still says to run Structurizr Lite
+# under Docker; the native binary makes that unnecessary, which is why colima and
+# docker stayed in Brewfile.optional where they were.
+#
+# It depends on Homebrew's openjdk, already installed here as a dependency of
+# jadx and apktool. That dependency is load-bearing, not incidental: the war is
+# built for Java 21+, and Homebrew's launcher script does
+#
+#     export JAVA_HOME="${JAVA_HOME:-<brew openjdk>}"
+#
+# which is a FALLBACK, not a pin. ~/.zshenv exports mise's temurin-17 for Gradle
+# and jdtls, so out of the box every structurizr call inherits Java 17 and dies
+# with UnsupportedClassVersionError. `_c4_structurizr` in ~/.config/zsh/c4.zsh
+# overrides JAVA_HOME for this command only -- do not "simplify" that away, and
+# do not change the global JAVA_HOME to fix it, because the Android toolchain
+# needs 17 exactly.
+brew "structurizr"

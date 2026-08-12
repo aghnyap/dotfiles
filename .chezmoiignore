@@ -96,6 +96,32 @@ Library/Application Support/Code/**
 .cursor/**
 Library/Application Support/Cursor/**
 
+# ~/.claude, denied as a tree with one hole in it.
+#
+# This repo manages exactly one thing under there -- skills/c4-architect, the C4
+# modelling prompt -- and that single managed path is the whole reason the rest
+# needs an explicit guard. Before it existed, nothing here touched ~/.claude and
+# there was no reason to `add` anything from it.
+#
+# What the rest of the tree holds: projects/*/memory/*.md, which is a written
+# record of who the machine's owner is -- role, employer, the tooling they were
+# told about -- plus full session transcripts, pasted file contents and
+# credentials-adjacent debugging output. None of that is configuration and all of
+# it is machine-local.
+#
+# The stakes are higher than the Cursor entries above. This repo now has a public
+# remote, so an accidental capture here is not a diff to notice and revert --
+# it is published, cached by third parties, and permanent even after a
+# force-push. Deny the tree, allow only skills.
+# Note the middle line. `**` matches ZERO or more path segments, so `.claude/**`
+# matches `.claude` itself -- which prunes the whole directory and takes the
+# skills exception below it with it, silently. Checked: without `!.claude`,
+# `chezmoi ignored` lists `.claude` and `chezmoi managed` never mentions the
+# skill. Later patterns win, so the order here matters too.
+.claude/**
+!.claude
+!.claude/skills/**
+
 # Repo documentation and tooling. Without these, chezmoi treats a source-root
 # file as a target and writes it into $HOME -- CHEATSHEET.md showed up as a
 # pending ~/CHEATSHEET.md until it was listed here, and bootstrap.sh as a
