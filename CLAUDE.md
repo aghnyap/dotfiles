@@ -231,6 +231,18 @@ The rule that catches everyone:
   codepoint exists with
   `fc-list ':charset=F0035' family | grep -i 'jetbrainsmono nerd font'`
   before committing it.
+- **`nf-md-*` being reliable is not the same as being portable.** That range is
+  plane 15 (`U+F0xxx` — five digits, above the BMP), so it renders only where
+  the patched font is genuinely active; astral-plane private use has no system
+  fallback, and a terminal that is not set to JetBrainsMono Nerd Font shows
+  tofu or nothing. Only Ghostty is configured for that font here, so a glyph
+  can look perfect in the terminal it was tested in and be broken in every
+  other one. **For anything that leaves Ghostty — the starship prompt above all,
+  since it also has to survive ssh and other people's terminals — stay in the
+  BMP.** `U+E0A0` and the rest of the original powerline range are the safe
+  choice; `git_branch` in `starship.toml` was reverted to it for exactly this
+  reason, and that file's comment has the detail. Inside `~/.config/nvim`,
+  plane-15 glyphs are fine: Neovim only ever runs in Ghostty here.
 - **zsh cannot define a function whose name is an existing alias.** oh-my-zsh's
   git plugin defines 197 aliases; a colliding function name aborts the rest of
   the file with a parse error. Check before adding any `g*` name.

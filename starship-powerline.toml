@@ -5,6 +5,15 @@
 # │  Requires a Nerd Font (JetBrainsMono Nerd Font Mono is configured in     │
 # │  ~/.config/ghostty/config).                                              │
 # ╰──────────────────────────────────────────────────────────────────────────╯
+#
+# "Requires a Nerd Font" is stricter here than it sounds, and it is why this
+# file is parked rather than in use. Six of its symbols are nf-md glyphs in
+# plane 15 (U+F003C, U+F0150, U+F0219, U+F0379, U+F10FE, U+F13AB): they need a
+# Nerd Fonts v3 patched font specifically, and astral-plane private use has no
+# system fallback, so any terminal not set to that font renders them as tofu.
+# Only Ghostty is configured for it. The powerline separators are fine -- they
+# are U+E0B0/U+E0B4 in the BMP. If this config is ever restored, swap the six
+# for BMP equivalents or accept that the prompt is Ghostty-only.
 
 format = """
 [](bg0)\

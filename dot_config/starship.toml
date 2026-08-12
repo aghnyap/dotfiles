@@ -32,15 +32,30 @@
 # does nothing. See the note in README.md.
 
 # ── The overrides ───────────────────────────────────────────────────────────
-# The default git_branch symbol is U+E0A0 (pl-branch), a thin two-pixel-wide
-# mark that reads as blank at font-size 14. Everything about it checks out --
-# starship emits it, the font has real outlines for it, and `ghostty
-# +show-face --cp=0xE0A0` resolves it to JetBrainsMono Nerd Font Mono -- it is
-# simply too faint to see. U+F062C (md-source_branch) is the same idea drawn
-# at icon weight. The nf-md range is also the one that has proved reliable
-# here; see the Nerd Fonts note in README.md.
-[git_branch]
-symbol = "󰘬 "
+# git_branch keeps starship's default symbol, U+E0A0 (pl-branch), on purpose.
+#
+# It was briefly overridden to U+F062C (md-source_branch) because U+E0A0 is a
+# thin two-pixel mark that reads as almost blank at font-size 14. That traded a
+# legibility nit for a portability bug:
+#
+#   U+E0A0   BMP, original powerline range. Present in every powerline-patched
+#            and Nerd-patched font, and in several terminals' own fallback.
+#            Renders everywhere.
+#   U+F062C  plane 15, Nerd Fonts *v3* Material Design range (v2 put these at
+#            U+F5xx). Needs a v3-patched font specifically, and astral-plane
+#            private use gets no system font fallback -- so anything not
+#            already rendering in the patched font shows tofu or nothing.
+#
+# Only Ghostty is configured to JetBrainsMono Nerd Font here, so the override
+# looked correct in the one terminal it was checked in and broke in the rest.
+# The prompt is the wrong place to spend portability on: it is the one piece of
+# config that has to survive every terminal, every ssh session and every
+# screen-recording tool. If the default is too faint, raise the font size or
+# recolour the module -- both stay inside the BMP.
+#
+# The general rule, and the reason this comment is long: the nf-md range being
+# *reliable* and being *portable* are different claims. See the Nerd Fonts
+# gotcha in CLAUDE.md.
 
 # gcloud off. Its default format leads with the active account, so every prompt
 # in every window rendered a work email address:
