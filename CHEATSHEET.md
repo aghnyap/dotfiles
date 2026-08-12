@@ -377,8 +377,15 @@ and never installed by `chezmoi apply`:
 | `secextra` | trufflehog, grype, dex2jar, ffuf — each overlaps a baseline tool |
 | `extras` | unar + sevenzip (for `extract`), watchman, yq, jless, pre-commit, ghorg |
 
-The baseline is 62 packages and holds only what the config actually calls. If a
+The baseline is 61 packages and holds only what the config actually calls. If a
 command says it needs something, the message names the group.
+
+Count that number, do not increment it — it was wrong for three commits because
+each change added one to the previous figure instead of asking the file:
+
+```sh
+chezmoi execute-template '{{ includeTemplate "Brewfile" . }}' | grep -cE '^(brew|cask|tap) '
+```
 
 New machine: `./bootstrap.sh` from the repo root does the whole setup and then
 verifies it — no flags, no questions, idempotent, so re-running is safe. It does

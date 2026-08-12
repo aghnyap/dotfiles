@@ -182,6 +182,25 @@ check "objection (uv tool)"    'command -v objection'
 # Cmd+L does nothing without it. Claude Code ships its own installer and is not a
 # brew formula, which is why this is a check and not a Brewfile line.
 check "claude CLI (Cmd+L)"     'command -v claude'
+check "aider (uv tool)"        'command -v aider'
+check "cursor-agent"           'command -v cursor-agent'
+# The c4 module is checked separately from the binary because it fails in its own
+# way: dot_zshrc's `_mods` array names every module individually, so a module
+# that exists on disk but is missing from that list never loads, silently, and
+# looks exactly like one that was never added.
+check "c4 module loaded"       'zsh -lic "whence -w c4-local" 2>/dev/null | grep -q function'
+# `command -v structurizr` would prove nothing here, for the same reason the JDK
+# check above does not use it. The binary exists and then refuses to run when
+# JAVA_HOME points at mise's temurin-17 -- which ~/.zshenv exports on every
+# machine -- because the war needs Java 21+:
+#     UnsupportedClassVersionError ... class file version 65.0
+# _c4_structurizr overrides JAVA_HOME per call to fix that, so the check runs it
+# through a login shell and through that wrapper, i.e. the path every c4 command
+# actually takes. Confirmed to fail without the wrapper.
+check "structurizr (Java 21+)" 'zsh -lic "_c4_structurizr version" 2>/dev/null | grep -qi structurizr'
+# plantuml is what turns a C4 model into images, and it renders nothing useful
+# without graphviz. It reports on the pair itself rather than making us infer it.
+check "plantuml + graphviz"    'plantuml -testdot 2>&1 | grep -q "Installation seems OK"'
 # --exclude=scripts: run_onchange scripts show as a pending diff whenever their
 # hash has not been recorded yet, which says nothing about the configs.
 #
@@ -231,5 +250,43 @@ if ! git config --get user.email >/dev/null 2>&1; then
     The pager, the delta theme and the editor are already configured, in
     ~/.config/git/config. Anything employer-specific -- internal host
     rewrites, a hook templateDir -- goes in ~/.gitconfig by hand.
+EOF
+fi
+
+# Model credentials, reported for the same reason as git identity: they are the
+# machine's, not the repo's. Deliberately NOT a `check` -- a fresh machine is
+# supposed to lack these, and failing the run for it would make a correct
+# bootstrap look broken.
+# Gated on the API key only. `cursor-agent status` looks like the obvious second
+# condition and is not trustworthy: on the machine this was written on it printed
+# "Login successful! / Logged in" while `cursor-agent --list-models` answered
+# "No models available for this account". Reporting on a signal known to be wrong
+# is worse than not reporting -- so the text below names the command that does
+# tell the truth, and this only decides whether to print at all.
+if [[ -z ${ANTHROPIC_API_KEY:-} ]]; then
+  cat <<'EOF'
+
+==> The AI tools are installed but not authenticated. Both are per-machine and
+    neither belongs in this repo:
+
+      aider         needs ANTHROPIC_API_KEY. Put it in a machine-local module,
+                    which ~/.zshrc sources last and chezmoi never captures:
+
+                      mkdir -p ~/.config/zsh/local
+                      # then add:  export ANTHROPIC_API_KEY=...
+                      $EDITOR ~/.config/zsh/local/ai.zsh
+
+      cursor-agent  needs `cursor-agent login`, a browser flow -- the one step
+                    here no script can do for you. CURSOR_API_KEY in the same
+                    file is the scriptable alternative.
+
+                    Check it with `cursor-agent --list-models`, not with
+                    `cursor-agent status`: status has been seen reporting
+                    "Login successful" for an account that then had no models
+                    available at all.
+
+    Until then <leader>Aa and <leader>Ac open sessions that cannot talk to
+    anything. The model and the rest of aider's defaults are already set, in
+    the managed ~/.aider.conf.yml.
 EOF
 fi
