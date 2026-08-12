@@ -31,7 +31,7 @@
 # `[palettes.<name>]` table, or TOML scopes it into that table and it silently
 # does nothing. See the note in README.md.
 
-# ── The one override ────────────────────────────────────────────────────────
+# ── The overrides ───────────────────────────────────────────────────────────
 # The default git_branch symbol is U+E0A0 (pl-branch), a thin two-pixel-wide
 # mark that reads as blank at font-size 14. Everything about it checks out --
 # starship emits it, the font has real outlines for it, and `ghostty
@@ -41,3 +41,19 @@
 # here; see the Nerd Fonts note in README.md.
 [git_branch]
 symbol = "󰘬 "
+
+# gcloud off. Its default format leads with the active account, so every prompt
+# in every window rendered a work email address:
+#
+#   /tmp on ☁️  someone@employer.example
+#
+# That is on screen in every screenshot, screen share and recording. The obvious
+# fix is to reformat the module to show region or project instead -- but on this
+# machine `gcloud config` has no project, region or zone set at all. Account is
+# the only value it has, so the identifying part is the only part it could ever
+# display, and reformatting would leave a decorative empty cloud.
+#
+# Turn it back on with a format that omits $account if you start setting a
+# region: format = 'on [$symbol$region]($style) '
+[gcloud]
+disabled = true

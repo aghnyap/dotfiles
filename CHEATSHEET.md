@@ -340,6 +340,18 @@ Decompiler output goes to `stdpath('cache')/apk/`, never into your repo.
 `top` → btop · `du` → dust · `df` → duf · `ps` → procs · `hex` → hexyl ·
 `MANPAGER` → bat. `..` `...` `....` walk up; `-` is `cd -`; `v`/`vi`/`vim` → nvim.
 
+**The replacements do not take the same flags, and the errors do not say so.**
+The two that bite:
+
+| You type | What happens |
+| --- | --- |
+| `grep -E 'a\|b'` | rg's `-E` is `--encoding` → `error parsing flag -E: unknown encoding` |
+| `cat -v`, `cat -A`, `cat -n` | bat has none of them → `unexpected argument '-v' found` |
+
+Reach for `command grep` / `command cat` when you want the real one — in a
+script, in a pipeline you copied from somewhere, or any time the flag error looks
+like it is about your data rather than about the alias. `\grep` works too.
+
 ### Everyday
 `ide [dir]` open a project as an IDE · `tm [name]` bare tmux session ·
 `f [query]` fuzzy-find and edit · `rgf <pattern>` ripgrep with preview ·
