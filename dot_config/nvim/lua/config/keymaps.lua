@@ -11,7 +11,8 @@
 -- │  LazyVim's own <leader> groups (f find, g git, c code,        │
 -- │  s search, u ui, x diagnostics, b buffer) are left alone.     │
 -- │  Only groups LazyVim does not define are added: F flutter,    │
--- │  r run, h http, a ai, m overview.                             │
+-- │  r run, h http, a ai (Claude), A agents (aider/cursor),       │
+-- │  C c4, X xcode, D database, m overview.                       │
 -- ╰──────────────────────────────────────────────────────────────╯
 
 local map = vim.keymap.set

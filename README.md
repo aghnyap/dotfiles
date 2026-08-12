@@ -296,6 +296,49 @@ It is deliberately not a shell: scanners are addressed by name from a fixed
 table, flags are pinned by the server, and there is no `shell=True` anywhere —
 so a caller cannot smuggle in arguments. It holds no credentials.
 
+## Terminal agents — aider and cursor-agent
+
+Two more AI tools, both driving a CLI in a split rather than acting as the
+editor. `<leader>A` is the group: `Aa` toggle aider, `Am` its command menu,
+`Ab`/`Ad` add/drop the buffer, `As` send a selection, `Aw` watch-files mode,
+`Ac`/`Ar` cursor-agent toggle/resume. Full table in
+`~/.config/nvim/KEYBINDINGS.md`.
+
+**Both need one manual step, and neither is in this repo.** aider reads
+`ANTHROPIC_API_KEY` from the environment — put it in
+`~/.config/zsh/local/ai.zsh`, which is machine-local, excluded in
+`.chezmoiignore` and sourced last:
+
+```sh
+mkdir -p ~/.config/zsh/local
+printf 'export ANTHROPIC_API_KEY=%s\n' 'your-key' >> ~/.config/zsh/local/ai.zsh
+```
+
+cursor-agent needs `cursor-agent login` once per machine — a browser flow, which
+is why `bootstrap.sh` cannot do it. `CURSOR_API_KEY` is the scriptable
+alternative and belongs in the same machine-local file.
+
+`~/.aider.conf.yml` **is** managed, and holds no credentials: model, and
+`auto-commits: false` so aider does not commit on your behalf. It sits in `$HOME`,
+which is the lowest-priority location aider searches (home → repo root → cwd), so
+any project can override it.
+
+**aider is installed with `uv`, not Homebrew,** although the formula exists and
+is current. Upstream's docs are blunt about it: *"While aider is available in a
+number of system package managers, they often install aider with incorrect
+dependencies."* The installer uses their exact command, interpreter pin included.
+
+**cursor-agent is a cask, not the `curl | bash` installer.** That installer
+self-manages versions under `~/.local/share` and leaves a fresh Mac with nothing.
+If you had installed it that way, the cask shadows it — `/opt/homebrew/bin`
+precedes `~/.local/bin` — and `rm -rf ~/.local/share/cursor-agent ~/.local/bin/{cursor-agent,agent}`
+clears the leftovers.
+
+One thing to be deliberate about: **cursor-agent has no offline mode.** Prompts
+and file context go to Cursor's servers on every action. Privacy Mode changes
+retention and training, not whether the data leaves the machine, and their docs
+do not state whether it applies to the CLI identically to the editor.
+
 **`~/.claude.json` is not managed by chezmoi**, on purpose. It carries session
 state and auth caches, so it is a local file, not a dotfile. Servers that need a
 token are registered locally and reference it as `${ENV_VAR}` — never a literal,

@@ -56,6 +56,16 @@ echo "==> uv tools (frida, objection)"
 uv tool install --force frida-tools
 uv tool install --force objection
 
+# aider, deliberately NOT `brew install aider` even though the formula exists and
+# is current. Upstream's install docs say plainly: "It's best to install aider
+# using one of methods recommended above. While aider is available in a number of
+# system package managers, they often install aider with incorrect dependencies."
+# The command below is theirs verbatim, including the interpreter pin -- the
+# published aider-chat 0.86.2 declares requires_python >=3.10,<3.13, so python
+# 3.12 is chosen rather than inherited from whatever uv would pick.
+echo "==> uv tools (aider)"
+uv tool install --force --python python3.12 --with pip aider-chat@latest
+
 # oh-my-zsh. Installed unattended: the upstream installer would otherwise
 # launch an interactive shell and overwrite ~/.zshrc, which chezmoi owns.
 if [[ ! -d "$HOME/.oh-my-zsh" ]]; then

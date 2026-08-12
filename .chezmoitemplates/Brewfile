@@ -36,6 +36,16 @@ brew "sesh"
 # download. Both ship their own JDK and manage their own SDKs, so nothing in this
 # repo depends on either.
 cask "cursor"
+# The Cursor agent as a terminal CLI, wired to <leader>A in Neovim. Installed as
+# a cask rather than by Cursor's `curl https://cursor.com/install | bash`, which
+# self-manages versions under ~/.local/share and leaves a fresh Mac with nothing
+# until someone remembers to run it. /opt/homebrew/bin precedes ~/.local/bin
+# here, so this copy wins if both exist.
+#
+# It needs `cursor-agent login` once per machine -- a browser flow that cannot
+# run in bootstrap.sh. CURSOR_API_KEY is the scriptable alternative and belongs
+# in ~/.config/zsh/local/, not here.
+cask "cursor-cli"
 cask "jetbrains-toolbox"
 
 # ── Core CLI ───────────────────────────────────────────────────────────────

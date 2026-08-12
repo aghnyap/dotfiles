@@ -13,8 +13,9 @@ outline are bound both ways; `Cmd+P`, `Cmd+F`, `Cmd+B`, `Cmd+S`, `Cmd+Z`, `Cmd+A
 or in another terminal, reach for the plain vim equivalent instead.
 
 Leader groups added on top of LazyVim's: `F` Flutter, `X` Xcode, `r` run,
-`h` HTTP, `a` AI, `m` overview/outline, `D` database. Everything else under
-`<leader>` is LazyVim's own.
+`h` HTTP, `a` AI (Claude), `A` agents (aider, cursor-agent), `C` c4/Structurizr,
+`m` overview/outline, `D` database. Everything else under `<leader>` is
+LazyVim's own.
 
 ## Files & navigation
 
@@ -269,6 +270,45 @@ open.
 
 Claude sees your active buffer and selection automatically, `@`-mentions
 resolve against real files, and edits arrive as native Neovim diffs.
+
+## Agents — aider and cursor-agent
+
+Both drive a CLI in a terminal split on the right. That is a different thing from
+the Claude integration above: claudecode.nvim makes Neovim the editor Claude Code
+*drives* — it sees the buffer, resolves `@`-mentions against real files and
+returns native diffs. These two edit files on disk and the buffer reloads.
+
+`<leader>A`, not `<leader>a`, because the AI group already holds 13 Claude
+bindings and this keeps that muscle memory intact.
+
+| Keys | Action |
+| --- | --- |
+| `<leader>Aa` | aider: toggle the session |
+| `<leader>Am` | aider: command menu (fuzzy over its slash-commands) |
+| `<leader>Ab` / `<leader>Ad` | aider: add / drop this buffer |
+| `<leader>As` | aider: send selection (visual) or buffer |
+| `<leader>AR` | aider: reset the session |
+| `<leader>AH` | aider: health check — run this first if something looks wrong |
+| `<leader>Aw` | aider: **watch-files mode** |
+| `<leader>Ac` | cursor-agent: toggle |
+| `<leader>Ar` | cursor-agent: resume the last session |
+
+**Watch-files mode is the interesting one, and it needs no plugin at all.**
+`aider --watch-files` watches files on disk for one-line comments ending in `AI`,
+`AI!` or `AI?` — in any comment syntax. Leave notes as you work, then trigger:
+
+```lua
+-- rename this to something honest AI
+local function doStuff() end  -- AI! apply the renames above
+```
+
+Saving the file is what fires it. `AI?` asks a question instead of editing. This
+is upstream's own editor-integration story and works in any editor; the plugin
+is convenience on top of it.
+
+> **Neither is set up until you add a key.** aider needs `ANTHROPIC_API_KEY` in
+> `~/.config/zsh/local/*.zsh`, and cursor-agent needs `cursor-agent login` once
+> per machine. Both are machine-local by design and neither is in this repo.
 
 ## Trade-offs to know about
 

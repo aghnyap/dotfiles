@@ -1,0 +1,35 @@
+# Aider defaults for this machine. Read from $HOME, which is the lowest-priority
+# location aider searches: home -> git repo root -> cwd, later wins. So anything
+# here is a default a project can override by dropping its own .aider.conf.yml,
+# which is the right way round.
+#
+# NO CREDENTIALS IN THIS FILE. It is committed. aider reads ANTHROPIC_API_KEY
+# from the environment, and that export belongs in ~/.config/zsh/local/*.zsh --
+# machine-local, excluded in .chezmoiignore, sourced last by ~/.zshrc. aider also
+# reads a .env file with the same home -> repo -> cwd precedence if you prefer
+# that, but the zsh-local route is the convention already used here.
+
+# Claude, matching the editor AI. `sonnet` is aider's own alias for the current
+# Sonnet, so this does not pin a dated model string that goes stale.
+model: sonnet
+
+# Do not commit on aider's behalf.
+#
+# aider auto-commits every edit by default, which is a reasonable default for
+# people who use it as the primary driver and a bad one here: it would write
+# commits into a repo mid-session under whatever identity git resolves to, and
+# review-before-commit is the whole point of the workflow this config is built
+# around. /commit when you actually want one.
+auto-commits: false
+
+# Keep aider's own droppings out of whatever repo it runs in. This makes it
+# offer to append `.aider*` to that project's .gitignore -- it writes
+# .aider.input.history, .aider.chat.history.md and a .aider.tags.cache.v* symbol
+# cache into the repo root, none of which belong in version control.
+gitignore: true
+
+# Dark, to match every other terminal tool here.
+dark-mode: true
+
+# Show the diff of what it changed. Without this you are trusting a summary.
+show-diffs: true

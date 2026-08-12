@@ -96,6 +96,18 @@ Library/Application Support/Code/**
 .cursor/**
 Library/Application Support/Cursor/**
 
+# aider's own state, denied with one hole for the config.
+#
+# aider writes .aider.input.history, .aider.chat.history.md and a
+# .aider.tags.cache.v* symbol cache into whatever directory it runs in. In a
+# project it offers to gitignore them itself; in $HOME nothing would, and a
+# chat transcript is the single most sensitive file this setup can produce --
+# it contains whatever source was in context. ~/.aider.conf.yml is the one
+# managed file and carries no credentials; the API key lives in
+# ~/.config/zsh/local/ with everything else machine-specific.
+.aider*
+!.aider.conf.yml
+
 # ~/.claude, denied as a tree with one hole in it.
 #
 # This repo manages exactly one thing under there -- skills/c4-architect, the C4

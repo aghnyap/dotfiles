@@ -377,7 +377,7 @@ and never installed by `chezmoi apply`:
 | `secextra` | trufflehog, grype, dex2jar, ffuf — each overlaps a baseline tool |
 | `extras` | unar + sevenzip (for `extract`), watchman, yq, jless, pre-commit, ghorg |
 
-The baseline is 61 packages and holds only what the config actually calls. If a
+The baseline is 62 packages and holds only what the config actually calls. If a
 command says it needs something, the message names the group.
 
 New machine: `./bootstrap.sh` from the repo root does the whole setup and then
@@ -417,6 +417,18 @@ with debugger on `:5005`.
 
 > Everything here operates on a local file, a local emulator, or a device you
 > have attached. For applications you are authorized to test.
+
+### AI agents
+`aider` pair-programming in the terminal · `aider --watch-files` acts on `AI!` /
+`AI?` comments when you save, no plugin needed · `cursor-agent` Cursor's agent as
+a CLI, `cursor-agent -p '…'` for a scripted one-shot.
+
+In Neovim both live under `<leader>A` — `Aa` aider, `Ac` cursor-agent. Claude
+stays on `<leader>a`.
+
+Model and defaults come from `~/.aider.conf.yml` (managed, no secrets).
+`ANTHROPIC_API_KEY` goes in `~/.config/zsh/local/*.zsh`; cursor-agent needs
+`cursor-agent login` once.
 
 ### Architecture — C4 / Structurizr
 `c4-init [dir]` scaffold `docs/architecture/{workspace.dsl,structurizr.properties}` ·
