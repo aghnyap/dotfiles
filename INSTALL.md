@@ -13,13 +13,22 @@ every config file and the full commit history with it.
 
 ```sh
 cd ~
-zip -qr ~/dotfiles.zip dotfiles -x 'dotfiles/.claude/*'
+zip -qr ~/dotfiles.zip dotfiles -x 'dotfiles/.claude/*' 'dotfiles/.git/hooks/*'
 ```
 
-`-x` drops `.claude/settings.local.json`, which is git-ignored rather than
-tracked: it records Claude Code's permission grants as absolute paths from
-whichever Mac approved them, so it is local state and does not belong in a
-copy handed to another machine.
+The two `-x` patterns drop local state that is not tracked but would otherwise
+ride along inside the directory:
+
+- `.claude/settings.local.json` records Claude Code's permission grants as
+  absolute paths from whichever Mac approved them.
+- `.git/hooks/*` is seeded from `~/.git-templates` by the corporate git config,
+  and `security.sh` alone is 44 KB naming an internal host and a commercial
+  scanner 60-odd times. It is employer tooling, it is not tracked, and a work
+  machine re-seeds it automatically at `git init` -- so a personal machine should
+  neither receive it nor need it.
+
+Worth knowing why this was easy to miss: everything else in this repo was audited
+by reading tracked files and git objects, and `.git/hooks` is neither.
 
 AirDrop / USB / iCloud `~/dotfiles.zip` to the other Mac.
 
@@ -245,5 +254,5 @@ The zip is a snapshot. After changing anything, commit here and re-zip:
 
 ```sh
 cd ~/dotfiles && chezmoi re-add && git add -A && git commit
-cd ~ && rm -f ~/dotfiles.zip && zip -qr ~/dotfiles.zip dotfiles -x 'dotfiles/.claude/*'
+cd ~ && rm -f ~/dotfiles.zip && zip -qr ~/dotfiles.zip dotfiles -x 'dotfiles/.claude/*' 'dotfiles/.git/hooks/*'
 ```
