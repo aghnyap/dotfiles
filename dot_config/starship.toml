@@ -1,0 +1,43 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# ╭──────────────────────────────────────────────────────────────────────────╮
+# │  Intentionally empty: starship's built-in defaults.                      │
+# ╰──────────────────────────────────────────────────────────────────────────╯
+#
+# The default format is the one with the connecting words:
+#
+#   repo-name on  branch [!] via ☕ v17.0.12 took 4s
+#   ❯
+#
+# starship applies its defaults for anything a config does not set, so an
+# empty file and no file behave identically. The file is kept (rather than
+# deleted) so it stays managed by chezmoi and there is somewhere obvious to put
+# an override later.
+#
+# Note the defaults use emoji for language symbols (☕ 🐳 🅺), not Nerd Font
+# glyphs. That is deliberate upstream -- it renders in any font. Overriding a
+# single `symbol` is enough to switch one back to a Nerd Font glyph.
+#
+# A two-line Tokyo Night powerline config used to live here, kept as a FILE
+# rather than in git history. History here gets rewritten and
+# squashed, so a comment pointing at a commit is a promise this repo cannot keep
+# -- which already happened once, when a scrub changed every SHA and left the
+# hash written here pointing at nothing.
+#
+#   cp ~/dotfiles/starship-powerline.toml ~/dotfiles/dot_config/starship.toml
+#   chezmoi apply ~/.config/starship.toml
+#
+# If you do re-customise: `palette = "..."` must appear ABOVE the
+# `[palettes.<name>]` table, or TOML scopes it into that table and it silently
+# does nothing. See the note in README.md.
+
+# ── The one override ────────────────────────────────────────────────────────
+# The default git_branch symbol is U+E0A0 (pl-branch), a thin two-pixel-wide
+# mark that reads as blank at font-size 14. Everything about it checks out --
+# starship emits it, the font has real outlines for it, and `ghostty
+# +show-face --cp=0xE0A0` resolves it to JetBrainsMono Nerd Font Mono -- it is
+# simply too faint to see. U+F062C (md-source_branch) is the same idea drawn
+# at icon weight. The nf-md range is also the one that has proved reliable
+# here; see the Nerd Fonts note in README.md.
+[git_branch]
+symbol = "󰘬 "

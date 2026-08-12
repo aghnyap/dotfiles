@@ -1,0 +1,10 @@
+**/.claude/settings.local.json
+
+# Editor-local build metadata, never belongs in a project repo.
+# buildServer.json is generated per-project by `xcode-build-server config`
+# (:XcodebuildSetup) and is what lets sourcekit-lsp understand the build graph.
+# It contains absolute paths to this machine's DerivedData, so it is
+# machine-specific by nature.
+buildServer.json
+.xcode-build-server/
+.compile

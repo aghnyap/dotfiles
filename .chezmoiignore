@@ -1,0 +1,86 @@
+# Never manage secrets or credential material with chezmoi.
+# Anything listed here is ignored on `apply` and must never be `add`ed.
+
+.git-credentials
+.netrc
+.ssh/**
+.aws/**
+.gnupg/**
+.config/gcloud/**
+.config/github-copilot/**
+.docker/config.json
+.npmrc
+.pypirc
+.gradle/gradle.properties
+.m2/settings.xml
+
+# Machine-local zsh modules. Employer-specific and credential-adjacent config
+# lives here (VPN helpers, work-only tooling) and must not follow the dotfiles
+# to another machine. ~/.zshrc sources this directory if it exists.
+.config/zsh/local/**
+
+# ~/.gitconfig is the identity half of git's user-level config: `[user]`,
+# employer host rewrites, corporate hook templateDirs, per-machine overrides.
+# This repo configures tooling, not people, so it does not manage the file at
+# all -- not even as a template with the identity templated out. What it does
+# manage is ~/.config/git/config, git's second user-level file, which holds the
+# pager, the editor and the delta theme. git reads both.
+.gitconfig
+
+# Machine-local state, caches, and build artifacts
+.local/state/**
+.cache/**
+.zsh_history
+.zcompdump*
+.DS_Store
+**/.DS_Store
+
+# There was a nine-entry block here for "stale backups that predate version
+# control" -- .zshrc.bak-*, .config/nvim.bak/**, .config/spaceship.zsh and the
+# rest. Every one of those paths has since been deleted, and they were one-time
+# migration artifacts that cannot come back, so the patterns were guarding
+# nothing. Entries below are kept even when the path is currently absent, because
+# those are files a tool could recreate.
+
+# zsh plugins are git clones, managed by their own upstreams
+.config/zsh/plugins/**
+
+# tmux plugins are tpm-managed git clones
+.config/tmux/plugins/**
+
+# Karabiner is machine-local, for two independent reasons: its remaps are keyed
+# to one external keyboard's vendor_id/product_id, and the profile carries a
+# work VPN hotkey -- employer-specific, so it must not follow this repo to a
+# personal laptop. Karabiner also rewrites and reindents the file on every
+# settings change, which showed up as permanent `chezmoi diff` noise; worse, an
+# `apply` from the stored copy silently deleted the VPN rule, because the app
+# had added it after the file was last captured. Templating is not an option
+# here -- `chezmoi re-add` skips templates, and this file is app-owned.
+.config/karabiner/**
+
+# VS Code, for the same app-owned reason as Karabiner plus one of its own. This
+# setup is terminal-first -- the IDE is Neovim, and the one GUI editor kept is
+# Cursor -- so a VS Code config has nothing to say here.
+#
+# Its settings.json used to be managed, and it was never really authored: it was
+# captured off one Mac wholesale, so whatever the installed extensions had
+# written became committed configuration. That is how a corporate scanner's CLI
+# path, a GitLab Duo language list and a vendor telemetry opt-in ended up in this
+# repo. Removing them was not enough either -- the extensions wrote all four
+# straight back into the live file, so the next `apply` refused to overwrite and
+# needed `--force`. The file is owned by the app, not by us.
+Library/Application Support/Code/**
+
+# Repo documentation and tooling. Without these, chezmoi treats a source-root
+# file as a target and writes it into $HOME -- CHEATSHEET.md showed up as a
+# pending ~/CHEATSHEET.md until it was listed here, and bootstrap.sh as a
+# pending ~/bootstrap.sh.
+README.md
+INSTALL.md
+CLAUDE.md
+CHEATSHEET.md
+bootstrap.sh
+# The previous two-line powerline starship config. Kept as a file rather than
+# left in git history, because the history gets squashed and rewritten -- a
+# comment pointing at a commit is a promise this repo cannot keep.
+starship-powerline.toml

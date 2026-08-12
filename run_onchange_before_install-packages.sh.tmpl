@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Re-runs automatically whenever the Brewfile below changes, because chezmoi
+# hashes the rendered script and this comment embeds the file's contents.
+#
+# Brewfile hash: {{ includeTemplate "Brewfile" . | sha256sum }}
+set -euo pipefail
+
+command -v brew >/dev/null 2>&1 || {
+  echo "Homebrew is not installed. Install it first:" >&2
+  echo '  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' >&2
+  exit 1
+}
+
+# --no-lock was removed from brew bundle; HOMEBREW_BUNDLE_NO_UPGRADE keeps a
+# re-run from silently upgrading formulae that are merely outdated.
+echo "==> brew bundle"
+HOMEBREW_BUNDLE_NO_UPGRADE=1 brew bundle --file=/dev/stdin <<'BREWFILE'
+{{ includeTemplate "Brewfile" . }}
+BREWFILE
+
+# Runtimes. Flutter is deliberately absent -- FVM pins it per repository, and a
+# global SDK on PATH would shadow the per-repo pin.
+#
+# The versions are NOT repeated here. They come from the managed
+# ~/.config/mise/config.toml, which this script cannot read yet -- it is a
+# run_onchange_BEFORE, so apply has not written it. Same problem and same
+# solution as the ruby pin below: inline the file from source and install from it.
+# Writing it first also means `mise install` pins as well as installs; the old
+# `mise install java@temurin-21` installed a runtime it never activated.
+echo "==> mise runtimes"
+mkdir -p "$HOME/.config/mise"
+cat > "$HOME/.config/mise/config.toml" <<'MISECONFIG'
+{{ trim (include "dot_config/mise/config.toml") }}
+MISECONFIG
+mise install
+
+# Ruby comes from mise, pinned in the config written above, so `mise install`
+# already built it. What mise cannot do is install the gems: cocoapods and
+# fastlane are what this toolchain actually needs on PATH.
+#
+# `mise exec` rather than a bare `gem`: this script runs BEFORE apply writes
+# ~/.zshenv, so mise's shims are not on PATH yet and a bare `gem` falls through to
+# /usr/bin/gem -- macOS's system ruby, which needs root and fails with
+# Gem::FilePermissionError. Routing through mise makes it independent of PATH.
+echo "==> ruby gems (cocoapods, fastlane)"
+mise exec ruby -- gem install --no-document cocoapods fastlane
+mise reshim
+
+# Frida/objection via uv, never system pip. uv brings its own interpreter per
+# tool, so unlike pipx these do not break when Homebrew bumps python.
+#
+# No `|| true`: `uv tool install --force` is idempotent, so a failure here is a
+# real failure and should stop the script rather than be discovered later by
+# bootstrap.sh's frida-ps/objection checks.
+echo "==> uv tools (frida, objection)"
+uv tool install --force frida-tools
+uv tool install --force objection
+
+# oh-my-zsh. Installed unattended: the upstream installer would otherwise
+# launch an interactive shell and overwrite ~/.zshrc, which chezmoi owns.
+if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+  echo "==> oh-my-zsh"
+  RUNZSH=no KEEP_ZSHRC=yes CHSH=no \
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
+
+# oh-my-zsh custom plugins that Homebrew's copies do not satisfy, because
+# .zshrc lists them in the omz `plugins` array and omz looks under $ZSH/custom.
+for repo in "zsh-users/zsh-autosuggestions" "zsh-users/zsh-syntax-highlighting"; do
+  dest="$HOME/.oh-my-zsh/custom/plugins/${repo##*/}"
+  [[ -d $dest ]] || git clone --depth 1 "https://github.com/$repo" "$dest"
+done
+
+# tmux plugin manager
+if [[ ! -d "$HOME/.config/tmux/plugins/tpm" ]]; then
+  echo "==> tpm"
+  git clone --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.config/tmux/plugins/tpm"
+fi
+
+# zsh plugins that Homebrew does not package. zsh-defer used to be cloned here
+# too; nothing ever sourced it (see the note at the bottom of ~/.zshrc, which
+# explains how to clone it if the deferred-startup experiment is ever retried).
+for repo in "Aloxaf/fzf-tab"; do
+  dest="$HOME/.config/zsh/plugins/${repo##*/}"
+  [[ -d $dest ]] || git clone --depth 1 "https://github.com/$repo" "$dest"
+done
+
+echo "==> done. Open nvim once for Mason to install its language servers."

@@ -1,0 +1,88 @@
+# Rust, if it is installed. The guard is the whole point: rustup appended this
+# line unguarded, and .zshenv runs for EVERY zsh -- login, non-login, `zsh -c`,
+# tmux panes, nvim :terminal, git hooks. On a machine without rustup (nothing in
+# this repo installs it) every single one of those printed
+# `.zshenv:1: no such file or directory` to stderr, which is both noise and a
+# real hazard for anything parsing a subshell's output.
+[[ -f $HOME/.cargo/env ]] && . "$HOME/.cargo/env"
+
+# --- Dev toolchain paths -----------------------------------------------------
+# Defined in .zshenv so they apply to non-interactive shells too: scripts,
+# `zsh -c`, CI, and tools that spawn a subshell. .zshrc is interactive-only.
+#
+# Notes:
+#  * $ANDROID_HOME/tools and tools/bin are deprecated and deliberately excluded.
+#    The old tools/emulator stub looks for an x86_64 QEMU engine that no longer
+#    ships, so it fails on arm64 with "Could not launch .../darwin-x86_64/...".
+#    The real emulator is $ANDROID_HOME/emulator/emulator.
+#  * /usr/bin/java on macOS is only a stub ("Unable to locate a Java Runtime")
+#    -- no JVM is registered under /Library/Java/JavaVirtualMachines, so
+#    $JAVA_HOME/bin must come first or Gradle picks up the stub.
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export ANDROID_SDK_ROOT=$ANDROID_HOME   # legacy name; some Gradle/CI tooling still reads it
+# JAVA_HOME follows the mise pin first, because mise is what this repo installs
+# and its shims already come before $JAVA_HOME/bin below -- if the two disagreed,
+# `java` and Gradle (which reads JAVA_HOME, not PATH) would run different JDKs.
+# `temurin-17` is a stable alias directory mise maintains, so this is a plain
+# directory test and costs no fork.
+#
+# One JDK, no fallback chain. There used to be an `elif` here for SDKMAN, which
+# is gone -- mise is the only thing that provides java now, and a fallback to a
+# directory nothing installs is how PATH and JAVA_HOME end up naming different
+# JDKs. Guarded rather than unconditional so a machine mid-bootstrap, before
+# `mise install` has run, simply has no JAVA_HOME instead of a broken one.
+if [[ -d $HOME/.local/share/mise/installs/java/temurin-17/Contents/Home ]]; then
+  export JAVA_HOME=$HOME/.local/share/mise/installs/java/temurin-17/Contents/Home
+fi
+
+# GEM_HOME is deliberately NOT set: mise's ruby owns gem resolution. Setting it
+# made gems install to ~/.gem, shared across ruby versions, which breaks native
+# extensions on a version switch. fastlane + plugins and CocoaPods live under
+# mise's ruby 3.3.5; ~/.gem has since been removed entirely.
+
+# Homebrew: sets HOMEBREW_PREFIX/MANPATH/INFOPATH as well as PATH. Guarded
+# because `brew shellenv` forks a subshell (~30ms) and .zshenv runs for every
+# nested zsh; HOMEBREW_PREFIX is exported, so children skip the re-run.
+[[ -z $HOMEBREW_PREFIX && -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# `typeset -U` keeps these deduplicated. .zshenv runs for every nested zsh, so
+# without it PATH would grow a duplicate set per subshell.
+typeset -U path PATH
+
+# For login shells, /etc/zprofile runs `path_helper`, which rebuilds PATH with
+# the system dirs in front -- demoting anything set here below /usr/bin. So this
+# is a function, re-invoked from ~/.zprofile after path_helper has run. With
+# `typeset -U`, re-prepending an existing entry just moves it back to the front.
+dev_paths_prepend() {
+  local -a p
+  # No Homebrew LLVM entry. There was one, carrying a comment about `clang`
+  # resolving to brew's LLVM instead of Xcode's -- but llvm is not installed and
+  # is in neither Brewfile, so the guard made the line a no-op and the comment
+  # described a toolchain order that was not in effect. Xcode's clang is what
+  # answers, which is what iOS and NDK builds want anyway.
+  # FVM: only the `fvm` launcher is global. Flutter/Dart themselves are pinned
+  # per-repository by the clone's .fvm/ -- deliberately NOT on PATH, so a global
+  # SDK can never shadow a repo's pinned version.
+  [[ -d $HOME/.fvm_flutter/bin ]]    && p+=($HOME/.fvm_flutter/bin)
+  # mise shims. These are the ONLY way mise resolves here: `mise activate` is
+  # deliberately never run (it costs ~53ms per shell -- see zsh/tools.zsh), so
+  # interactive shells do not "upgrade" to a full activation later. Everything
+  # pinned in ~/.config/mise/config.toml -- node, java and ruby -- arrives through
+  # these shims, in login shells, `zsh -c` and scripts alike.
+  [[ -d $HOME/.local/share/mise/shims ]] && p+=($HOME/.local/share/mise/shims)
+  [[ -n $JAVA_HOME ]]                && p+=($JAVA_HOME/bin)
+  [[ -d $ANDROID_HOME ]]             && p+=(
+    $ANDROID_HOME/emulator
+    $ANDROID_HOME/platform-tools
+    $ANDROID_HOME/cmdline-tools/latest/bin   # symlink -> 19.0; survives SDK upgrades
+  )
+  [[ -d $HOMEBREW_PREFIX/bin ]]      && p+=($HOMEBREW_PREFIX/bin $HOMEBREW_PREFIX/sbin)
+  [[ -d $HOME/.local/bin ]]          && p+=($HOME/.local/bin)
+  [[ -d $HOME/go/bin ]]              && p+=($HOME/go/bin)
+  [[ -d /usr/local/go/bin ]]         && p+=(/usr/local/go/bin)
+  [[ -d $HOME/.pub-cache/bin ]]      && p+=($HOME/.pub-cache/bin)   # dart pub global
+  path=($p $path)
+  return 0
+}
+dev_paths_prepend
+# -----------------------------------------------------------------------------

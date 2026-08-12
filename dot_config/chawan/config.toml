@@ -1,0 +1,67 @@
+# ╭──────────────────────────────────────────────────────────────────────────╮
+# │  chawan (cha) -- the terminal browser                                    │
+# │                                                                          │
+# │  Replaces browsh, which rasterised the whole page into half-block        │
+# │  characters and so looked pixelated no matter the terminal. chawan       │
+# │  lays the page out with real CSS and draws text as text, so it stays     │
+# │  sharp at any font size; images are drawn with a graphics protocol       │
+# │  rather than approximated with coloured blocks.                          │
+# ╰──────────────────────────────────────────────────────────────────────────╯
+
+[buffer]
+# Inline images. Off by default in chawan; the whole point of the switch.
+images = true
+# Author stylesheets, so pages keep their intended layout.
+styling = true
+
+# ── Scripting and privacy ───────────────────────────────────────────────────
+# JavaScript is ON globally, by choice. chawan's manual recommends per-site
+# opt-in instead; two consequences of overriding that are worth knowing:
+#
+#   * This build reports itself as "not sandboxed" (see `cha -v`), so buffer
+#     processes are NOT isolated from each other or the system. Running
+#     arbitrary sites' JavaScript is a broader trust decision here than it
+#     would be in a mainstream browser.
+#   * `start.headless = true` may never exit once scripting is on: it waits
+#     for every script and network request to finish, and a setInterval keeps
+#     it alive forever. `-d` and piping are NOT affected -- they use "dump"
+#     mode, which does not wait. Verified: with scripting on, `cha -d` still
+#     returns immediately and executes the page's JS.
+#
+# Cookies and Referer stay off: a separate tracking surface, and most reading
+# does not need them. M-k toggles cookies for the current page; [[siteconf]]
+# below makes it permanent for one host.
+scripting = true
+cookie = false
+referer-from = false
+
+[display]
+# "auto" probes the terminal and picks sixel or the Kitty protocol, falling
+# back to none. Both ends of the chain support it: Ghostty implements the
+# Kitty graphics protocol, and this tmux is built with sixel support
+# (`tmux display -p '#{sixel_support}'` reports 1), so images survive inside
+# a pane -- unlike the Cmd chords, which do not. Pin to "sixel" or "kitty"
+# only if the probe ever guesses wrong.
+image-mode = "auto"
+sixel-colors = "auto"
+
+# Tokyo Night orange, matching the palette every other surface uses.
+highlight-color = "#ff9e64"
+
+[external]
+# chawan defaults these to xsel, which is X11 and does not exist on macOS.
+# Without this, yanking a URL out of the browser silently does nothing.
+copy-cmd = "pbcopy"
+paste-cmd = "pbpaste"
+download-dir = "$HOME/Downloads/"
+# editor already resolves correctly: it defaults to ${VISUAL:-${EDITOR:-vi}},
+# and ~/.config/zsh/aliases.zsh exports both as nvim.
+
+# ── Per-site escapes ────────────────────────────────────────────────────────
+# Turn JavaScript on only where a page genuinely needs it. Uncomment and edit;
+# `url` is a regex matched against the whole URL.
+#
+# [[siteconf]]
+# url = '^https://(www\.)?example\.com/'
+# scripting = true
+# cookie = true

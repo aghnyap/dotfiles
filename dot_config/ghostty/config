@@ -1,0 +1,164 @@
+# ╭──────────────────────────────────────────────────────────────╮
+# │  Ghostty — tuned to host a Cursor-like Neovim                 │
+# ╰──────────────────────────────────────────────────────────────╯
+
+# ── Font ────────────────────────────────────────────────────────
+font-family = JetBrainsMono Nerd Font Mono
+font-size = 14
+font-thicken = true
+font-feature = calt
+font-feature = liga
+adjust-cell-height = 10%
+
+# ── Colours: Tokyo Night (Night) ────────────────────────────────
+# One palette across every surface -- Ghostty, Neovim, tmux, fzf,
+# bat, delta, lazygit, btop. Replaces the hand-written VS Code Dark
+# Modern palette that used to live here.
+# Exact name from `ghostty +list-themes`.
+theme = TokyoNight Night
+
+cursor-style = block
+cursor-style-blink = false
+
+# ── Window ──────────────────────────────────────────────────────
+window-padding-x = 10
+window-padding-y = 6
+window-padding-balance = true
+window-colorspace = display-p3
+window-save-state = always
+macos-titlebar-style = tabs
+mouse-hide-while-typing = true
+confirm-close-surface = false
+shell-integration = detect
+
+# Slight transparency + blur. Subtle enough to stay readable over a
+# wallpaper; raise the opacity if a light desktop shows through.
+background-opacity = 0.95
+background-blur-radius = 20
+# Dim the pane that does not have focus, so splits read at a glance.
+unfocused-split-opacity = 0.85
+mouse-scroll-multiplier = 2
+
+# tmux owns scrollback now (history-limit 100000 per pane), so Ghostty
+# does not need a 10-million-line buffer per surface.
+scrollback-limit = 1000000
+
+# Drop-down scratch terminal on Cmd+Escape, available from any app.
+quick-terminal-position = top
+quick-terminal-animation-duration = 0.1
+keybind = global:cmd+escape=toggle_quick_terminal
+
+# Makes the Option key behave as Alt, which Neovim needs for the
+# Alt+Up / Alt+Down move-line bindings and Shift+Alt+F to format.
+macos-option-as-alt = true
+
+# ╭──────────────────────────────────────────────────────────────╮
+# │  Cmd-key forwarding                                          │
+# │                                                              │
+# │  macOS terminals swallow Cmd chords, so Neovim never sees     │
+# │  them. Each binding below re-emits the chord as a CSI-u       │
+# │  escape sequence which Neovim decodes back into a real key.   │
+# │                                                              │
+# │  Encoding: \x1b[<codepoint>;<mods>u                           │
+# │  mods = 1 + (shift 1 | alt 2 | ctrl 4 | super 8)              │
+# │                                                              │
+# │  These deliberately do NOT carry the Super bit, though that    │
+# │  is the obvious encoding and is what this file used to send.   │
+# │  Super does not survive tmux: tmux's key model has no Super    │
+# │  modifier, so it collapses Super onto Meta and the pane gets   │
+# │  a bare <M-p> for Cmd+P (measured: bytes 1b 70). Its own       │
+# │  CSI-u parser consumes the sequence before `user-keys` can     │
+# │  match, so there is no escape hatch. Every <D-...> mapping      │
+# │  was therefore dead in a tmux pane -- which is where this      │
+# │  config actually runs.                                        │
+# │                                                              │
+# │  Ctrl-bearing CSI-u does survive tmux intact, so:              │
+# │      Cmd+X        -> mods 6  (Ctrl+Shift)      -> <C-S-X>      │
+# │      Cmd+Shift+X  -> mods 8  (Ctrl+Alt+Shift)  -> <M-C-S-X>    │
+# │      Cmd+Alt+Arrow-> mods 7  (Ctrl+Alt)        -> <M-C-Arrow>  │
+# │  Alt-only carriers were measured too and are unusable: tmux    │
+# │  downgrades them to legacy ESC+char, which arrives as TWO      │
+# │  keys (<Esc> then the character).                              │
+# │                                                              │
+# │  FOUR chords cannot use their own codepoint, because Ctrl+key  │
+# │  collapses to an ASCII control code before any modifier is     │
+# │  reported -- Ctrl+M is CR, Ctrl+J is NL, Ctrl+[ is Esc and     │
+# │  Ctrl+` is NUL. Those arrive as <S-CR>/<S-NL>/<S-Esc>/<S-Nul>.  │
+# │  For them the MODIFIER is kept and the CODEPOINT moved to a     │
+# │  spare letter that no other chord uses. The physical key you    │
+# │  press is unchanged; only the wire encoding differs:            │
+# │      Cmd+J        -> 'n' (110)   Cmd+`       -> 'q' (113)       │
+# │      Cmd+Shift+M  -> 'r' (114)   Cmd+Shift+[ -> 't' (116)       │
+# │                                                              │
+# │  Neovim maps these back onto the <D-...> names in              │
+# │  ~/.config/nvim/lua/config/keymaps.lua, so every real binding  │
+# │  is still written once, as <D-...>. If a chord does nothing,   │
+# │  check that this file and that alias table agree.              │
+# │                                                              │
+# │  These take precedence over Ghostty's own defaults. The ones   │
+# │  reassigned here are noted; Cmd+C, Cmd+V, Cmd+T, Cmd+N and    │
+# │  Cmd+Q keep their normal Ghostty meaning.                      │
+# ╰──────────────────────────────────────────────────────────────╯
+
+# Files, search and the palette
+keybind = super+p=text:\x1b[112;6u
+keybind = super+shift+p=text:\x1b[112;8u
+keybind = super+shift+f=text:\x1b[102;8u
+keybind = super+shift+o=text:\x1b[111;8u
+keybind = super+f=text:\x1b[102;6u
+
+# Sidebar and panels
+keybind = super+b=text:\x1b[98;6u
+keybind = super+shift+u=text:\x1b[117;8u
+keybind = super+shift+e=text:\x1b[101;8u
+# Cmd+Shift+M: 'm' would be Ctrl+M = CR, so it rides on 'r' (114).
+keybind = super+shift+m=text:\x1b[114;8u
+keybind = super+shift+g=text:\x1b[103;8u
+# Cmd+J: 'j' would be Ctrl+J = NL, so it rides on 'n' (110).
+keybind = super+j=text:\x1b[110;6u
+# Cmd+`: '`' would be Ctrl+` = NUL, so it rides on 'q' (113).
+keybind = super+grave_accent=text:\x1b[113;6u
+
+# File operations  (overrides: Cmd+, open-config)
+keybind = super+s=text:\x1b[115;6u
+keybind = super+comma=text:\x1b[44;6u
+
+# Cmd+W stays with the terminal. It was forwarded to Neovim as close-editor for
+# a while, and that was a bad trade: a bare shell has no CSI-u parser, so at a
+# prompt the escape bytes were simply printed. Cmd+W is also the one chord whose
+# terminal meaning is universal on macOS, and Neovim already closes buffers with
+# `<leader>bd` and `:q`. close_surface closes the split if there is one, else the
+# tab, else the window.
+keybind = super+w=close_surface
+
+# Editing  (overrides: Cmd+A select-all, Cmd+K clear-screen)
+keybind = super+z=text:\x1b[122;6u
+keybind = super+shift+z=text:\x1b[122;8u
+keybind = super+a=text:\x1b[97;6u
+keybind = super+slash=text:\x1b[47;6u
+keybind = super+shift+k=text:\x1b[107;8u
+keybind = super+period=text:\x1b[46;6u
+keybind = super+backslash=text:\x1b[92;6u
+
+# Multi-cursor  (overrides: Cmd+D new-split)
+keybind = super+d=text:\x1b[100;6u
+keybind = super+shift+d=text:\x1b[100;8u
+keybind = super+alt+up=text:\x1b[1;7A
+keybind = super+alt+down=text:\x1b[1;7B
+
+# Editor tab navigation
+keybind = super+shift+right_bracket=text:\x1b[93;8u
+# Cmd+Shift+[: '[' would be Ctrl+[ = Esc, so it rides on 't' (116).
+keybind = super+shift+left_bracket=text:\x1b[116;8u
+
+# Claude
+keybind = super+l=text:\x1b[108;6u
+keybind = super+shift+l=text:\x1b[108;8u
+keybind = super+k=text:\x1b[107;6u
+
+# Reclaimed Ghostty actions, moved out of the way
+keybind = super+shift+w=close_window
+keybind = super+shift+n=new_window
+keybind = super+shift+t=new_tab
+keybind = super+shift+comma=open_config
+keybind = super+shift+r=reload_config

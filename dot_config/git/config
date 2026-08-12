@@ -1,0 +1,52 @@
+# git's second user-level config file, read alongside ~/.gitconfig. Managed by
+# chezmoi; edit the source, not this file:
+#   chezmoi edit ~/.config/git/config   (or: cd $(chezmoi source-path))
+#
+# Why this file and not ~/.gitconfig: git reads both, so the two can be split by
+# what they are rather than by what they configure. Everything here is tooling
+# and appearance -- which pager, which diff colours, which editor -- and is true
+# of any machine this repo lands on. Identity is not: ~/.gitconfig holds
+# `[user]`, employer host rewrites and hook templateDirs, is written by hand per
+# machine, and is `.chezmoiignore`d so this repo neither reads nor writes it.
+#
+# ~/.gitconfig wins on any key set in both, so a machine can override anything
+# below without editing the repo.
+[core]
+	editor = nvim
+	pager = delta
+
+[sequence]
+	editor = nvim
+
+[credential]
+	# macOS Keychain, NOT `store` -- that writes tokens as plaintext to
+	# ~/.git-credentials.
+	helper = osxkeychain
+
+[interactive]
+	diffFilter = delta --color-only
+
+[merge]
+	conflictStyle = zdiff3
+
+[diff]
+	colorMoved = default
+
+# ── delta: Tokyo Night, matching Ghostty / Neovim / bat / lazygit ──────────
+[delta]
+	navigate = true
+	side-by-side = true
+	line-numbers = true
+	syntax-theme = tokyonight_night
+	hyperlinks = true
+	true-color = always
+	file-style = "bold #7aa2f7"
+	file-decoration-style = "#3b4261 ul"
+	hunk-header-decoration-style = "#3b4261 box"
+	line-numbers-minus-style = "#f7768e"
+	line-numbers-plus-style = "#9ece6a"
+	line-numbers-zero-style = "#3b4261"
+	minus-style = "syntax #37222c"
+	minus-emph-style = "syntax #713137"
+	plus-style = "syntax #20303b"
+	plus-emph-style = "syntax #2c5a66"

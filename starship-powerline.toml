@@ -1,0 +1,207 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# ╭──────────────────────────────────────────────────────────────────────────╮
+# │  Tokyo Night (night) -- two-line powerline prompt                        │
+# │  Requires a Nerd Font (JetBrainsMono Nerd Font Mono is configured in     │
+# │  ~/.config/ghostty/config).                                              │
+# ╰──────────────────────────────────────────────────────────────────────────╯
+
+format = """
+[](bg0)\
+$os\
+$username\
+[](bg:bg1 fg:bg0)\
+$directory\
+[](fg:bg1 bg:bg2)\
+$git_branch\
+$git_status\
+[](fg:bg2 bg:bg3)\
+$kotlin\
+$java\
+$dart\
+$nodejs\
+$python\
+$golang\
+$rust\
+$ruby\
+[](fg:bg3 bg:bg4)\
+$docker_context\
+$kubernetes\
+[](fg:bg4)\
+$fill\
+$cmd_duration\
+$time\
+$line_break\
+$character"""
+
+add_newline = true
+command_timeout = 800
+scan_timeout = 30
+
+# Must stay ABOVE [palettes.tokyonight]. TOML assigns every key after a table
+# header to that table, so putting this line below it silently becomes
+# `palettes.tokyonight.palette` -- the top-level `palette` is then unset,
+# bg0..bg4 resolve to nothing, and `blue`/`red` fall back to 4-bit ANSI. The
+# prompt still renders, just flat and mis-coloured, which is how it went
+# unnoticed.
+palette = "tokyonight"
+
+[palettes.tokyonight]
+bg0 = "#3b4261"
+bg1 = "#2f334d"
+bg2 = "#292e42"
+bg3 = "#222436"
+bg4 = "#1e2030"
+fg = "#c0caf5"
+blue = "#7aa2f7"
+cyan = "#7dcfff"
+green = "#9ece6a"
+magenta = "#bb9af7"
+orange = "#ff9e64"
+red = "#f7768e"
+yellow = "#e0af68"
+teal = "#2ac3de"
+comment = "#565f89"
+
+[fill]
+symbol = " "
+
+# ── Identity ────────────────────────────────────────────────────────────────
+[os]
+disabled = false
+style = "bg:bg0 fg:fg"
+format = '[ $symbol ]($style)'
+
+[os.symbols]
+Macos = ""
+
+[username]
+show_always = false          # only when SSH'd or running as another user
+style_user = "bg:bg0 fg:fg"
+style_root = "bg:bg0 fg:red bold"
+format = '[$user ]($style)'
+
+[hostname]
+ssh_only = true
+style = "bg:bg0 fg:orange"
+format = '[@$hostname ]($style)'
+
+# ── Location ────────────────────────────────────────────────────────────────
+[directory]
+style = "bg:bg1 fg:blue bold"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+read_only = " "
+read_only_style = "bg:bg1 fg:red"
+
+[directory.substitutions]
+"Documents" = "󰈙"
+"Downloads" = ""
+"Repositories" = ""
+"Desktop" = "󰍹"
+
+# ── Git ─────────────────────────────────────────────────────────────────────
+[git_branch]
+symbol = ""
+style = "bg:bg2 fg:magenta"
+format = '[ $symbol $branch ]($style)'
+truncation_length = 24
+truncation_symbol = "…"
+
+[git_status]
+style = "bg:bg2 fg:orange"
+format = '[$all_status$ahead_behind]($style)'
+conflicted = "═ "
+ahead = "↑${count} "
+behind = "↓${count} "
+diverged = "↑${ahead_count}↓${behind_count} "
+untracked = "?${count} "
+stashed = "󰀼 ${count} "
+modified = "!${count} "
+staged = "+${count} "
+renamed = "»${count} "
+deleted = "✗${count} "
+
+# ── Languages ───────────────────────────────────────────────────────────────
+# Only render inside a project that actually uses the language -- starship's
+# defaults already key off marker files, so these stay quiet elsewhere.
+[kotlin]
+symbol = ""
+style = "bg:bg3 fg:magenta"
+format = '[ $symbol $version ]($style)'
+
+[java]
+symbol = ""
+style = "bg:bg3 fg:red"
+format = '[ $symbol $version ]($style)'
+
+[dart]
+symbol = ""
+style = "bg:bg3 fg:cyan"
+format = '[ $symbol $version ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:bg3 fg:green"
+format = '[ $symbol $version ]($style)'
+
+[python]
+symbol = ""
+style = "bg:bg3 fg:yellow"
+format = '[ $symbol $version ]($style)'
+
+[golang]
+symbol = ""
+style = "bg:bg3 fg:teal"
+format = '[ $symbol $version ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:bg3 fg:orange"
+format = '[ $symbol $version ]($style)'
+
+[ruby]
+symbol = ""
+style = "bg:bg3 fg:red"
+format = '[ $symbol $version ]($style)'
+
+# ── Infra ───────────────────────────────────────────────────────────────────
+[docker_context]
+symbol = ""
+style = "bg:bg4 fg:blue"
+format = '[ $symbol $context ]($style)'
+only_with_files = true
+
+[kubernetes]
+disabled = false
+symbol = "󱃾"
+style = "bg:bg4 fg:cyan"
+format = '[ $symbol $context ]($style)'
+detect_files = ["k8s", "kustomization.yaml", "skaffold.yaml", "Chart.yaml"]
+
+# Cloud modules shell out and are the usual cause of prompt lag. Off unless
+# you actually want them in the prompt -- `gcloud config get-value project`
+# is the slow one.
+[gcloud]
+disabled = true
+[aws]
+disabled = true
+
+# ── Right side ──────────────────────────────────────────────────────────────
+[cmd_duration]
+min_time = 2000
+style = "fg:yellow"
+format = '[ 󱎫 $duration]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "fg:comment"
+format = '[ 󰅐 $time ]($style)'
+
+# ── Prompt character ────────────────────────────────────────────────────────
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold magenta)"

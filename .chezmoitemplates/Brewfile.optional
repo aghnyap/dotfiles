@@ -1,0 +1,81 @@
+# Optional package groups. NOT installed by `chezmoi apply`.
+#
+# The main Brewfile is the baseline every machine gets, identical everywhere.
+# This file holds groups that are large and only pay off on some machines. It is
+# deliberately a manual step rather than a prompt or a template conditional --
+# nothing here is decided by what kind of machine this is, only by someone
+# typing a command:
+#
+#     brewopt            # list the groups
+#     brewopt backend    # install one
+#
+# `brew bundle` never uninstalls, so removing a line here has no effect on a
+# machine that already has the package. Uninstall by hand if that is the intent.
+
+# ── backend ────────────────────────────────────────────────────────────────
+# Containers and Kubernetes, ~1 GB. colima is the VM that gives the docker CLI a
+# daemon on macOS without Docker Desktop; without it `docker` has nothing to talk
+# to. Start it with `colima start`.
+brew "colima"
+brew "docker"
+brew "docker-compose"
+brew "kubernetes-cli"
+# hadolint lints Dockerfiles, so it belongs with Docker rather than in the
+# baseline. Note Mason installs its own copy too, because lazyvim.json enables
+# `lang.docker` -- the nvim integration works without this line.
+brew "hadolint"
+
+# ── mobilesec ──────────────────────────────────────────────────────────────
+# Extras for mobile security work that the baseline does not require.
+# android-platform-tools provides a standalone `adb` for a machine with no
+# Android SDK. If the SDK IS installed, ~/.zshenv puts its platform-tools ahead
+# of Homebrew on PATH, so the SDK's adb keeps winning and the two do not fight.
+cask "android-platform-tools"
+brew "zbar"                  # decode QR codes and barcodes from images
+brew "chafa"                 # render an image as ANSI art in the terminal
+
+# ── secrets ────────────────────────────────────────────────────────────────
+# Credential tooling. Deliberately opt-in: both want per-machine setup (a vault
+# login, a seeded TOTP secret) that installing the binary does not give you.
+brew "bitwarden-cli"
+brew "oath-toolkit"          # oathtool, for TOTP codes at the prompt
+
+# ── extras ─────────────────────────────────────────────────────────────────
+# Development tooling that the baseline does not need. The first three are
+# optional back-ends the config calls if present and names in an error if not:
+# unar and sevenzip for `extract`, watchman for the React Native cache reset.
+# The rest are build-and-ship tools. An RSS reader and a web-search CLI used to
+# be here too; terminal-shaped is not the same as development environment.
+brew "unar"                  # rar archives, for extract()
+brew "sevenzip"              # 7z archives (binary is 7zz), for extract()
+brew "watchman"              # React Native metro cache reset (<leader>rnc)
+brew "yq"                    # jq for YAML
+brew "jless"                 # pager for JSON
+brew "pre-commit"            # git-hook framework, for repos that use it
+# ghorg is not in homebrew/core, so it needs its tap named explicitly -- a bare
+# `brew "ghorg"` fails to resolve.
+tap "gabrie30/utils"
+brew "gabrie30/utils/ghorg"  # clone every repo in an org or user
+
+# ── secextra ───────────────────────────────────────────────────────────────
+# Second opinions and web-side tooling. Each overlaps something the baseline
+# already installs and wires up, so none of it belongs in every machine:
+#   trufflehog  another secret scanner; gitleaks is the one sec.zsh, the nvim
+#               scanners and the mobilesec MCP server all call
+#   grype        vulnerability scanning; trivy covers it and is referenced
+#   dex2jar      APK decompilation; jadx covers it and is referenced
+#   ffuf         web fuzzing -- useful, but nothing here drives it
+brew "trufflehog"
+brew "grype"
+brew "dex2jar"
+brew "ffuf"
+
+# No `desktop` group. There was one, holding 13 GUI casks -- rectangle, aldente,
+# arc, obsidian, notion and the rest -- added on the reasoning that a fresh Mac
+# would otherwise be missing them. That reasoning is wrong, and it is worth
+# writing down so it does not get re-applied: a fresh Mac missing Rectangle is not
+# a dotfiles problem. This repo is the development environment. Every machine
+# should be identical on that, and free to differ on everything else.
+#
+# http-toolkit went with them despite genuinely being a security tool: it is the
+# GUI sibling of mitmproxy, which is already in the baseline.

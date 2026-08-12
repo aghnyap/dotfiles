@@ -1,0 +1,24 @@
+# The single source of truth for the global runtime versions. The installer
+# script (run_onchange_before_install-packages.sh.tmpl) inlines this file and
+# runs `mise install` against it, so the pins are not repeated there.
+#
+# java is pinned, not merely installed. It used to be `mise install
+# java@temurin-21` in the installer with no pin, which left the runtime present
+# but inactive -- `mise which java` reported "not currently active" -- so the
+# shim fell through to whatever else was on PATH. On this machine that happened
+# to be a SDKMAN JetBrains Runtime; on a fresh Mac it is /usr/bin/java, the macOS
+# stub that exists and then refuses to run, which breaks Gradle and jdtls.
+#
+# 17 rather than 21: it is what the Android/Gradle work here targets.
+[tools]
+node = "22"
+java = "temurin-17"
+# ruby was rbenv's until 2026-08-11. rbenv was the last version manager here that
+# mise could have owned, and keeping it cost a hand-written lazy-load wrapper (to
+# dodge a 119ms `rbenv init`), a shims PATH entry that had to precede system ruby,
+# a separate pin file, and its own installer step. mise does the pin and the shims,
+# so all of that is deleted and this line replaces it.
+#
+# 3.3.5 exactly, not a newer 3.3.x: it is what the cocoapods and fastlane gems on
+# this machine were built against.
+ruby = "3.3.5"

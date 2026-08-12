@@ -1,0 +1,44 @@
+# lazygit -- Tokyo Night (night)
+gui:
+  nerdFontsVersion: "3"
+  showFileTree: true
+  showRandomTip: false
+  showCommandLog: false
+  sidePanelWidth: 0.28
+  mainPanelSplitMode: flexible
+  timeFormat: "2006-01-02 15:04"
+  theme:
+    activeBorderColor:
+      - "#7aa2f7"
+      - bold
+    inactiveBorderColor:
+      - "#3b4261"
+    searchingActiveBorderColor:
+      - "#ff9e64"
+      - bold
+    optionsTextColor:
+      - "#7aa2f7"
+    selectedLineBgColor:
+      - "#283457"
+    cherryPickedCommitBgColor:
+      - "#283457"
+    cherryPickedCommitFgColor:
+      - "#7aa2f7"
+    unstagedChangesColor:
+      - "#f7768e"
+    defaultFgColor:
+      - "#c0caf5"
+git:
+  # Reuse the delta setup from ~/.gitconfig so diffs look identical inside
+  # lazygit and on the command line.
+  diffRenderers:
+    - colorArg: always
+      command: delta --dark --paging=never --syntax-theme=tokyonight_night --line-numbers
+  parseEmoji: true
+os:
+  editPreset: "nvim"
+keybinding:
+  universal:
+    # `e` edits in Neovim; the default already does this but pin it explicitly
+    # so it does not drift with upstream changes.
+    edit: "e"

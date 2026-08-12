@@ -1,0 +1,24 @@
+{{/*
+  Rendered once by `chezmoi init` into ~/.config/chezmoi/chezmoi.toml.
+
+  It asks nothing. There is no work/personal split, no identity, and no
+  per-machine data: every machine built from this repo gets the same
+  configuration, so there is nothing to branch on. What differs between two
+  Macs -- who commits from them, which employer network they sit on, which
+  SDKs are installed -- lives outside this repo entirely: ~/.gitconfig,
+  ~/.config/zsh/local/, and each project's own workspace settings.
+
+  The only thing this file carries is where the source repo lives.
+*/ -}}
+{{- $repo := joinPath .chezmoi.homeDir "dotfiles" -}}
+{{ if stat $repo }}
+# The source repo lives at ~/dotfiles rather than buried in ~/.local/share, so
+# it can be browsed and worked on like any other repo.
+#
+# Emitted only when that directory actually exists. Hard-coding it would break
+# a fresh machine: `chezmoi init <url>` clones into the DEFAULT source dir, and
+# a config pointing somewhere else would leave chezmoi looking at nothing. To
+# get this layout on a new machine, clone there explicitly:
+#     chezmoi init --source=~/dotfiles <url>
+sourceDir = {{ $repo | quote }}
+{{ end }}

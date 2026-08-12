@@ -1,0 +1,7 @@
+# bat -- Tokyo Night (night)
+# The theme is not built in; it lives in ~/.config/bat/themes/ and must be
+# registered with `bat cache --build` after any change there.
+--theme="tokyonight_night"
+--style="numbers,changes,header"
+--italic-text=always
+--paging=auto

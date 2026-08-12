@@ -1,0 +1,145 @@
+# Reproduces the toolchain on a new machine.
+# Applied automatically by run_onchange_before_install-packages.sh.tmpl,
+# which re-runs whenever this file changes.
+
+# `brew bundle` is built into Homebrew now; no tap needed.
+
+# ── Terminal ───────────────────────────────────────────────────────────────
+cask "ghostty"
+cask "font-jetbrains-mono-nerd-font"
+brew "tmux"
+brew "starship"
+brew "sesh"
+# zsh-autosuggestions and zsh-syntax-highlighting are NOT here. .zshrc lists
+# them in oh-my-zsh's `plugins` array, so omz loads its own clones from
+# ~/.oh-my-zsh/custom/plugins (created by the installer) and the Homebrew copies
+# sat installed and never sourced. One source of truth per plugin, and the one
+# kept is the framework's own convention.
+
+# ── Editors ────────────────────────────────────────────────────────────────
+# This setup is terminal-first: the IDE is Neovim, installed below with the rest
+# of the CLI. Cursor is the one GUI editor here, kept for its model rather than
+# its editing surface. No Cursor settings are managed -- only the app.
+#
+# Android Studio is installed through JetBrains Toolbox, not brew -- which is why
+# it lives in ~/Applications and `brew list` has never heard of it. Adding
+# `cask "android-studio"` would therefore install a SECOND copy into
+# /Applications, two apps sharing one set of config dirs. So Toolbox is what
+# belongs here, and Android Studio comes from it.
+#
+# Toolbox also earns its place for a reason the Brewfile can check: ~/.zprofile
+# puts Toolbox's scripts directory on PATH, which is where the `studio1` and
+# `idea` launchers live. That PATH entry was managed while the thing that creates
+# it was not.
+#
+# Xcode stays absent: not a cask at all, only the App Store or a developer.apple
+# download. Both ship their own JDK and manage their own SDKs, so nothing in this
+# repo depends on either.
+cask "cursor"
+cask "jetbrains-toolbox"
+
+# ── Core CLI ───────────────────────────────────────────────────────────────
+brew "neovim"
+brew "chezmoi"
+brew "git"
+brew "git-delta"
+brew "lazygit"
+brew "gh"
+brew "ripgrep"
+brew "fd"
+brew "fzf"
+brew "bat"
+brew "eza"
+brew "zoxide"
+brew "atuin"
+brew "jq"
+brew "btop"
+brew "direnv"
+brew "tlrc"
+brew "hexyl"
+brew "duf"
+brew "dust"
+brew "procs"
+brew "sd"
+brew "hyperfine"
+
+# BOTH tree-sitter formulae are needed and neither is redundant. `tree-sitter` is
+# the library; `tree-sitter-cli` is the `tree-sitter` binary. nvim-treesitter is
+# pinned to its `main` branch (see lazy-lock.json), which compiles parsers by
+# shelling out to that binary -- without it, parsers fail to build and the only
+# symptom is missing highlighting. This machine had the CLI installed by hand and
+# the Brewfile never captured it, so a fresh Mac silently lost treesitter.
+brew "tree-sitter"
+brew "tree-sitter-cli"
+
+# fontconfig is listed on purpose even though it arrives anyway as a dependency
+# of apktool, jadx and friends. `fc-list` is what bootstrap.sh uses to prove a
+# Nerd Font glyph actually exists in the installed font -- the one check that
+# catches the failure mode where a stale codepoint renders as nothing rather than
+# tofu. That check is wrapped in `command -v fc-list`, so without an explicit
+# entry, trimming the security section would make it silently disappear instead
+# of fail.
+brew "fontconfig"
+
+# Terminal browser. chawan lays pages out with real CSS and draws text as
+# text, so it stays sharp; it replaced browsh, which rasterised the page into
+# half-block characters and looked pixelated regardless of terminal.
+brew "chawan"
+
+# yazi -- terminal file manager. The gap it fills: file browsing otherwise only
+# exists inside Neovim (neo-tree), with nothing for navigating and previewing
+# outside the editor. No config needed; the `y` cd-on-exit wrapper from upstream
+# docs is deliberately NOT added, to keep hand-written shell minimal.
+brew "yazi"
+
+# ── Runtimes ───────────────────────────────────────────────────────────────
+# mise owns node, java and ruby -- see ~/.config/mise/config.toml, the single
+# place those versions are pinned. Flutter is NOT here: it is pinned per-repo
+# by FVM, installed via `dart pub global activate fvm` or the fvm installer.
+brew "mise"
+brew "luarocks"
+
+# ruby-build without rbenv: mise's ruby backend uses it to build interpreters.
+# rbenv itself is gone -- mise pins ruby in ~/.config/mise/config.toml and
+# provides the shims, which is what rbenv was here for.
+brew "ruby-build"
+
+# ── Mobile / build ─────────────────────────────────────────────────────────
+brew "cocoapods"
+brew "fastlane"
+brew "xcbeautify"
+brew "xcode-build-server"
+brew "swiftformat"
+brew "swiftlint"
+# ── Device mirroring ───────────────────────────────────────────────────────
+brew "scrcpy"
+
+# The container/Kubernetes toolchain is NOT here. It is roughly a gigabyte and
+# only earns that on a machine doing backend work, so it lives in
+# `Brewfile.optional` and is installed by hand with `brewopt`. This is not the
+# work/personal split coming back: nothing branches at apply time, every machine
+# still gets an identical baseline, and the extra group is a command a human runs
+# once. Dropping it from this file does not uninstall anything -- `brew bundle`
+# only ever installs -- so a machine that already has Docker keeps it.
+
+# ── Security ───────────────────────────────────────────────────────────────
+# For applications you are authorized to test.
+brew "semgrep"
+brew "gitleaks"
+# trufflehog, grype, dex2jar and ffuf were here and are now in the `secextra`
+# opt-in group: each duplicates a tool the config actually calls (gitleaks,
+# trivy, jadx) or targets web pentesting this baseline does not wire up.
+brew "trivy"
+brew "osv-scanner"
+brew "syft"
+brew "jadx"
+brew "apktool"
+brew "nmap"
+brew "nuclei"
+brew "jwt-cli"
+cask "mitmproxy"   # ships as a cask, not a formula
+# uv, not pipx, for the two Python security tools. pipx installed them against
+# Homebrew's python, so a `brew upgrade python` orphaned the venvs and broke
+# frida-ps/objection with an error pointing nowhere near the cause. uv manages an
+# interpreter per tool, so brew cannot reach them.
+brew "uv"
