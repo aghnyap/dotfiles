@@ -215,6 +215,7 @@ guides name (`jfcherng/vim-structurizr`) does not exist.
 | `<leader>Cs` | Serve the model in a terminal split (`c4-local`) |
 | `<leader>Cb` | Open `http://localhost:8081` in the browser |
 | `<leader>Ce` | Export every view to Mermaid |
+| `<leader>Cr` / `<leader>CR` | Render every view as an image — svg / png |
 | `<leader>Cv` | Validate, violations into the quickfix list |
 | `<leader>Ca` | Toggle Mermaid export on save |
 

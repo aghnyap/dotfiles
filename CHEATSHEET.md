@@ -83,7 +83,7 @@ Prefix is <kbd>Ctrl</kbd>+<kbd>a</kbd>. `prefix + a` sends a literal Ctrl+a.
 | `prefix` `Tab` | Last window |
 | `prefix` `o` | Session switcher (sesh: live sessions, zoxide dirs, configs) |
 | `prefix` `Space` | Last session |
-| `prefix` `P` | Project layout picker (mobile / web / backend / sec) |
+| `prefix` `P` | Project layout picker (mobile / web / backend / sec / arch) |
 | `prefix` `X` | Kill session (confirms) |
 | `prefix` `r` | Reload tmux.conf |
 | `prefix` `u` | fzf over URLs visible in the pane |

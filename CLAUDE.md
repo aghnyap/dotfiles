@@ -106,6 +106,16 @@ were invisible to `zsh -c` and only appeared with a live ZLE):
   is deliberately comment-only; emoji symbols there are upstream defaults, not
   a broken Nerd Font
 - tab completion works: `git chec<TAB>` → `checkout`
+- the tool modules loaded: `whence -w c4-local c4-render` reports `function` for
+  both. They come from `dot_config/zsh/c4.zsh`, which loads only because `c4` is
+  listed in `_mods` at `dot_zshrc:215` — a module missing from that array fails
+  silently and looks exactly like a module that was never added
+- `c4-init && c4-validate` in a scratch git repo reports the workspace valid.
+  This is the check that catches the JVM trap: `structurizr` needs Java 21+ and
+  `~/.zshenv` exports mise's temurin-17, so it only works because
+  `_c4_structurizr` overrides `JAVA_HOME` per call
+- `aider --version` and `cursor-agent --version` both answer. Neither can do
+  anything useful yet — see the credentials note in `INSTALL.md`
 
 Then confirm nothing employer-specific arrived:
 
@@ -285,9 +295,11 @@ not. These are not bugs — do not "fix" them:
 | --- | --- |
 | `dot_zshenv` | Toolchain PATH/env for **all** shells; `dev_paths_prepend()` re-asserted from `.zprofile` because `/etc/zprofile`'s `path_helper` reorders PATH |
 | `dot_zshrc` | Interactive only. oh-my-zsh + the fork-elimination shims |
-| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent) |
+| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:215`** — a new file here does nothing until it is added there |
 | `dot_config/nvim/` | LazyVim + custom specs. See `KEYBINDINGS.md` |
-| `dot_config/tmux/` | tmux.conf + mobile/web/backend/sec project layouts |
+| `dot_config/tmux/` | tmux.conf + mobile/web/backend/sec/arch project layouts |
+| `dot_aider.conf.yml` | aider's model and defaults. Managed because it holds no credentials; the API key is machine-local, in `~/.config/zsh/local/` |
+| `dot_claude/skills/` | Claude Code skills, currently `c4-architect`. The **only** managed path under `~/.claude` — `.chezmoiignore` denies the rest of that tree, which holds session transcripts and memory files |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig` holds identity and is **not** managed |
 | `.chezmoitemplates/Brewfile` | Baseline package list. One list, no variants |

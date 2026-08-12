@@ -128,6 +128,34 @@ local function export(opts)
   end))
 end
 
+-- Render every view to an image, via the shell function.
+--
+-- Delegated rather than reimplemented because c4-render is two steps -- export
+-- PlantUML, then rasterise it with plantuml -- plus the JAVA_HOME override that
+-- structurizr needs and plantuml does not. Duplicating that here would mean two
+-- places to fix when any of it changes.
+local function render(fmt)
+  local dir = workspace_dir()
+  if not dir then
+    notify('no workspace.dsl in . or docs/architecture', vim.log.levels.WARN)
+    return
+  end
+  notify('rendering ' .. fmt .. '…')
+  vim.system({
+    'zsh',
+    '-c',
+    'source ${HOME}/.config/zsh/c4.zsh 2>/dev/null; cd "$1" && c4-render "$0"',
+    fmt,
+    dir,
+  }, { text = true }, vim.schedule_wrap(function(out)
+    if out.code ~= 0 then
+      notify('render failed:\n' .. vim.trim((out.stderr or '') .. (out.stdout or '')), vim.log.levels.ERROR)
+      return
+    end
+    notify('rendered to ' .. vim.fn.fnamemodify(dir .. '/images', ':~'))
+  end))
+end
+
 -- Validate, violations into the quickfix list. The stand-in for an LSP.
 local function validate()
   local dir = workspace_dir()
@@ -265,6 +293,8 @@ vim.api.nvim_create_autocmd('FileType', {
       export()
     end, 'Export to Mermaid')
     map('<leader>Cv', validate, 'Validate workspace')
+    map('<leader>Cr', function() render('svg') end, 'Render images (svg)')
+    map('<leader>CR', function() render('png') end, 'Render images (png)')
     map('<leader>Ca', '<cmd>C4AutoExport<cr>', 'Toggle export on save')
   end,
 })

@@ -94,9 +94,11 @@ terminal browser (chawan).
 | --- | --- |
 | `dot_zshenv` | Toolchain PATH/env for **all** shells. `dev_paths_prepend()` is re-asserted from `.zprofile` because `/etc/zprofile`'s `path_helper` reorders PATH. |
 | `dot_zshrc` | Interactive shell only. Thin — content lives in the modules. |
-| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu`, plus `git-aliases` as a fallback when oh-my-zsh is absent |
+| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4`, plus `git-aliases` as a fallback when oh-my-zsh is absent. Each is named in `_mods` in `dot_zshrc` — a file added here loads only once it is listed there |
 | `dot_config/nvim/` | LazyVim + custom plugin specs. See `KEYBINDINGS.md`. |
-| `dot_config/tmux/` | tmux.conf + project layouts (mobile/web/backend/sec) |
+| `dot_config/tmux/` | tmux.conf + project layouts (mobile/web/backend/sec/arch) |
+| `dot_aider.conf.yml` | aider's model and defaults — no credentials, so it is managed |
+| `dot_claude/skills/` | Claude Code skills (`c4-architect`). The only managed path under `~/.claude`; the rest of that tree is denied in `.chezmoiignore` |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig`, which holds identity, is not managed |
 | `.chezmoitemplates/Brewfile.optional` | Opt-in package groups (`brewopt backend`). Not installed by `apply` |

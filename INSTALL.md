@@ -235,6 +235,19 @@ Deliberately — these are secrets or machine state, and are excluded in
 - `~/.config/zsh/local/` — machine-local shell modules. Employer-specific and
   credential-adjacent config lives here (VPN helpers, work-only tooling) and is
   sourced last so it can override any module. Deliberately never captured.
+- **AI model credentials.** `aider` reads `ANTHROPIC_API_KEY` from the
+  environment, so on a new machine put it in `~/.config/zsh/local/ai.zsh` —
+  nothing in this repo has ever held it, and `<leader>Aa` will open a session
+  that cannot talk to anything until it exists. `cursor-agent` needs
+  `cursor-agent login` once, which is a browser flow and therefore the one thing
+  here `bootstrap.sh` genuinely cannot automate; `CURSOR_API_KEY` in the same
+  machine-local file is the scriptable alternative.
+- aider's own state — `.aider.chat.history.md`, `.aider.input.history` and the
+  `.aider.tags.cache.v*` symbol cache. aider writes these into whatever
+  directory it runs in and offers to gitignore them per project; `.chezmoiignore`
+  denies `.aider*` here with a single exception for `~/.aider.conf.yml`. The
+  chat transcript is the most sensitive file this setup produces, because it
+  contains whatever source was in context.
 - `~/.gitconfig` — git identity and anything network- or employer-shaped:
   `[user]`, internal host rewrites, the corporate hook `templateDir`. Written by
   hand per machine. The managed half of git config is `~/.config/git/config`
