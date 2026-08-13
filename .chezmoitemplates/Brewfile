@@ -108,7 +108,6 @@ brew "yazi"
 # place those versions are pinned. Flutter is NOT here: it is pinned per-repo
 # by FVM, installed via `dart pub global activate fvm` or the fvm installer.
 brew "mise"
-brew "luarocks"
 
 # ruby-build without rbenv: mise's ruby backend uses it to build interpreters.
 # rbenv itself is gone -- mise pins ruby in ~/.config/mise/config.toml and
@@ -116,6 +115,11 @@ brew "luarocks"
 brew "ruby-build"
 
 # ── Mobile / build ─────────────────────────────────────────────────────────
+# A standalone adb is baseline because logcat, the tmux sec layout and the
+# mobile-security MCP all call it on a fresh Mac before Android Studio or a full
+# SDK exists. If an SDK is installed later, ~/.zshenv puts its platform-tools
+# first, so that project-compatible adb wins without removing this fallback.
+cask "android-platform-tools"
 brew "cocoapods"
 brew "fastlane"
 brew "xcbeautify"

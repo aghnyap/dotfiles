@@ -22,8 +22,10 @@ for _, profile in ipairs(PROFILES) do
   models[#models + 1] = profile.model
 end
 
-local warned_missing = {}
 local autocmd_set = false
+local ready_model
+local ready_at = 0
+local READY_TTL_MS = 5000
 
 local function is_known(model)
   return type(model) == 'string' and profiles_by_model[model] ~= nil
@@ -93,6 +95,10 @@ local function aider_sessions()
   end, terminal.list())
 end
 
+function M.aider_running()
+  return #aider_sessions() > 0
+end
+
 function M.sync_aider_args()
   local ok, config = pcall(require, 'nvim_aider.config')
   if ok then
@@ -100,27 +106,51 @@ function M.sync_aider_args()
   end
 end
 
-function M.warn_if_missing(model)
+local function check_ready(model, callback)
   model = model or M.current()
   if not model then
-    return
+    notify('Select a local model first with :AiModel.', vim.log.levels.WARN)
+    return false
   end
-  if warned_missing[model] then
-    return
-  end
-  warned_missing[model] = true
 
   if vim.fn.executable('ollama') == 0 then
-    return notify('ollama is not installed; cannot use ' .. model, vim.log.levels.WARN)
+    notify('ollama is not installed; cannot use ' .. model, vim.log.levels.WARN)
+    return false
+  end
+
+  if ready_model == model and vim.uv.now() - ready_at < READY_TTL_MS then
+    callback(model)
+    return true
   end
 
   vim.system({ 'ollama', 'show', model }, { text = true }, function(result)
-    if result.code ~= 0 then
-      vim.schedule(function()
-        notify('Ollama model is not pulled: ' .. model, vim.log.levels.WARN)
-      end)
-    end
+    vim.schedule(function()
+      if M.current() ~= model then
+        notify('Local AI model changed while readiness was checked; action cancelled.', vim.log.levels.WARN)
+        return
+      end
+
+      if result.code ~= 0 then
+        notify(
+          ('Ollama is unavailable or the model is not pulled: %s\nRun: brew services start ollama && ollama pull %s'):format(
+            model,
+            model
+          ),
+          vim.log.levels.WARN
+        )
+        return
+      end
+
+      ready_model = model
+      ready_at = vim.uv.now()
+      callback(model)
+    end)
   end)
+  return true
+end
+
+function M.warn_if_missing(model)
+  check_ready(model, function() end)
 end
 
 function M.require_selected()
@@ -146,16 +176,18 @@ local function apply(model)
     end
   end
 
-  -- aider 0.86.2 applies local metadata to the initial model, but `/model`
-  -- reconstructs it after LiteLLM has loaded and can replace the safe 8k/16k
-  -- budget with the advertised 32k/262k window. Reopen instead of hot-swapping
-  -- into silent truncation; the chat transcript remains on disk.
+  -- aider applies local metadata to the initial model, but its live `/model`
+  -- path can reconstruct it after LiteLLM has loaded and replace the safe
+  -- 8k/16k budget with the advertised 32k/262k window. Reopen instead of
+  -- hot-swapping into silent truncation; the chat transcript remains on disk.
   if #sessions > 0 then
     notify('Close Aider before switching models; model unchanged.', vim.log.levels.WARN)
     return false
   end
 
   _G.ai_model = model
+  ready_model = nil
+  ready_at = 0
 
   local ok, config = pcall(require, 'nvim_aider.config')
   if ok then
@@ -188,14 +220,23 @@ local function apply(model)
     end
   end)
 
-  M.warn_if_missing(model)
   notify(('Local AI model: %s (%dk context)'):format(model, M.context(model) / 1024))
   return true
 end
 
-function M.select(model)
+function M.select(model, callback)
+  local function selected(choice)
+    if apply(choice) then
+      if callback then
+        callback(choice)
+      else
+        M.warn_if_missing(choice)
+      end
+    end
+  end
+
   if model and model ~= '' then
-    return apply(model)
+    return selected(model)
   end
 
   vim.ui.select(models, {
@@ -205,9 +246,24 @@ function M.select(model)
     end,
   }, function(choice)
     if choice then
-      apply(choice)
+      selected(choice)
     end
   end)
+end
+
+-- Run a local-AI action only after a human has selected a model and Ollama has
+-- proved that exact tag is available. Selection remains per-process; the first
+-- action simply opens the same picker as :AiModel and resumes after the choice.
+function M.with_ready_model(callback)
+  local model = M.current()
+  if model then
+    return check_ready(model, callback)
+  end
+
+  M.select(nil, function(choice)
+    check_ready(choice, callback)
+  end)
+  return true
 end
 
 function M.setup()

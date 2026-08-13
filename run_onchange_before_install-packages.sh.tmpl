@@ -60,11 +60,13 @@ uv tool install --force objection
 # is current. Upstream's install docs say plainly: "It's best to install aider
 # using one of methods recommended above. While aider is available in a number of
 # system package managers, they often install aider with incorrect dependencies."
-# The command below is theirs verbatim, including the interpreter pin -- the
-# published aider-chat 0.86.2 declares requires_python >=3.10,<3.13, so python
-# 3.12 is chosen rather than inherited from whatever uv would pick.
+# Pin the version because ai_model.lua's close-before-switch safeguard and the
+# managed metadata budgets are tested against its startup/model-loading path.
+# To upgrade: change this pin, re-run audit.sh and bootstrap.sh, then verify in
+# a real nvim session that :AiModel is blocked while aider is open and that a
+# fresh launch keeps the configured max input/output budgets.
 echo "==> uv tools (aider)"
-uv tool install --force --python python3.12 --with pip aider-chat@latest
+uv tool install --force --python python3.12 --with pip aider-chat@0.86.2
 
 # oh-my-zsh. Installed unattended: the upstream installer would otherwise
 # launch an interactive shell and overwrite ~/.zshrc, which chezmoi owns.

@@ -80,20 +80,28 @@ Brewfile, oh-my-zsh (unattended), mise runtimes (node/java/ruby) and the ruby
 gems, the uv-managed security tools, tmux's plugin
 manager and the zsh plugins. It takes a while on a fresh machine.
 
-### 4. Two manual finishes
+### 4. Finish the plugin installs
 
 ```sh
-nvim        # LazyVim installs plugins, Mason installs servers; then :q
-tmux        # press Ctrl-a then Shift-i to install tmux plugins
+nvim --headless "+Lazy! restore" +qa
+tmux -L bootstrap new-session -d
+tmux -L bootstrap run-shell ~/.config/tmux/plugins/tpm/bin/install_plugins
+tmux -L bootstrap kill-server
 ```
+
+`bootstrap.sh` runs these itself. They are shown here only so debugging the
+manual sequence reproduces the script rather than relying on interactive
+first-start behaviour. Mason still finishes language servers on the first real
+Neovim start because that needs a running event loop.
 
 ### 5. Verify — do not report success without this
 
 ```sh
+./audit.sh
 chezmoi diff                      # expect: empty
 zsh -lic 'true'                   # expect: no output at all
 zsh -lic 'whence -w omz; alias glog; echo $STARSHIP_SHELL'
-nvim --headless -c 'Lazy! sync' -c qa
+nvim --headless -c 'Lazy! restore' -c qa
 ```
 
 In a **real terminal** (not headless — several defects in this config's history
@@ -115,8 +123,9 @@ were invisible to `zsh -c` and only appeared with a live ZLE):
   This is the check that catches the JVM trap: `structurizr` needs Java 21+ and
   `~/.zshenv` exports mise's temurin-17, so it only works because
   `_c4_structurizr` overrides `JAVA_HOME` per call
-- `aider --version` and `cursor-agent --version` both answer. Neither can do
-  anything useful yet — see the credentials note in `INSTALL.md`
+- `aider --version` and `cursor-agent --version` both answer. aider uses the
+  selected local Ollama model and needs no credential; cursor-agent needs the
+  machine-local login described in `INSTALL.md`
 
 Then confirm nothing employer-specific arrived:
 
@@ -315,4 +324,5 @@ not. These are not bugs — do not "fix" them:
 | `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one also reaches any unmanaged GUI editor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
 | `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout |
 | `bootstrap.sh` | Scripted bootstrap + look-and-feel verification. `.chezmoiignore`d, so it is not a target |
+| `audit.sh` | Non-mutating source-contract checks (syntax, AI budgets, key ownership, templates, Brewfile scope, gitleaks). Run before committing; also `.chezmoiignore`d |
 | `INSTALL.md` | The same bootstrap, written for a human |

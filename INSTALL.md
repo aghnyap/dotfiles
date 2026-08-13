@@ -95,13 +95,22 @@ git config --global user.name  "Your Name"
 If you want the Neovim Claude integration (`Cmd+L`, `Cmd+K`), install the
 `claude` CLI too — it ships its own installer rather than a brew formula, so this
 repo checks for it and does not install it. `claudecode.nvim` runs whatever
-`claude` is on PATH.
+`claude` is on PATH. Claude and cursor-agent are the explicit cloud paths:
+prompts and selected code leave the machine. Avante and aider are the local
+paths; they use loopback Ollama and need no API credential. Which-key labels
+the request-producing actions added by this repo as local or cloud so that
+egress choice stays visible.
 
-Nothing else is left to do by hand. `bootstrap.sh` installs the nvim plugins
-(`nvim --headless "+Lazy! sync"`), the tmux plugins (tpm's own
-`install_plugins`) and builds the `bat` theme cache, then verifies all three.
+Nothing else is left to do by hand. `bootstrap.sh` restores the nvim plugins
+from the committed lockfile (`nvim --headless "+Lazy! restore"`), installs the
+tmux plugins (tpm's own `install_plugins`) and builds the `bat` theme cache,
+then verifies all three.
 Mason still installs its language servers on your first real `nvim` start —
 that needs a running event loop, so no script can force it.
+
+For later source changes, run `./audit.sh` before committing. It performs the
+non-mutating contract, syntax, key-ownership and secret checks; `bootstrap.sh`
+remains the applied-machine verification.
 
 Optional, if this machine does backend work:
 

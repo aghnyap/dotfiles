@@ -80,6 +80,10 @@ identity, which this repo deliberately does not own. Mason installs its language
 servers on the first real `nvim` start — that needs an event loop, so no script
 can force it.
 
+`audit.sh` is the complementary maintainer check: it does not apply or install
+anything, and validates source syntax, model budgets, key ownership, templates,
+Brewfile scope and secrets before a commit or push.
+
 ## Cheatsheet
 
 [`CHEATSHEET.md`](CHEATSHEET.md) is the one-page reference across every tool —
@@ -106,6 +110,7 @@ terminal browser (chawan).
 | `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one reaches Android Studio, Xcode and Cursor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
 | `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout |
 | `bootstrap.sh` | One-command setup for a new machine, plus the look-and-feel verification. Not a target — `.chezmoiignore`d like the docs. |
+| `audit.sh` | Non-mutating source-contract verification for maintainers. Also `.chezmoiignore`d, so it never becomes `~/audit.sh` |
 
 ## Opening a project
 
@@ -280,12 +285,15 @@ permanent.
   `zsh -fc/-c/-lc/-lic exit`, which are stable. The notes at the bottom of
   `dot_zshrc` record where the time goes and why the rest is unreachable.
 
-## Claude in the editor
+## Cloud Claude in the editor
 
 `claudecode.nvim` speaks the same protocol the official extension speaks inside
 VS Code and Cursor. `Cmd+L` toggles the panel, `Cmd+Shift+L` adds the selection
 or file, and `Cmd+K` is an inline edit — it prompts in a float and returns the
 answer as an inline diff over the selection (`diff_opts.layout = 'unified'`).
+These actions send their selected context to Claude. The explicit local
+equivalent is visual `<leader>ave` through Avante; ambient local suggestions
+remain off unless `<leader>avg` enables them.
 
 `~/.config/claude/mobilesec-mcp.py` is an MCP server exposing this machine's
 toolchain as structured data: `adb_devices`, `logcat` (scoped to an app's pid),
@@ -301,7 +309,7 @@ It is deliberately not a shell: scanners are addressed by name from a fixed
 table, flags are pinned by the server, and there is no `shell=True` anywhere —
 so a caller cannot smuggle in arguments. It holds no credentials.
 
-## Terminal agents — aider and cursor-agent
+## Terminal agents — local aider and cloud cursor-agent
 
 Two more AI tools, both driving a CLI in a split rather than acting as the
 editor. `<leader>A` is the group: `Aa` toggle aider, `Am` its command menu,
@@ -323,12 +331,14 @@ ollama pull qwen3-coder:30b         # 19.0 GB; 16k context, 32 GB-class Mac
 
 `bootstrap.sh` asks the same Lua catalog and reports whether at least one of
 these weights exists; it never downloads or selects a multi-gigabyte model.
-Run `:AiModel` or press `<leader>aM` once per Neovim process. The selection is
-not persisted. At a shell, pass `--model ollama_chat/<tag>` explicitly.
+The first local request opens the same picker as `:AiModel` / `<leader>aM`,
+verifies that Ollama serves the exact tag, then resumes. The selection is not
+persisted. At a shell, pass `--model ollama_chat/<tag>` explicitly.
 
 Close an active aider terminal before changing the selection, then reopen it.
-aider 0.86.2 can replace the managed context metadata on its live `/model`
-path; a fresh launch always reads the safe local budget.
+The tested aider release can replace managed context metadata on its live
+`/model` path; a fresh launch always reads the safe local budget. Its exact
+version is pinned in the installer template.
 
 cursor-agent still needs `cursor-agent login` once per machine — a browser flow,
 which is why `bootstrap.sh` cannot do it. `CURSOR_API_KEY` is the scriptable

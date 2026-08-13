@@ -114,10 +114,11 @@ fi
 
 if command -v nvim >/dev/null 2>&1; then
   step "nvim plugins (lazy.nvim + Mason; slow on a fresh Mac)"
-  # `Lazy! sync` is the headless form: ! means no-wait, so it installs, cleans
-  # and returns instead of opening the UI. Mason then installs its tools on the
-  # first real start; nothing here can force that without a running event loop.
-  nvim --headless "+Lazy! sync" +qa >/dev/null 2>&1 || warn "nvim plugin sync failed; open nvim and run :Lazy sync"
+  # Restore the committed lockfile rather than `sync`, which advances plugin
+  # commits and rewrites lazy-lock.json during bootstrap. Mason then installs
+  # its tools on the first real start; nothing here can force that without a
+  # running event loop.
+  nvim --headless "+Lazy! restore" +qa >/dev/null 2>&1 || warn "nvim plugin restore failed; open nvim and run :Lazy restore"
 fi
 
 tpm_install="$HOME/.config/tmux/plugins/tpm/bin/install_plugins"
@@ -126,7 +127,7 @@ if [[ -x $tpm_install ]]; then
   # tpm's installer needs a server to talk to. Use a throwaway one rather than
   # touching a session the user may already have running.
   tmux -L bootstrap new-session -d 2>/dev/null || true
-  TMUX= "$tpm_install" >/dev/null 2>&1 || warn "tpm install failed; open tmux and press prefix + I"
+  tmux -L bootstrap run-shell "$tpm_install" >/dev/null 2>&1 || warn "tpm install failed; open tmux and press prefix + I"
   tmux -L bootstrap kill-server 2>/dev/null || true
 fi
 
@@ -165,10 +166,9 @@ check "bat theme registered"   'bat --list-themes | grep -q tokyonight_night'
 # ~/.zshenv shows up here and nowhere else -- it is invisible to every check
 # above, because none of them starts a shell.
 check "clean login shell"      'test -z "$(zsh -lic true 2>&1 | grep -v "can.t change option: zle")"'
-# adb is not installed by this repo (the Android SDK is out of scope) but the
-# logcat helpers, the tmux sec layout and the mobilesec MCP server all shell out
-# to it, so report it rather than let those fail later with no explanation.
-check "adb (see brewopt mobilesec)" 'command -v adb'
+# android-platform-tools is baseline because the logcat helpers, tmux sec layout
+# and mobilesec MCP all need adb even before a full Android SDK is installed.
+check "adb"                      'command -v adb'
 # macOS ships a `java` stub that exists and then refuses to run, so `command -v`
 # proves nothing -- ask for a version instead. mise owns java (pinned temurin-17 in
 # its config), so this should pass on any machine the installer has finished on;

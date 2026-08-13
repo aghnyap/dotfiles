@@ -26,11 +26,8 @@ brew "kubernetes-cli"
 brew "hadolint"
 
 # ── mobilesec ──────────────────────────────────────────────────────────────
-# Extras for mobile security work that the baseline does not require.
-# android-platform-tools provides a standalone `adb` for a machine with no
-# Android SDK. If the SDK IS installed, ~/.zshenv puts its platform-tools ahead
-# of Homebrew on PATH, so the SDK's adb keeps winning and the two do not fight.
-cask "android-platform-tools"
+# Image/QR extras for mobile security work. adb itself is baseline because the
+# managed logcat, tmux and MCP workflows require it on a fresh Mac.
 brew "zbar"                  # decode QR codes and barcodes from images
 brew "chafa"                 # render an image as ANSI art in the terminal
 

@@ -253,7 +253,7 @@ and never prints the matched secret into a buffer.
 Decompiler output goes to `stdpath('cache')/apk/`, never into the repo you have
 open.
 
-## Claude
+## Cloud AI — Claude
 
 | Keys | Action |
 | --- | --- |
@@ -275,9 +275,9 @@ resolve against real files, and edits arrive as native Neovim diffs.
 ## Local AI — Ollama / Avante
 
 Avante talks to the local Ollama server on `127.0.0.1:11434`. No local model is
-selected at startup or saved to disk. Run `:AiModel` or press `<leader>aM` once
-per Neovim process; the picker presents every supported profile and the choice
-becomes global only inside that process.
+selected at startup or saved to disk. The first request opens the same picker as
+`:AiModel` / `<leader>aM`, checks that Ollama serves the exact tag, then resumes
+the action. The choice becomes global only inside that Neovim process.
 
 | Model | Ollama `num_ctx` | Prompt budget |
 | --- | --- | --- |
@@ -292,22 +292,27 @@ budgets are in `~/.aider.model.metadata.json`. Change all three together.
 
 | Keys | Action |
 | --- | --- |
-| `<leader>aa` | Avante: ask / open the sidebar |
+| `<leader>aa` | Avante: ask / open the sidebar (picker on first use) |
 | `<leader>aA` | Avante: refresh context |
 | `<leader>aM` | Select this session's local model (close aider before changing it) |
 | `<leader>aR` | On-demand memory check — selected model, macOS RAM and swap |
 | `<leader>avn` | Avante: new ask |
-| `<leader>ave` / `<leader>avf` | Avante: edit / focus |
+| `<leader>ave` / `<leader>avf` | Local inline edit of visual selection / focus |
 | `<leader>avs` / `<leader>avz` | Avante: stop / zen mode |
 | `<leader>avt` / `<leader>avd` | Avante: toggle sidebar / debug |
-| `<leader>avg` / `<leader>avr` / `<leader>avv` | Avante: suggestion / repo map / selection toggles |
+| `<leader>avg` / `<leader>avr` / `<leader>avv` | Opt-in local suggestions / repo map / selection toggles |
 | `<leader>avc` / `<leader>avB` | Avante: add current file / all buffers |
 | `<leader>avh` | Avante: select history |
 | `<leader>avM` / `<leader>avp` | Avante: select ACP model / mode |
 
-Changing the selection is blocked while an aider terminal is running. aider
-0.86.2 can lose the managed prompt budget on its live `/model` path, so close
-the terminal, select, then reopen it; the new launch keeps the correct metadata.
+Changing the selection is blocked while an aider terminal is running. The
+tested aider release can lose the managed prompt budget on its live `/model`
+path, so close the terminal, select, then reopen it; the new launch keeps the
+correct metadata. The exact tested release is pinned in the installer template.
+
+Ambient ghost-text stays off. `Cmd+K` is the cloud Claude inline edit;
+`<leader>ave` is the explicit local equivalent, and `<leader>avg` opts into
+local suggestions for the current session.
 
 ## Agents — aider and cursor-agent
 
@@ -321,17 +326,17 @@ bindings and this keeps that muscle memory intact.
 
 | Keys | Action |
 | --- | --- |
-| `<leader>Aa` | aider: toggle the session |
-| `<leader>Ao` | aider: toggle the same session; first open uses a float |
-| `<leader>Am` | aider: command menu (fuzzy over its slash-commands) |
-| `<leader>Ab` / `<leader>Ad` | aider: add / drop this buffer |
-| `<leader>AO` | aider: add this buffer read-only |
-| `<leader>As` | aider: send selection (visual) or buffer |
-| `<leader>AR` | aider: reset the session |
+| `<leader>Aa` | local aider: toggle the session (picker on first use) |
+| `<leader>Ao` | local aider: toggle the same session; first open uses a float |
+| `<leader>Am` | local aider: command menu (fuzzy over its slash-commands) |
+| `<leader>Ab` / `<leader>Ad` | local aider: add / drop this buffer |
+| `<leader>AO` | local aider: add this buffer read-only |
+| `<leader>As` | local aider: send selection (visual) or buffer |
+| `<leader>AR` | local aider: reset the session |
 | `<leader>AH` | aider: health check — run this first if something looks wrong |
-| `<leader>Aw` | aider: **watch-files mode** |
-| `<leader>Ac` | cursor-agent: toggle |
-| `<leader>Ar` | cursor-agent: resume the last session |
+| `<leader>Aw` | local aider: **watch-files mode** |
+| `<leader>Ac` | cloud cursor-agent: toggle |
+| `<leader>Ar` | cloud cursor-agent: resume the last session |
 
 **Watch-files mode is the interesting one, and it needs no plugin at all.**
 `aider --watch-files` watches files on disk for one-line comments ending in `AI`,

@@ -282,7 +282,7 @@ Filters are retroactive — they apply to what already scrolled past.
 `<leader>hs` send under cursor · `<leader>ha` send all · `<leader>hr` replay ·
 `<leader>ht` body/headers · `<leader>he` environment · `<leader>hc` copy as curl.
 
-### Claude
+### Cloud AI — Claude
 | Keys | Action |
 | --- | --- |
 | `Cmd+L` | Toggle the Claude panel |
@@ -299,15 +299,17 @@ Filters are retroactive — they apply to what already scrolled past.
 ### Local AI — Ollama / Avante
 | Keys | Action |
 | --- | --- |
-| `<leader>aa` | Avante: ask / open sidebar |
+| `<leader>aa` | Avante: ask / open sidebar (opens the model picker on first use) |
 | `<leader>aA` | Avante: refresh context |
 | `<leader>aM` | Select the local model for this Neovim session (`:AiModel`) |
 | `<leader>aR` | On-demand AI memory check (selected model + macOS RAM + swap) |
-| `<leader>av…` | Avante extras: new/edit/focus/stop/zen/toggles/files/history |
+| `<leader>ave` | Local inline edit of the visual selection |
+| `<leader>avg` | Opt-in local suggestions; ambient ghost text stays off |
+| `<leader>av…` | Avante extras: new/focus/stop/zen/toggles/files/history |
 
-No model is selected at startup and nothing is persisted. Run `:AiModel` or
-press `<leader>aM` once in each Neovim process; the picker offers every supported
-profile, and the human decides what this Mac should run.
+No model is selected at startup and nothing is persisted. The first request
+opens the same picker as `:AiModel` / `<leader>aM`, verifies that Ollama serves
+the exact tag, then resumes the requested action.
 
 | Model | Ollama `num_ctx` | Prompt budget |
 | --- | --- | --- |
@@ -320,8 +322,8 @@ selector is hidden because it cannot update shared state. Close aider before
 changing the selection — its live `/model` path can discard the managed prompt
 budget.
 
-There is **no inline ghost-text completion**, by choice — see the note in
-`README.md`.
+There is **no ambient ghost-text completion**, by choice. `Cmd+K` is the cloud
+Claude inline-edit path; visual `<leader>ave` is the explicit local equivalent.
 
 ---
 
@@ -398,16 +400,13 @@ and never installed by `chezmoi apply`:
 | Group | Packages |
 | --- | --- |
 | `backend` | colima, docker, docker-compose, kubectl, hadolint |
-| `mobilesec` | android-platform-tools (`adb`), zbar (QR/barcodes), chafa (images as ANSI) |
+| `mobilesec` | zbar (QR/barcodes), chafa (images as ANSI); `adb` is baseline |
 | `secrets` | bitwarden-cli, oath-toolkit (`oathtool`, TOTP) |
 | `secextra` | trufflehog, grype, dex2jar, ffuf — each overlaps a baseline tool |
 | `extras` | unar + sevenzip (for `extract`), watchman, yq, jless, pre-commit, ghorg |
 
-The baseline is 62 packages and holds only what the config actually calls. If a
-command says it needs something, the message names the group.
-
-Count that number, do not increment it — it was wrong for three commits because
-each change added one to the previous figure instead of asking the file:
+The baseline holds only what the managed workflows call. Ask the rendered file
+for its current size rather than maintaining a stale number:
 
 ```sh
 chezmoi execute-template '{{ includeTemplate "Brewfile" . }}' | grep -cE '^(brew|cask|tap) '
@@ -425,6 +424,9 @@ verifies it — no flags, no questions, idempotent, so re-running is safe. It do
 not set your git identity: `~/.gitconfig` is yours, hand-written per machine;
 only `~/.config/git/config` (pager, editor, delta theme) is managed. See
 `INSTALL.md`.
+
+Repository maintenance: `./audit.sh` performs non-mutating syntax, model-budget,
+key-ownership, template, Brewfile and gitleaks checks before commit or push.
 
 ### Mobile / dev
 `fl` = `fvm flutter` · `fld` = `fvm dart` · `fldev` devices · `flr` run · `flc` clean · `flpg`/`flpu`
@@ -459,12 +461,13 @@ with debugger on `:5005`.
 > have attached. For applications you are authorized to test.
 
 ### AI agents
-`aider` pair-programming in the terminal · `aider --watch-files` acts on `AI!` /
-`AI?` comments when you save, no plugin needed · `cursor-agent` Cursor's agent as
-a CLI, `cursor-agent -p '…'` for a scripted one-shot.
+`aider` local pair-programming in the terminal · `aider --watch-files` acts on
+`AI!` / `AI?` comments when you save, no plugin needed · `cursor-agent` cloud
+agent as a CLI, `cursor-agent -p '…'` for a scripted one-shot.
 
-In Neovim terminal agents live under `<leader>A` — `Aa` aider, `Ac`
-cursor-agent. Claude and Avante stay on `<leader>a`.
+In Neovim terminal agents live under `<leader>A` — `Aa` local aider, `Ac` cloud
+cursor-agent. Cloud Claude and local Avante stay on `<leader>a`; which-key names
+the boundary on every request-producing action.
 
 **aider runs a local model, no key and no network.** Neovim uses the model
 selected for that process with `:AiModel`; at a shell, pass
@@ -607,6 +610,9 @@ the project's own workspace settings.
 
 When you change a keybinding, alias, command, or add a tool, update this file in
 the same commit. The places that hold bindings:
+
+Run `./audit.sh` before committing; it enforces the source contracts documented
+here without applying the configuration.
 
 | Source | Covers |
 | --- | --- |

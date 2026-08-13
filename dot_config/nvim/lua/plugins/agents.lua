@@ -46,21 +46,87 @@ local function aider_watch()
     vim.notify('aider is not installed -- see run_onchange_before_install-packages.sh', vim.log.levels.ERROR, { title = 'agents' })
     return
   end
+  local cwd = vim.fs.root(0, '.git') or vim.uv.cwd()
   local ai_model = require 'util.ai_model'
-  if not ai_model.require_selected() then
+  ai_model.with_ready_model(function()
+    local cmd = ('aider --watch-files --model %s'):format(vim.fn.shellescape(ai_model.aider_model()))
+    Snacks.terminal.toggle(cmd, {
+      cwd = cwd,
+      win = { position = 'right', width = 0.35 },
+    })
+  end)
+end
+
+local function with_aider(callback, allow_start)
+  if vim.fn.executable('aider') == 0 then
+    vim.notify('aider is not installed -- see run_onchange_before_install-packages.sh', vim.log.levels.ERROR, { title = 'agents' })
     return
   end
-  local cmd = ('aider --watch-files --model %s'):format(vim.fn.shellescape(ai_model.aider_model()))
-  Snacks.terminal.toggle(cmd, {
-    cwd = vim.fs.root(0, '.git') or vim.uv.cwd(),
-    win = { position = 'right', width = 0.35 },
-  })
+
+  local ai_model = require 'util.ai_model'
+  if ai_model.aider_running() then
+    callback(require 'nvim_aider.api')
+    return
+  end
+  if not allow_start then
+    vim.notify('Open an Aider terminal first with <leader>Aa.', vim.log.levels.INFO, { title = 'agents' })
+    return
+  end
+
+  ai_model.with_ready_model(function()
+    callback(require 'nvim_aider.api')
+  end)
+end
+
+local function current_path()
+  local path = vim.api.nvim_buf_get_name(0)
+  return path ~= '' and vim.fn.fnamemodify(path, ':p') or nil
+end
+
+local function aider_file(action)
+  local path = current_path()
+  if not path then
+    vim.notify('No valid file in current buffer', vim.log.levels.INFO, { title = 'agents' })
+    return
+  end
+
+  with_aider(function(api)
+    if action == 'add' then
+      api.add_file(path)
+    elseif action == 'drop' then
+      api.drop_file(path)
+    else
+      api.send_command('/read-only', path)
+    end
+  end)
+end
+
+-- The readiness check is asynchronous, so capture a visual selection before
+-- the picker or `ollama show` changes mode. Re-selecting with `gv` would work
+-- for Avante, but aider accepts the text directly and needs no mode restoration.
+local function aider_send()
+  local mode = vim.fn.mode()
+  local content
+  local subject = 'buffer'
+  if vim.tbl_contains({ 'v', 'V', '\22' }, mode) then
+    content = table.concat(vim.fn.getregion(vim.fn.getpos 'v', vim.fn.getpos '.', { type = mode }), '\n')
+    subject = 'selection'
+  else
+    content = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), '\n')
+  end
+
+  with_aider(function(api)
+    vim.ui.input({ prompt = ('Add a prompt to your %s (empty to skip):'):format(subject) }, function(input)
+      if input ~= nil then
+        api.send_to_terminal(input ~= '' and (content .. '\n> ' .. input) or content)
+      end
+    end)
+  end)
 end
 
 return {
   {
     'GeorgesAlkhouri/nvim-aider',
-    cmd = 'Aider',
     dependencies = { 'folke/snacks.nvim' },
     -- The two plugins with more stars are both dead: joshuavial/aider.nvim is
     -- GitHub-archived with "No longer maintained" as its first README line
@@ -86,45 +152,82 @@ return {
       {
         '<leader>Aa',
         function()
-          local ai_model = require 'util.ai_model'
-          if ai_model.require_selected() then
-            require('nvim_aider.api').toggle_terminal()
-          end
+          with_aider(function(api)
+            api.toggle_terminal()
+          end, true)
         end,
-        desc = 'aider: toggle',
+        desc = 'aider (local): toggle',
       },
       {
         '<leader>Ao',
         function()
-          local ai_model = require 'util.ai_model'
-          if ai_model.require_selected() then
-            require('nvim_aider.api').toggle_terminal { win = { position = 'float' } }
-          end
+          with_aider(function(api)
+            api.toggle_terminal { win = { position = 'float' } }
+          end, true)
         end,
-        desc = 'aider: toggle float',
+        desc = 'aider (local): toggle float',
       },
-      { '<leader>Am', '<cmd>Aider command<cr>', desc = 'aider: command menu' },
-      { '<leader>Ab', '<cmd>Aider add<cr>', desc = 'aider: add buffer' },
+      {
+        '<leader>Am',
+        function()
+          with_aider(function(api)
+            api.open_command_picker()
+          end)
+        end,
+        desc = 'aider (local): command menu',
+      },
+      {
+        '<leader>Ab',
+        function()
+          aider_file 'add'
+        end,
+        desc = 'aider (local): add buffer',
+      },
       {
         '<leader>AO',
         function()
-          require('nvim_aider.api').add_read_only_file()
+          aider_file 'read-only'
         end,
-        desc = 'aider: add buffer read-only',
+        desc = 'aider (local): add buffer read-only',
       },
-      { '<leader>Ad', '<cmd>Aider drop<cr>', desc = 'aider: drop buffer' },
-      { '<leader>As', '<cmd>Aider send<cr>', mode = { 'n', 'v' }, desc = 'aider: send selection/buffer' },
-      { '<leader>AR', '<cmd>Aider reset<cr>', desc = 'aider: reset session' },
-      { '<leader>AH', '<cmd>Aider health<cr>', desc = 'aider: health check' },
-      { '<leader>Aw', aider_watch, desc = 'aider: watch-files mode (AI! comments)' },
+      {
+        '<leader>Ad',
+        function()
+          aider_file 'drop'
+        end,
+        desc = 'aider (local): drop buffer',
+      },
+      {
+        '<leader>As',
+        aider_send,
+        mode = { 'n', 'v' },
+        desc = 'aider (local): send selection/buffer',
+      },
+      {
+        '<leader>AR',
+        function()
+          with_aider(function(api)
+            api.reset_session()
+          end)
+        end,
+        desc = 'aider (local): reset session',
+      },
+      {
+        '<leader>AH',
+        function()
+          require('nvim_aider.api').health_check()
+        end,
+        desc = 'aider: health check',
+      },
+      { '<leader>Aw', aider_watch, desc = 'aider (local): watch-files mode (AI! comments)' },
     },
   },
 
   {
     'folke/snacks.nvim',
     keys = {
-      { '<leader>Ac', function() cursor_agent() end, desc = 'cursor-agent: toggle' },
-      { '<leader>Ar', function() cursor_agent('--resume') end, desc = 'cursor-agent: resume' },
+      { '<leader>Ac', function() cursor_agent() end, desc = 'cursor-agent (cloud): toggle' },
+      { '<leader>Ar', function() cursor_agent('--resume') end, desc = 'cursor-agent (cloud): resume' },
     },
   },
 
@@ -134,7 +237,7 @@ return {
     'folke/which-key.nvim',
     opts = {
       spec = {
-        { '<leader>A', group = 'agents', mode = { 'n', 'v' } },
+        { '<leader>A', group = 'agents (local / cloud)', mode = { 'n', 'v' } },
         { '<leader>av', group = 'avante', mode = 'n' },
       },
     },
