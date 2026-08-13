@@ -324,9 +324,8 @@ supported profile belongs on that Mac; there is no configured default:
 
 ```sh
 brew services start ollama
-ollama pull qwen2.5-coder:7b        # 4.7 GB; 16k context
-ollama pull qwen2.5-coder:14b       # 9.0 GB; 8k context
-ollama pull qwen3-coder:30b         # 19.0 GB; 16k context, 32 GB-class Mac
+ollama pull qwen2.5-coder:7b        # 4.7 GB; 5.5 GB resident at a 32k window
+ollama pull qwen3-coder:30b         # 19.0 GB; 20 GB resident at a 32k window
 ```
 
 `bootstrap.sh` asks the same Lua catalog and reports whether at least one of
@@ -359,25 +358,25 @@ aider searches — home → repo root → cwd — so a project can override them
 
 ### Adding another model
 
-The 7b, 14b and 30b are already configured. To add a different tag, pull it,
+The 7b and 30b are already configured. To add a different tag, pull it,
 add matching entries to `dot_aider.model.settings.yml` and
 `dot_aider.model.metadata.json`, then add its total context to the catalog in
 `lua/util/ai_model.lua`. Those three values are one contract: Ollama gets the
-total `num_ctx`, while aider and Avante get that total minus the 1024-token
+total `num_ctx`, while aider and Avante get that total minus the 8192-token
 output reserve. Drop unused weights with `ollama rm <tag>`.
 
-Only the first row is measured — on an M1 Pro, warm, 21.1 and 23.2 tok/s over two
-runs, and a real aider edit (one-line fix in a small file) took **23 s** end to
-end. The rest are sourced estimates scaled from published benchmarks, because
-they have not been benchmarked here. Treat them as the right order of magnitude
-and nothing more. Note also that `whole` format re-emits the entire file, so time
-scales with file size rather than with the size of the change:
+The two configured rows are measured on an M1 Pro, warm, at a 32k window, both
+confirmed by `ollama ps` as fully GPU-resident. The rejected rows are sourced
+estimates scaled from published benchmarks, because they have not been
+benchmarked here. Treat those as the right order of magnitude and nothing more.
+Note also that `whole` format re-emits the entire file, so time scales with file
+size rather than with the size of the change:
 
 | Tag | Disk | Speed here | |
 | --- | --- | --- | --- |
-| `qwen2.5-coder:7b` | 4.7 GB | **~22 tok/s, 23 s for a one-line fix — measured** | practical 16 GB choice |
-| `qwen2.5-coder:14b` | 9.0 GB | ~15-20 tok/s, 45-70 s/edit | 8k context; tight on 16 GB |
-| `qwen3-coder:30b` | 19.0 GB | unmeasured | 32 GB-class; 16k context stays below the Metal ceiling |
+| `qwen2.5-coder:7b` | 4.7 GB | **24.0 tok/s — measured** | 5.5 GB resident at 32k, its native ceiling |
+| `qwen3-coder:30b` | 19.0 GB | **40.2 tok/s — measured** | 20 GB resident at 32k; MoE, ~3B active per token, so it beats the 7b on speed *and* quality |
+| `qwen2.5-coder:14b` | 9.0 GB | ~15-20 tok/s, 45-70 s/edit | **dropped** — 8 key/value heads give it 102 KB/token of cache, twice the 30b's, for less quality |
 | `gpt-oss:20b` | 13.8 GB | ≈14b (MoE) | Apache 2.0; unverified against aider's edit parsing |
 | `qwen2.5-coder:32b` | 19.9 GB | ~8-10 tok/s, 1.5-2 min/edit | **skip it** — scores *below* the 14b and sits at this machine's Metal ceiling |
 | `codestral` | — | — | **licence forbids commercial use** |
@@ -389,12 +388,13 @@ invisible, you simply get worse edits. And it is set **per-request** rather than
 via `OLLAMA_CONTEXT_LENGTH`, because `brew services` starts ollama through
 launchd, which does not inherit your shell environment — exporting it would look
 right and do nothing. `~/.aider.model.metadata.json` prevents the opposite side
-of the same bug: aider otherwise budgets against the model's advertised 32k or
-262k window and can hand a 16k Ollama runner a prompt it silently truncates. The
-metadata reserves 1024 tokens for output. `edit_format: whole` is the third
-setting: returning a whole file is far easier for a small model than a byte-exact
-search/replace block, and the same 32B model scores 8.0% with diff against 16.4%
-with whole.
+of the same bug: aider otherwise budgets against the 30b's advertised 262k
+window and can hand a 32k Ollama runner a prompt it silently truncates. The
+metadata reserves 8192 tokens for output, because `edit_format: whole` returns
+an entire file and at the previous 1024 nothing longer than roughly 100 lines
+could be rewritten. That format is the third setting: returning a whole file is
+far easier for a small model than a byte-exact search/replace block, and the
+same 32B model scores 8.0% with diff against 16.4% with whole.
 
 **aider is installed with `uv`, not Homebrew,** although the formula exists and
 is current. Upstream's docs are blunt about it: *"While aider is available in a

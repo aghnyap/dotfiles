@@ -253,7 +253,7 @@ Deliberately — these are secrets or machine state, and are excluded in
 - **The Ollama model weights.** aider runs locally, so it needs no API key, but
   the weights are several GB and do not belong in a dotfiles repo. Start with
   `brew services start ollama`, then pull at least one supported tag:
-  `qwen2.5-coder:7b`, `qwen2.5-coder:14b`, or `qwen3-coder:30b`.
+  `qwen2.5-coder:7b` or `qwen3-coder:30b`.
   `bootstrap.sh` reports whether one is present but never downloads or selects
   it. In Neovim run `:AiModel` once per process; at a shell pass
   `--model ollama_chat/<tag>` explicitly.

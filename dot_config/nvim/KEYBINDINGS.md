@@ -281,12 +281,17 @@ the action. The choice becomes global only inside that Neovim process.
 
 | Model | Ollama `num_ctx` | Prompt budget |
 | --- | --- | --- |
-| `qwen2.5-coder:7b` | 16,384 | 15,360 |
-| `qwen2.5-coder:14b` | 8,192 | 7,168 |
-| `qwen3-coder:30b` | 16,384 | 15,360 |
+| `qwen2.5-coder:7b` | 32,768 | 24,576 |
+| `qwen3-coder:30b` | 32,768 | 24,576 |
 
-The table shows Ollama's total window. Avante and aider reserve 1024 tokens for
-output. The catalog and arithmetic are in `lua/util/ai_model.lua`, aider's
+Both windows are the largest each model holds at 100% GPU, arrived at
+separately: 32k is the 7b's native ceiling, while the 30b is stopped by memory
+well short of its trained 262k. Neither is capped to match the other, and
+nothing decides which one suits a given machine — `:AiModel` always asks.
+
+The table shows Ollama's total window. Avante and aider reserve 8192 tokens for
+output, which `edit_format: whole` needs because a reply carries a whole file
+rather than a diff. The catalog and arithmetic are in `lua/util/ai_model.lua`, aider's
 request totals are in `~/.aider.model.settings.yml`, and its prompt/output
 budgets are in `~/.aider.model.metadata.json`. Change all three together.
 

@@ -4,15 +4,25 @@ local M = {}
 -- only records request budgets that have been checked against Ollama's q8_0 KV
 -- cache. Keep it aligned with ~/.aider.model.settings.yml and
 -- ~/.aider.model.metadata.json.
+--
+-- Both sit at 32k for unrelated reasons: it is the 7b's native ceiling, while
+-- the 30b is stopped by memory long before its trained 262k. Neither is capped
+-- to match the other, and nothing here decides which one belongs on a given
+-- machine. Verified with `ollama ps` reporting 100% GPU at this window --
+-- 5.5 GB for the 7b, 20 GB for the 30b.
 local PROFILES = {
-  { model = 'qwen2.5-coder:7b', context = 16384 },
-  { model = 'qwen2.5-coder:14b', context = 8192 },
-  { model = 'qwen3-coder:30b', context = 16384 },
+  { model = 'qwen2.5-coder:7b', context = 32768 },
+  { model = 'qwen3-coder:30b', context = 32768 },
 }
 
 -- Ollama's num_ctx is input + output. Avante and aider receive the smaller
 -- prompt budget so a response cannot silently run beyond that total.
-local OUTPUT_TOKENS = 1024
+--
+-- The reserve is large because both models run edit_format=whole, which
+-- returns an entire file rather than a diff. At the previous 1024 no file over
+-- roughly 100 lines could be rewritten, and the failure mode is a truncated
+-- response rather than an error.
+local OUTPUT_TOKENS = 8192
 local AIDER_BASE_ARGS = { '--no-auto-commits', '--pretty', '--stream' }
 
 local profiles_by_model = {}
@@ -178,7 +188,7 @@ local function apply(model)
 
   -- aider applies local metadata to the initial model, but its live `/model`
   -- path can reconstruct it after LiteLLM has loaded and replace the safe
-  -- 8k/16k budget with the advertised 32k/262k window. Reopen instead of
+  -- 32k budget with the advertised 262k window. Reopen instead of
   -- hot-swapping into silent truncation; the chat transcript remains on disk.
   if #sessions > 0 then
     notify('Close Aider before switching models; model unchanged.', vim.log.levels.WARN)

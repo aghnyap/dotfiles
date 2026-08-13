@@ -313,9 +313,8 @@ the exact tag, then resumes the requested action.
 
 | Model | Ollama `num_ctx` | Prompt budget |
 | --- | --- | --- |
-| `qwen2.5-coder:7b` | 16,384 | 15,360 |
-| `qwen2.5-coder:14b` | 8,192 | 7,168 |
-| `qwen3-coder:30b` | 16,384 | 15,360 |
+| `qwen2.5-coder:7b` | 32,768 | 24,576 |
+| `qwen3-coder:30b` | 32,768 | 24,576 |
 
 The selector updates Avante and the next aider launch; Avante's independent
 selector is hidden because it cannot update shared state. Close aider before
