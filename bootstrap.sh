@@ -184,6 +184,19 @@ check "objection (uv tool)"    'command -v objection'
 check "claude CLI (Cmd+L)"     'command -v claude'
 check "aider (uv tool)"        'command -v aider'
 check "cursor-agent"           'command -v cursor-agent'
+check "ollama"                 'command -v ollama'
+# A real HTTP request, not pgrep: a server process that is running and not
+# answering is the failure that actually happens, and it is indistinguishable
+# from a healthy one by process name alone. Start it with:
+#     brew services start ollama
+check "ollama serving"         'curl -sf --max-time 5 http://127.0.0.1:11434/api/tags'
+# The model aider is configured to use, read out of its own config rather than
+# hardcoded, so this keeps telling the truth after the model is switched. The
+# pull is several GB and is the one part of this setup that never travels
+# between machines -- without it aider fails at request time, long after
+# bootstrap has said everything is fine.
+check "aider's model pulled" \
+  'ollama ls 2>/dev/null | grep -qF "$(sed -n "s|^model: ollama_chat/||p" "$HOME/.aider.conf.yml")"'
 # The c4 module is checked separately from the binary because it fails in its own
 # way: dot_zshrc's `_mods` array names every module individually, so a module
 # that exists on disk but is missing from that list never loads, silently, and

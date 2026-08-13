@@ -377,7 +377,7 @@ and never installed by `chezmoi apply`:
 | `secextra` | trufflehog, grype, dex2jar, ffuf — each overlaps a baseline tool |
 | `extras` | unar + sevenzip (for `extract`), watchman, yq, jless, pre-commit, ghorg |
 
-The baseline is 61 packages and holds only what the config actually calls. If a
+The baseline is 62 packages and holds only what the config actually calls. If a
 command says it needs something, the message names the group.
 
 Count that number, do not increment it — it was wrong for three commits because
@@ -433,9 +433,19 @@ a CLI, `cursor-agent -p '…'` for a scripted one-shot.
 In Neovim both live under `<leader>A` — `Aa` aider, `Ac` cursor-agent. Claude
 stays on `<leader>a`.
 
-Model and defaults come from `~/.aider.conf.yml` (managed, no secrets).
-`ANTHROPIC_API_KEY` goes in `~/.config/zsh/local/*.zsh`; cursor-agent needs
-`cursor-agent login` once.
+**aider runs a local model, no key and no network.** Ollama serves
+`qwen2.5-coder:7b` on `127.0.0.1:11434` (loopback only).
+`brew services start ollama` · `ollama ls` what is downloaded · `ollama ps`
+what is loaded in RAM · `ollama stop <tag>` unload it · `ollama rm <tag>`
+delete it.
+
+Expect a real downgrade from a frontier model — roughly 8-16% against Sonnet's
+56% on aider's polyglot benchmark. Fine for single-file edits, weak on multi-file
+work. Adding a bigger model: see README, and the template in
+`~/.aider.model.settings.yml`.
+
+cursor-agent still needs `cursor-agent login` once; check it with
+`cursor-agent --list-models`, not `status`.
 
 ### Architecture — C4 / Structurizr
 `c4-init [dir]` scaffold `docs/architecture/{workspace.dsl,structurizr.properties}` ·

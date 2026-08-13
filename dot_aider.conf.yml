@@ -9,9 +9,22 @@
 # reads a .env file with the same home -> repo -> cwd precedence if you prefer
 # that, but the zsh-local route is the convention already used here.
 
-# Claude, matching the editor AI. `sonnet` is aider's own alias for the current
-# Sonnet, so this does not pin a dated model string that goes stale.
-model: sonnet
+# A local model served by Ollama, so aider needs no API key and no network, and
+# nothing leaves the machine.
+#
+# `ollama_chat/`, not `ollama/`: aider's docs say plainly "Using ollama_chat/ is
+# recommended over ollama/". The two are different litellm providers and the
+# chat one matches how aider frames requests.
+#
+# Be realistic about what this is. On aider's own polyglot leaderboard Claude
+# Sonnet 4 scores 56.4% and the best locally-runnable coder manages 8-16%.
+# Single-file, conventional edits are usually fine; multi-file or cross-language
+# work fails noticeably more often. That is the trade for free and offline, and
+# it is not something configuration can tune away.
+#
+# Model tuning lives in ~/.aider.model.settings.yml, not here -- context size and
+# edit format are per-model, and that file documents how to add another one.
+model: ollama_chat/qwen2.5-coder:7b
 
 # Do not commit on aider's behalf.
 #

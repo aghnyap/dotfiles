@@ -20,6 +20,17 @@
 #    $JAVA_HOME/bin must come first or Gradle picks up the stub.
 export ANDROID_HOME=$HOME/Library/Android/sdk
 export ANDROID_SDK_ROOT=$ANDROID_HOME   # legacy name; some Gradle/CI tooling still reads it
+
+# Where aider looks for the local model server. This is a CLIENT-side variable
+# and belongs here; the SERVER's own settings (OLLAMA_MODELS, OLLAMA_KEEP_ALIVE,
+# OLLAMA_CONTEXT_LENGTH) deliberately do NOT go here, because `brew services`
+# starts ollama through launchd and launchd does not inherit a shell's
+# environment. Exporting those would read as configuration and change nothing.
+# Anything that has to reach the server is set per-request instead --
+# see num_ctx in ~/.aider.model.settings.yml.
+#
+# 127.0.0.1, not localhost: ollama binds loopback v4 by default.
+export OLLAMA_API_BASE=http://127.0.0.1:11434
 # JAVA_HOME follows the mise pin first, because mise is what this repo installs
 # and its shims already come before $JAVA_HOME/bin below -- if the two disagreed,
 # `java` and Gradle (which reads JAVA_HOME, not PATH) would run different JDKs.

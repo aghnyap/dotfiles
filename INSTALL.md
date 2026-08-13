@@ -235,13 +235,17 @@ Deliberately — these are secrets or machine state, and are excluded in
 - `~/.config/zsh/local/` — machine-local shell modules. Employer-specific and
   credential-adjacent config lives here (VPN helpers, work-only tooling) and is
   sourced last so it can override any module. Deliberately never captured.
-- **AI model credentials.** `aider` reads `ANTHROPIC_API_KEY` from the
-  environment, so on a new machine put it in `~/.config/zsh/local/ai.zsh` —
-  nothing in this repo has ever held it, and `<leader>Aa` will open a session
-  that cannot talk to anything until it exists. `cursor-agent` needs
-  `cursor-agent login` once, which is a browser flow and therefore the one thing
-  here `bootstrap.sh` genuinely cannot automate; `CURSOR_API_KEY` in the same
-  machine-local file is the scriptable alternative.
+- **The Ollama model weights.** aider runs a local model, so it needs no API key
+  at all — but the weights are several GB of binary and are not, and should not
+  be, in a dotfiles repo. On a new machine: `brew services start ollama` then
+  `ollama pull qwen2.5-coder:7b` (4.7 GB). `bootstrap.sh` checks for the model
+  named in `~/.aider.conf.yml` and reports it missing, because otherwise aider
+  fails at request time long after the bootstrap said everything was fine.
+- **`cursor-agent login`.** A browser flow, and therefore the one step here that
+  `bootstrap.sh` genuinely cannot automate. `CURSOR_API_KEY` in
+  `~/.config/zsh/local/` is the scriptable alternative. Verify with
+  `cursor-agent --list-models` rather than `cursor-agent status`, which has been
+  seen reporting a successful login for an account with no models available.
 - aider's own state — `.aider.chat.history.md`, `.aider.input.history` and the
   `.aider.tags.cache.v*` symbol cache. aider writes these into whatever
   directory it runs in and offers to gitignore them per project; `.chezmoiignore`

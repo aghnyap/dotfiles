@@ -1,0 +1,75 @@
+# Per-model settings for aider. Read from $HOME, the lowest-priority location
+# aider searches (home -> git repo root -> cwd), so a project can override any of
+# this with its own file.
+#
+# No credentials here either -- this file only describes models.
+#
+# ── Why this file exists at all ──────────────────────────────────────────────
+# Two settings below are the difference between a local model that works and one
+# that appears to work while producing nonsense.
+#
+# num_ctx. From aider's docs: "Ollama uses a 2k context window by default, which
+# is very small for working with aider. It also silently discards context that
+# exceeds the window... many users don't even realize that most of their data is
+# being discarded by Ollama." Recent aider tries to size the window per request,
+# but that detection is known to fall back to generic defaults (aider issue
+# #1380), and the failure is invisible -- you get worse edits, not an error.
+#
+# The other documented fix, OLLAMA_CONTEXT_LENGTH, is NOT used here on purpose.
+# It is read by the server process, and `brew services` starts ollama through
+# launchd, which does not inherit a shell's environment. Exporting it from
+# ~/.zshenv would look correct and do nothing. Setting num_ctx here travels with
+# the request instead, so it works no matter how the server was started.
+#
+# edit_format: whole. Aider defaults unfamiliar models to `whole` because it is
+# the easiest format for a model to produce correctly -- it returns the entire
+# file rather than a search/replace block that has to match byte-for-byte. Its
+# own troubleshooting page says to switch to `whole` when edits fail. The
+# numbers back it up: Qwen2.5-Coder-32B scores 8.0% with diff and 16.4% with
+# whole on aider's polyglot benchmark. The format is worth more than the model
+# size here.
+
+- name: ollama_chat/qwen2.5-coder:7b
+  edit_format: whole
+  # Aider turns the repo map off for models it does not recognise. It is worth
+  # having on: without it the model cannot see anything outside the files you
+  # added, and it guesses at names it has never been shown.
+  use_repo_map: true
+  extra_params:
+    # 16k. `whole` sends entire files, so the window fills faster than it would
+    # with diffs -- but a 7B's KV cache at 16k is small enough to stay well
+    # inside the GPU's share of unified memory on a 32 GB machine.
+    num_ctx: 16384
+
+# ── Adding another model ─────────────────────────────────────────────────────
+#
+#   1. ollama pull qwen2.5-coder:14b
+#   2. uncomment the block below (the name must match the tag exactly)
+#   3. aider --model ollama_chat/qwen2.5-coder:14b     # try it for a session
+#
+# Keep it by pointing `model:` in ~/.aider.conf.yml at it and running
+# `chezmoi apply`; drop it with `ollama rm <tag>`.
+#
+# Keep edit_format: whole for anything in this size class. Raise num_ctx only if
+# you have the memory to spare -- the KV cache scales with it, and a context
+# that no longer fits in the GPU's share spills to CPU and gets far slower.
+#
+# Sizes and speeds measured or sourced, not guessed:
+#
+#   qwen2.5-coder:7b    4.7 GB   ~35 tok/s     25-35 s per edit   (this default)
+#   qwen2.5-coder:14b   9.0 GB   ~15-20 tok/s  45-70 s per edit   best published
+#   gpt-oss:20b        13.8 GB   ~14b speed    Apache 2.0, MoE; unverified
+#                                              against aider's edit parsing
+#   qwen2.5-coder:32b  19.9 GB   ~8-10 tok/s   1.5-2 min per edit -- NOT worth
+#                                              it: scores below the 14b and sits
+#                                              at this machine's Metal ceiling
+#
+# Do not use `codestral`. The tag Ollama serves is under the Mistral AI
+# Non-Production License, which forbids commercial use -- including internal use
+# at work -- without a paid agreement.
+#
+# - name: ollama_chat/qwen2.5-coder:14b
+#   edit_format: whole
+#   use_repo_map: true
+#   extra_params:
+#     num_ctx: 32768

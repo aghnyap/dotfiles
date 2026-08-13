@@ -107,6 +107,7 @@ Library/Application Support/Cursor/**
 # ~/.config/zsh/local/ with everything else machine-specific.
 .aider*
 !.aider.conf.yml
+!.aider.model.settings.yml
 
 # ~/.claude, denied as a tree with one hole in it.
 #

@@ -298,7 +298,8 @@ not. These are not bugs — do not "fix" them:
 | `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:215`** — a new file here does nothing until it is added there |
 | `dot_config/nvim/` | LazyVim + custom specs. See `KEYBINDINGS.md` |
 | `dot_config/tmux/` | tmux.conf + mobile/web/backend/sec/arch project layouts |
-| `dot_aider.conf.yml` | aider's model and defaults. Managed because it holds no credentials; the API key is machine-local, in `~/.config/zsh/local/` |
+| `dot_aider.conf.yml` | aider's model and defaults. Managed because it holds no credentials — aider runs a local Ollama model, so there is no key at all |
+| `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. **`num_ctx` must be set here, not via `OLLAMA_CONTEXT_LENGTH`** — `brew services` starts ollama through launchd, which does not inherit a shell's environment, so an export would look correct and change nothing. Ollama's 2k default silently truncates instead of erroring |
 | `dot_claude/skills/` | Claude Code skills, currently `c4-architect`. The **only** managed path under `~/.claude` — `.chezmoiignore` denies the rest of that tree, which holds session transcripts and memory files |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig` holds identity and is **not** managed |

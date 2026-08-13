@@ -46,6 +46,21 @@ cask "cursor"
 # run in bootstrap.sh. CURSOR_API_KEY is the scriptable alternative and belongs
 # in ~/.config/zsh/local/, not here.
 cask "cursor-cli"
+# The local model server aider talks to, so aider needs no API key and no
+# network. The FORMULA, not the `ollama-app` cask: the two conflict, and the cask
+# installs an Electron menu-bar GUI this setup has no use for. The formula is the
+# CLI and server only.
+#
+# Its Homebrew service block is worth knowing about -- `brew services start
+# ollama` runs it under launchd with OLLAMA_FLASH_ATTENTION=1 and
+# OLLAMA_KV_CACHE_TYPE=q8_0, both better than upstream's defaults. The same
+# launchd path is why context size is set per-request in
+# ~/.aider.model.settings.yml: launchd does not inherit a shell's environment, so
+# OLLAMA_CONTEXT_LENGTH exported from ~/.zshenv would do nothing at all.
+#
+# Model weights are NOT installed here -- several GB, pulled per machine with
+# `ollama pull`, and checked by bootstrap.sh.
+brew "ollama"
 cask "jetbrains-toolbox"
 
 # ── Core CLI ───────────────────────────────────────────────────────────────

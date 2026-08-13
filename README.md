@@ -306,24 +306,60 @@ editor. `<leader>A` is the group: `Aa` toggle aider, `Am` its command menu,
 `Ac`/`Ar` cursor-agent toggle/resume. Full table in
 `~/.config/nvim/KEYBINDINGS.md`.
 
-**Both need one manual step, and neither is in this repo.** aider reads
-`ANTHROPIC_API_KEY` from the environment — put it in
-`~/.config/zsh/local/ai.zsh`, which is machine-local, excluded in
-`.chezmoiignore` and sourced last:
+**aider needs no key at all — it runs a local model.** Ollama serves
+`qwen2.5-coder:7b` on `127.0.0.1:11434`; nothing leaves the machine and there is
+nothing to authenticate. The one per-machine step is the model download:
 
 ```sh
-mkdir -p ~/.config/zsh/local
-printf 'export ANTHROPIC_API_KEY=%s\n' 'your-key' >> ~/.config/zsh/local/ai.zsh
+brew services start ollama
+ollama pull qwen2.5-coder:7b        # 4.7 GB
 ```
 
-cursor-agent needs `cursor-agent login` once per machine — a browser flow, which
-is why `bootstrap.sh` cannot do it. `CURSOR_API_KEY` is the scriptable
-alternative and belongs in the same machine-local file.
+cursor-agent still needs `cursor-agent login` once per machine — a browser flow,
+which is why `bootstrap.sh` cannot do it. `CURSOR_API_KEY` is the scriptable
+alternative and belongs in `~/.config/zsh/local/`, which is machine-local,
+excluded in `.chezmoiignore` and sourced last.
 
-`~/.aider.conf.yml` **is** managed, and holds no credentials: model, and
-`auto-commits: false` so aider does not commit on your behalf. It sits in `$HOME`,
-which is the lowest-priority location aider searches (home → repo root → cwd), so
-any project can override it.
+**Be realistic about the local model.** On aider's own polyglot leaderboard
+Claude Sonnet 4 scores 56.4% and the best locally-runnable coder manages 8-16%.
+Single-file, conventional edits are usually fine; multi-file refactors and
+cross-language work fail noticeably more often. That is the trade for free and
+offline, and no amount of configuration tunes it away.
+
+Two managed files, neither holding credentials: `~/.aider.conf.yml` (model,
+`auto-commits: false` so aider does not commit on your behalf) and
+`~/.aider.model.settings.yml` (context size and edit format). Both live in
+`$HOME`, the lowest-priority location aider searches — home → repo root → cwd —
+so any project can override them.
+
+### Adding another model
+
+```sh
+ollama pull qwen2.5-coder:14b                     # 1. fetch it
+$EDITOR ~/dotfiles/dot_aider.model.settings.yml   # 2. uncomment the template
+aider --model ollama_chat/qwen2.5-coder:14b       # 3. try it for a session
+```
+
+Keep it by pointing `model:` in `dot_aider.conf.yml` at it and running
+`chezmoi apply`. Drop it with `ollama rm <tag>`. Measured, not guessed:
+
+| Tag | Disk | Speed here | |
+| --- | --- | --- | --- |
+| `qwen2.5-coder:7b` | 4.7 GB | ~35 tok/s, 25-35 s/edit | the default |
+| `qwen2.5-coder:14b` | 9.0 GB | ~15-20 tok/s, 45-70 s/edit | best score aider has published at a runnable size |
+| `gpt-oss:20b` | 13.8 GB | ≈14b (MoE) | Apache 2.0; unverified against aider's edit parsing |
+| `qwen2.5-coder:32b` | 19.9 GB | ~8-10 tok/s, 1.5-2 min/edit | **skip it** — scores *below* the 14b and sits at this machine's Metal ceiling |
+| `codestral` | — | — | **licence forbids commercial use** |
+
+Two settings in `~/.aider.model.settings.yml` are load-bearing and easy to get
+wrong. `num_ctx` exists because *"Ollama uses a 2k context window by default…
+It also silently discards context that exceeds the window"* — the failure is
+invisible, you simply get worse edits. And it is set **per-request** rather than
+via `OLLAMA_CONTEXT_LENGTH`, because `brew services` starts ollama through
+launchd, which does not inherit your shell environment — exporting it would look
+right and do nothing. `edit_format: whole` is the second: returning a whole file
+is far easier for a small model than a byte-exact search/replace block, and the
+same 32B model scores 8.0% with diff against 16.4% with whole.
 
 **aider is installed with `uv`, not Homebrew,** although the formula exists and
 is current. Upstream's docs are blunt about it: *"While aider is available in a
