@@ -33,6 +33,7 @@ indent_size = 4
 
 [{Makefile,makefile,*.mk}]
 indent_style = tab
+indent_size = 4
 
 # Markdown keeps trailing whitespace, because two trailing spaces are a hard line
 # break -- stripping them silently reflows the rendered document.

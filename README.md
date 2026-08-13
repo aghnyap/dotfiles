@@ -16,7 +16,7 @@ editor's accumulated state.
 
 ## Bootstrap a new machine
 
-Get the repo onto the machine (private remote, or the zip in
+Get the repo onto the machine (clone it, or the zip in
 [`INSTALL.md`](INSTALL.md)), then from inside it:
 
 ```sh
@@ -98,6 +98,7 @@ terminal browser (chawan).
 | `dot_config/nvim/` | LazyVim + custom plugin specs. See `KEYBINDINGS.md`. |
 | `dot_config/tmux/` | tmux.conf + project layouts (mobile/web/backend/sec/arch) |
 | `dot_aider.conf.yml` | aider's model and defaults — no credentials, so it is managed |
+| `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. Both are load-bearing: Ollama's 2k default silently truncates, and `whole` beats `diff` on a small model |
 | `dot_claude/skills/` | Claude Code skills (`c4-architect`). The only managed path under `~/.claude`; the rest of that tree is denied in `.chezmoiignore` |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig`, which holds identity, is not managed |
@@ -269,8 +270,8 @@ permanent.
   `gitleaks detect` on this repo before pushing. The repo carries no address,
   employer hostname or project path at all: identity is not something a machine
   config needs, so it lives in `~/.gitconfig` and nothing here templates it.
-  Keep the repo private anyway; the toolchain it describes is still a map of
-  one person's machine.
+  The remote is public, so that discipline is the only thing standing between a
+  careless `chezmoi add` and a published, permanently cached copy of it.
 - **Shell startup is load-dependent, so do not trust a single number** — this
   README asserted "~179ms" for a while and it was not reproducible. Measured at
   load ~3 it is 227ms mean (± 39), range 147-291, down from 475ms before the

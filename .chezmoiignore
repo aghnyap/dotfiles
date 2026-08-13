@@ -148,9 +148,14 @@ Library/Application Support/Cursor/**
 .claude.json
 .claude.json.backup
 
-# Flutter's settings file records the Apple Developer signing identity, which is
-# an email address. Regenerates per machine, so there is nothing to carry even
-# if it were safe -- and it is not.
+# Credential and identity caches belonging to tools this repo does not manage but
+# that are installed on the machine anyway.
+#
+# configstore is where firebase-tools keeps its OAuth token cache; flutter's
+# settings file records the Apple Developer signing identity, which is an email
+# address. Both regenerate per machine, so there is nothing to carry even if they
+# were safe -- and they are not.
+.config/configstore/**
 .config/flutter/settings
 
 # Repo documentation and tooling. Without these, chezmoi treats a source-root

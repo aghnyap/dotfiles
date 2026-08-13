@@ -183,13 +183,15 @@ brew install chezmoi
 chezmoi init --apply --source=~/dotfiles git@github.com:<you>/dotfiles.git
 ```
 
-**Keep the repo private.** It carries no email address, internal hostname or
-employer project path — identity is not a machine setting, so it lives in
-`~/.gitconfig` and the work repo path in `~/.config/chezmoi/chezmoi.toml`,
-neither of which is in the source tree — but it is still a detailed description
-of one person's machine. Do not use the internal GitLab for this either: a
-personal Mac generally cannot reach it, and personal config does not belong on
-company infrastructure.
+**The remote is public, so treat anything committed here as published.** It
+carries no email address, internal hostname or employer project path — identity
+is not a machine setting, so it lives in `~/.gitconfig` and the work repo path in
+`~/.config/chezmoi/chezmoi.toml`, neither of which is in the source tree — and
+keeping it that way is the whole job, because a mistake here is fetched and
+cached rather than merely reverted. Run `gitleaks detect --no-git -s .` before
+pushing. Do not use the internal GitLab for this either: a personal Mac
+generally cannot reach it, and personal config does not belong on company
+infrastructure.
 
 ---
 
@@ -261,6 +263,8 @@ Deliberately — these are secrets or machine state, and are excluded in
 - `~/.claude.json` — Claude Code session state next to, not inside, `~/.claude/`.
   The `.claude/**` rule does not match a sibling file; without this line a
   `chezmoi add` would capture it. Skills under `~/.claude/skills/` still travel.
+- `~/.config/configstore/` — OAuth token caches belonging to tools this repo does
+  not manage but the machine has anyway. Regenerates per machine.
 - `~/.config/flutter/settings` — records the Apple Developer signing identity,
   which is an email address. Regenerates per machine.
 - `~/.gitconfig` — git identity and anything network- or employer-shaped:

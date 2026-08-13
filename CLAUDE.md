@@ -33,8 +33,9 @@ ls ~/dotfiles/.git  # the repo must already be unzipped here
 ```
 
 If the repo is somewhere else, either move it to `~/dotfiles` or
-substitute the real path in every `--source=` below. Do not clone from a
-remote; there isn't one.
+substitute the real path in every `--source=` below. There is a remote
+(`github.com/aghnyap/dotfiles`), so cloning is an option too — but `--source`
+still has to point at wherever the checkout lands.
 
 ### 1. Homebrew
 
@@ -170,10 +171,15 @@ re-apply. It is not a mis-answered prompt — there are no prompts.
 
   `bootstrap.sh` follows the same rule: it reports a missing git identity and
   prints the two `git config --global` lines, and never runs them.
-- **Never push this repo to a public remote,** and never to the employer's
-  internal GitLab. It carries no email address, internal hostname or employer
-  project path — but it is still a full description of one person's machine.
-  Private remote or sneakernet only.
+- **Treat every commit here as published.** The remote is public
+  (`github.com/aghnyap/dotfiles`), so there is no window in which a mistake is
+  merely a diff to revert — it is fetched, cached by third parties and permanent
+  even after a force-push. That is what makes the capture guards in
+  `.chezmoiignore` mandatory rather than advisory, and why nothing here may
+  carry an email address, an internal hostname or an employer project path —
+  see the secrets rule below for the pre-push check. **Never push it to the
+  employer's internal GitLab either:** a personal Mac generally cannot reach
+  that host, and personal config does not belong on company infrastructure.
 - **Never add Flutter or Dart to `PATH`.** Their absence is deliberate: FVM
   pins Flutter per-repository from each clone's `.fvm/`. A global SDK would
   shadow the pin and silently build the wrong version. Use `fvm flutter …`

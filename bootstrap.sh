@@ -6,7 +6,7 @@
 # configured machine re-applies and re-verifies rather than duplicating work.
 #
 #   ./bootstrap.sh                      # repo already on disk; run from inside it
-#   ./bootstrap.sh <url-or-path>        # clone from a private remote, or copy from a path
+#   ./bootstrap.sh <url-or-path>        # clone from a remote, or copy from a path
 #
 # There are no flags for what kind of machine this is, because there is no such
 # distinction: every Mac built from this repo gets the same configuration. It
@@ -15,10 +15,9 @@
 # repo, in ~/.gitconfig, ~/.config/zsh/local/ and each project's own workspace
 # settings. The verification step reports a missing git identity and moves on.
 #
-# There is deliberately no default remote baked in: this repo has none, and
-# while it carries no address or internal hostname of its own, it is still a
-# full description of one person's machine. Sneakernet (INSTALL.md option A) or
-# a private remote you pass in.
+# No default remote is baked in, even though the repo has one. A URL in here
+# would be this checkout's remote asserted as everyone's, and the argument form
+# already covers it. Sneakernet (INSTALL.md option A) or a URL you pass in.
 set -euo pipefail
 
 SOURCE_DIR="$HOME/dotfiles"
