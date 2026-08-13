@@ -275,15 +275,29 @@ resolve against real files, and edits arrive as native Neovim diffs.
 ## Local AI — Ollama / Avante
 
 Avante talks to the local Ollama server on `127.0.0.1:11434`. The active model is
-global inside Neovim: `_G.ai_model` starts at `qwen3-coder:30b` and toggles to
-`qwen2.5-coder:7b`.
+global inside Neovim: `_G.ai_model` is set at startup from `vim.uv.get_total_memory()`,
+so one config gets the largest model each machine can actually hold.
+
+| RAM | Default | `<leader>aM` |
+| --- | --- | --- |
+| 32 GB+ | `qwen3-coder:30b` @ 16k | `qwen2.5-coder:7b` @ 16k |
+| 16 GB | `qwen2.5-coder:7b` @ 16k | `qwen2.5-coder:14b` @ 8k |
+
+The context window is a property of the model, not the tier, so the same tag gets
+the same window in Avante and in aider. The tiers and the arithmetic behind those
+numbers are in `lua/util/ai_model.lua`; the matching aider windows are in
+`~/.aider.model.settings.yml`. Change one, change the other.
+
+The 16 GB Air leads with the 7b even though the 14b fits at 8k: the M3 has half an
+M1 Pro's memory bandwidth and no fan, so the 14b runs near 9 tok/s against the 7b's
+18-20, and aider's `whole` format re-sends entire files on every edit.
 
 | Keys | Action |
 | --- | --- |
 | `<leader>aa` | Avante: ask / open the sidebar |
 | `<leader>aA` | Avante: refresh context |
-| `<leader>aM` | Toggle the local model for Avante and the active aider session |
-| `<leader>aR` | AI memory check — macOS RAM and swap guard |
+| `<leader>aM` | Cycle the local model for Avante and the active aider session |
+| `<leader>aR` | AI memory check — active model, macOS RAM and swap guard |
 | `<leader>avn` | Avante: new ask |
 | `<leader>ave` / `<leader>avf` | Avante: edit / focus |
 | `<leader>avs` / `<leader>avz` | Avante: stop / zen mode |

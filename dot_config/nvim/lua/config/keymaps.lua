@@ -225,7 +225,7 @@ map('n', '<leader>mf', '<cmd>AerialToggle<cr>', { desc = 'Focus symbol outline' 
 -- ── Local AI (<leader>aM / <leader>aR) ─────────────────────────
 map('n', '<leader>aM', function()
   require('util.ai_model').toggle()
-end, { desc = 'Toggle local AI model' })
+end, { desc = 'Cycle local AI model' })
 map('n', '<leader>aR', function()
   require('util.ai_memory').check()
 end, { desc = 'AI memory check' })

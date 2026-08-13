@@ -63,6 +63,7 @@ local function parse_swap_used_gb(output)
 end
 
 local function notify_memory(total_bytes, vm_stat_output, swap_output)
+  local ai_model = require 'util.ai_model'
   local stats = parse_vm_stat(vm_stat_output)
   local total_gb = gb(total_bytes)
   local available_gb = gb((stats.free + stats.inactive + stats.speculative) * stats.page_size)
@@ -70,14 +71,19 @@ local function notify_memory(total_bytes, vm_stat_output, swap_output)
   local swap_used_gb = parse_swap_used_gb(swap_output)
   local level = available_gb < LOW_MEMORY_GB and vim.log.levels.WARN or vim.log.levels.INFO
 
-  local message = ('Available %.1f GB / %.1f GB (purgeable %.1f GB, swap used %.1f GB)')
-    :format(available_gb, total_gb, purgeable_gb, swap_used_gb)
+  -- Naming the model and window matters most on a 16 GB machine, where the
+  -- margin between what is loaded and what fits is a few hundred megabytes.
+  local message = ('%s at %dk context\nAvailable %.1f GB / %.1f GB (purgeable %.1f GB, swap used %.1f GB)'):format(
+    ai_model.current(),
+    ai_model.context() / 1024,
+    available_gb,
+    total_gb,
+    purgeable_gb,
+    swap_used_gb
+  )
 
   if level == vim.log.levels.WARN then
-    message = message .. ('\nBelow %d GB while using %s; pause local AI before macOS starts swap-paging.'):format(
-      LOW_MEMORY_GB,
-      _G.ai_model or 'local AI'
-    )
+    message = message .. ('\nBelow %d GB; pause local AI before macOS starts swap-paging.'):format(LOW_MEMORY_GB)
   end
 
   vim.notify(message, level, { title = 'AI memory' })

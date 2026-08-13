@@ -301,9 +301,22 @@ Filters are retroactive — they apply to what already scrolled past.
 | --- | --- |
 | `<leader>aa` | Avante: ask / open sidebar |
 | `<leader>aA` | Avante: refresh context |
-| `<leader>aM` | Toggle local model (`qwen3-coder:30b` ⇄ `qwen2.5-coder:7b`) |
-| `<leader>aR` | AI memory check (macOS RAM + swap) |
+| `<leader>aM` | Cycle the local model within this machine's tier |
+| `<leader>aR` | AI memory check (active model + macOS RAM + swap) |
 | `<leader>av…` | Avante extras: new/edit/focus/stop/zen/toggles/files/model/history |
+
+The model is picked from total RAM at startup, so the same config gets the
+largest model each machine can actually hold. `<leader>aM` cycles within the
+tier; the context window travels with the model.
+
+| RAM | Default | `<leader>aM` |
+| --- | --- | --- |
+| 32 GB+ | `qwen3-coder:30b` @ 16k | `qwen2.5-coder:7b` @ 16k |
+| 16 GB | `qwen2.5-coder:7b` @ 16k | `qwen2.5-coder:14b` @ 8k |
+
+The 16 GB Air leads with the 7b even though the 14b fits: the M3 has half an M1
+Pro's memory bandwidth and no fan, so the 14b runs at roughly 9 tok/s against
+the 7b's 18-20, and aider re-sends whole files on every edit.
 
 There is **no inline ghost-text completion**, by choice — see the note in
 `README.md`.
@@ -451,8 +464,8 @@ In Neovim terminal agents live under `<leader>A` — `Aa` aider, `Ac`
 cursor-agent. Claude and Avante stay on `<leader>a`.
 
 **aider runs a local model, no key and no network.** The shell default remains
-`qwen2.5-coder:7b`; Neovim starts local AI on `qwen3-coder:30b` and
-`<leader>aM` toggles it between the two. Ollama serves on
+`qwen2.5-coder:7b`; Neovim picks its model from total RAM and `<leader>aM`
+cycles the alternatives — see the tier table above. Ollama serves on
 `127.0.0.1:11434` (loopback only).
 `brew services start ollama` · `ollama ls` what is downloaded · `ollama ps`
 what is loaded in RAM · `ollama stop <tag>` unload it · `ollama rm <tag>`

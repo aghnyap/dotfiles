@@ -20,7 +20,7 @@ return {
             is_env_set = require('avante.providers.ollama').check_endpoint_alive,
             extra_request_body = {
               options = {
-                num_ctx = 16384,
+                num_ctx = ai_model.context(),
                 num_predict = 1024,
                 keep_alive = '5m',
               },
