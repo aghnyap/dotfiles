@@ -246,6 +246,10 @@ cat <<'EOF'
     Mason finishes its language servers on your first real `nvim` start -- that
     needs a running event loop, so no script can force it.
 
+    Log out once: chezmoi apply writes macOS keyboard defaults (press-and-hold
+    off, fast key repeat) and the running login session has already read the
+    old values. Finder restarts itself; the keyboard does not.
+
     Then open Ghostty fresh.
 EOF
 

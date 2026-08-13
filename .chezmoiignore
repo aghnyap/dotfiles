@@ -135,6 +135,24 @@ Library/Application Support/Cursor/**
 !.claude
 !.claude/skills/**
 
+# ~/.claude.json is a SIBLING of ~/.claude/, so the rule above does not touch it.
+# `.claude/**` matches paths INSIDE that directory; this is a file next to it,
+# and the two are unrelated as far as globbing is concerned.
+#
+# That mattered more than it sounds: checked with `chezmoi add --dry-run`, and it
+# offered to create private_dot_claude.json rather than refusing. The file is
+# 72 KB of session state -- absolute project paths, usage counters, an
+# oauthAccount key. README.md has claimed all along that this file "is not
+# managed by chezmoi, on purpose", which was true only because nobody had run
+# `add` on it. Documented protection that nothing enforced.
+.claude.json
+.claude.json.backup
+
+# Flutter's settings file records the Apple Developer signing identity, which is
+# an email address. Regenerates per machine, so there is nothing to carry even
+# if it were safe -- and it is not.
+.config/flutter/settings
+
 # Repo documentation and tooling. Without these, chezmoi treats a source-root
 # file as a target and writes it into $HOME -- CHEATSHEET.md showed up as a
 # pending ~/CHEATSHEET.md until it was listed here, and bootstrap.sh as a

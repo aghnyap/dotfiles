@@ -102,6 +102,8 @@ terminal browser (chawan).
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig`, which holds identity, is not managed |
 | `.chezmoitemplates/Brewfile.optional` | Opt-in package groups (`brewopt backend`). Not installed by `apply` |
+| `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one reaches Android Studio, Xcode and Cursor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
+| `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout |
 | `bootstrap.sh` | One-command setup for a new machine, plus the look-and-feel verification. Not a target — `.chezmoiignore`d like the docs. |
 
 ## Opening a project
@@ -341,11 +343,18 @@ aider --model ollama_chat/qwen2.5-coder:14b       # 3. try it for a session
 ```
 
 Keep it by pointing `model:` in `dot_aider.conf.yml` at it and running
-`chezmoi apply`. Drop it with `ollama rm <tag>`. Measured, not guessed:
+`chezmoi apply`. Drop it with `ollama rm <tag>`.
+
+Only the first row is measured — on an M1 Pro, warm, 21.1 and 23.2 tok/s over two
+runs, and a real aider edit (one-line fix in a small file) took **23 s** end to
+end. The rest are sourced estimates scaled from published benchmarks, because
+those models were never pulled here. Treat them as the right order of magnitude
+and nothing more. Note also that `whole` format re-emits the entire file, so time
+scales with file size rather than with the size of the change:
 
 | Tag | Disk | Speed here | |
 | --- | --- | --- | --- |
-| `qwen2.5-coder:7b` | 4.7 GB | ~35 tok/s, 25-35 s/edit | the default |
+| `qwen2.5-coder:7b` | 4.7 GB | **~22 tok/s, 23 s for a one-line fix — measured** | the default |
 | `qwen2.5-coder:14b` | 9.0 GB | ~15-20 tok/s, 45-70 s/edit | best score aider has published at a runnable size |
 | `gpt-oss:20b` | 13.8 GB | ≈14b (MoE) | Apache 2.0; unverified against aider's edit parsing |
 | `qwen2.5-coder:32b` | 19.9 GB | ~8-10 tok/s, 1.5-2 min/edit | **skip it** — scores *below* the 14b and sits at this machine's Metal ceiling |

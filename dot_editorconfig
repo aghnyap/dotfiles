@@ -1,0 +1,45 @@
+# Indentation every editor reads, rather than only the one that has a Lua table.
+#
+# Neovim already enforces per-language indents in
+# ~/.config/nvim/lua/config/autocmds.lua, whose own comment notes that LazyVim
+# "leaves indentation to editorconfig / the filetype plugins". That is the gap
+# this closes: the rule existed, but only inside Neovim, so Android Studio, Xcode
+# and Cursor each used their own defaults on the same repository.
+#
+# The two are intentionally kept in sync. Change one, change the other.
+#
+# `root = true` stops the search here, so a project's own .editorconfig still
+# wins -- this is a default, not an override.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Four spaces, matching the Neovim table and each language's own convention.
+[*.{py,java,kt,kts,swift,rs,c,h,cpp,hpp,cc,php}]
+indent_size = 4
+
+# Tabs, and not negotiable in either case: gofmt rewrites Go to tabs whatever
+# this file says, and make treats a leading space as a syntax error rather than
+# a recipe line.
+[*.go]
+indent_style = tab
+indent_size = 4
+
+[{Makefile,makefile,*.mk}]
+indent_style = tab
+
+# Markdown keeps trailing whitespace, because two trailing spaces are a hard line
+# break -- stripping them silently reflows the rendered document.
+[*.md]
+trim_trailing_whitespace = false
+
+# Generated or third-party formats where the tool owns the layout.
+[*.{lock,sum}]
+insert_final_newline = false
+trim_trailing_whitespace = false

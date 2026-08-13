@@ -54,9 +54,14 @@
 # you have the memory to spare -- the KV cache scales with it, and a context
 # that no longer fits in the GPU's share spills to CPU and gets far slower.
 #
-# Sizes and speeds measured or sourced, not guessed:
+# Sizes are from the registry manifests. Only the 7b speed is measured -- on an
+# M1 Pro, warm: 21.1 and 23.2 tok/s over two runs, and a real aider edit (one-line
+# fix, small file) took 23s end to end. The rest are scaled from published
+# benchmarks for models that were never pulled here, so treat them as an order of
+# magnitude. `whole` format re-sends the entire file, so time tracks file size
+# rather than the size of the change.
 #
-#   qwen2.5-coder:7b    4.7 GB   ~35 tok/s     25-35 s per edit   (this default)
+#   qwen2.5-coder:7b    4.7 GB   ~22 tok/s     23 s measured      (this default)
 #   qwen2.5-coder:14b   9.0 GB   ~15-20 tok/s  45-70 s per edit   best published
 #   gpt-oss:20b        13.8 GB   ~14b speed    Apache 2.0, MoE; unverified
 #                                              against aider's edit parsing

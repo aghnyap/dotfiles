@@ -305,5 +305,7 @@ not. These are not bugs — do not "fix" them:
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig` holds identity and is **not** managed |
 | `.chezmoitemplates/Brewfile` | Baseline package list. One list, no variants |
 | `.chezmoitemplates/Brewfile.optional` | Opt-in groups, installed by hand via `brewopt`. Never applied |
+| `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one reaches Android Studio, Xcode and Cursor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
+| `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout |
 | `bootstrap.sh` | Scripted bootstrap + look-and-feel verification. `.chezmoiignore`d, so it is not a target |
 | `INSTALL.md` | The same bootstrap, written for a human |

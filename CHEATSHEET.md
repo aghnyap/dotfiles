@@ -387,6 +387,13 @@ each change added one to the previous figure instead of asking the file:
 chezmoi execute-template '{{ includeTemplate "Brewfile" . }}' | grep -cE '^(brew|cask|tap) '
 ```
 
+`chezmoi apply` also writes macOS system defaults — press-and-hold off and a fast
+key repeat (the two that matter for `hjkl`), Finder showing extensions and the
+path bar, screenshots to `~/Screenshots` as png. **The keyboard ones need a
+logout.** Indentation comes from `~/.editorconfig`, which Android Studio, Xcode
+and Cursor read as well as Neovim; the per-language table in
+`nvim/lua/config/autocmds.lua` mirrors it and the two must stay in sync.
+
 New machine: `./bootstrap.sh` from the repo root does the whole setup and then
 verifies it — no flags, no questions, idempotent, so re-running is safe. It does
 not set your git identity: `~/.gitconfig` is yours, hand-written per machine;

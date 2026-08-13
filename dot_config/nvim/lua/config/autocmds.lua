@@ -50,6 +50,12 @@ end
 -- Per-language indentation, matching common VS Code language defaults.
 -- LazyVim leaves indentation to editorconfig / the filetype plugins, which do
 -- not cover all of these consistently.
+--
+-- ~/.editorconfig now carries the same rules, so that Android Studio, Xcode and
+-- Cursor agree with Neovim on the same repository. This table is still the one
+-- that applies to buffers with no matching extension, and to projects that ship
+-- their own .editorconfig without covering a language. KEEP THE TWO IN SYNC --
+-- Go and Make are the ones that bite, because both require literal tabs.
 local indents = {
   go = { sw = 4, expandtab = false },
   make = { sw = 4, expandtab = false },

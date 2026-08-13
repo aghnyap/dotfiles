@@ -195,6 +195,11 @@ company infrastructure.
 
 ## Living with it afterwards
 
+**Log out once after the first apply.** `chezmoi apply` writes macOS defaults —
+press-and-hold off and a fast key repeat, the two that make `hjkl` usable — and
+the running login session has already read the old values. Finder and the menu
+bar restart themselves; the keyboard does not.
+
 The one rule that catches people out:
 
 > Edit a config file normally (`~/.zshrc`, anything in `~/.config/nvim`), then
@@ -249,9 +254,15 @@ Deliberately — these are secrets or machine state, and are excluded in
 - aider's own state — `.aider.chat.history.md`, `.aider.input.history` and the
   `.aider.tags.cache.v*` symbol cache. aider writes these into whatever
   directory it runs in and offers to gitignore them per project; `.chezmoiignore`
-  denies `.aider*` here with a single exception for `~/.aider.conf.yml`. The
-  chat transcript is the most sensitive file this setup produces, because it
-  contains whatever source was in context.
+  denies `.aider*` here with holes for the two managed files,
+  `~/.aider.conf.yml` and `~/.aider.model.settings.yml`. The chat transcript is
+  the most sensitive file this setup produces, because it contains whatever
+  source was in context.
+- `~/.claude.json` — Claude Code session state next to, not inside, `~/.claude/`.
+  The `.claude/**` rule does not match a sibling file; without this line a
+  `chezmoi add` would capture it. Skills under `~/.claude/skills/` still travel.
+- `~/.config/flutter/settings` — records the Apple Developer signing identity,
+  which is an email address. Regenerates per machine.
 - `~/.gitconfig` — git identity and anything network- or employer-shaped:
   `[user]`, internal host rewrites, the corporate hook `templateDir`. Written by
   hand per machine. The managed half of git config is `~/.config/git/config`
