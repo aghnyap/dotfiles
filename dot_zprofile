@@ -1,9 +1,5 @@
 # Homebrew now runs from ~/.zshenv so non-interactive shells get it too.
 
-# Added by Toolbox App. Written with a literal home path by the installer;
-# rewritten to $HOME so it survives a machine whose username differs.
-export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
-
 # `rbenv init` used to be eval'd here, at 119ms -- more than every other startup
 # component combined. rbenv is gone entirely now: mise owns ruby, pinned in
 # ~/.config/mise/config.toml, and its shims are on PATH from ~/.zshenv, so

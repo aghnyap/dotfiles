@@ -3,14 +3,13 @@
 # here is a default a project can override by dropping its own .aider.conf.yml,
 # which is the right way round.
 #
-# NO CREDENTIALS IN THIS FILE. It is committed. aider reads ANTHROPIC_API_KEY
-# from the environment, and that export belongs in ~/.config/zsh/local/*.zsh --
-# machine-local, excluded in .chezmoiignore, sourced last by ~/.zshrc. aider also
-# reads a .env file with the same home -> repo -> cwd precedence if you prefer
-# that, but the zsh-local route is the convention already used here.
+# NO CREDENTIALS IN THIS FILE. It is committed.
 
-# A local model served by Ollama, so aider needs no API key and no network, and
-# nothing leaves the machine.
+# There is deliberately no model default. Inside Neovim, choose one for that
+# process with :AiModel before opening nvim-aider. At a shell, make the same
+# human decision explicitly:
+#
+#   aider --model ollama_chat/qwen2.5-coder:7b
 #
 # `ollama_chat/`, not `ollama/`: aider's docs say plainly "Using ollama_chat/ is
 # recommended over ollama/". The two are different litellm providers and the
@@ -22,9 +21,9 @@
 # work fails noticeably more often. That is the trade for free and offline, and
 # it is not something configuration can tune away.
 #
-# Model tuning lives in ~/.aider.model.settings.yml, not here -- context size and
-# edit format are per-model, and that file documents how to add another one.
-model: ollama_chat/qwen2.5-coder:7b
+# Model tuning lives in ~/.aider.model.settings.yml and
+# ~/.aider.model.metadata.json, not here -- request context, prompt/output
+# budgets and edit format are per-model.
 
 # Do not commit on aider's behalf.
 #

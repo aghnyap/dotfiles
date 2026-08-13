@@ -46,7 +46,12 @@ local function aider_watch()
     vim.notify('aider is not installed -- see run_onchange_before_install-packages.sh', vim.log.levels.ERROR, { title = 'agents' })
     return
   end
-  Snacks.terminal.toggle('aider --watch-files', {
+  local ai_model = require 'util.ai_model'
+  if not ai_model.require_selected() then
+    return
+  end
+  local cmd = ('aider --watch-files --model %s'):format(vim.fn.shellescape(ai_model.aider_model()))
+  Snacks.terminal.toggle(cmd, {
     cwd = vim.fs.root(0, '.git') or vim.uv.cwd(),
     win = { position = 'right', width = 0.35 },
   })
@@ -78,11 +83,23 @@ return {
       }
     end,
     keys = {
-      { '<leader>Aa', '<cmd>Aider toggle<cr>', desc = 'aider: toggle' },
+      {
+        '<leader>Aa',
+        function()
+          local ai_model = require 'util.ai_model'
+          if ai_model.require_selected() then
+            require('nvim_aider.api').toggle_terminal()
+          end
+        end,
+        desc = 'aider: toggle',
+      },
       {
         '<leader>Ao',
         function()
-          require('nvim_aider.api').toggle_terminal { win = { position = 'float' } }
+          local ai_model = require 'util.ai_model'
+          if ai_model.require_selected() then
+            require('nvim_aider.api').toggle_terminal { win = { position = 'float' } }
+          end
         end,
         desc = 'aider: toggle float',
       },

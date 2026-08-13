@@ -304,14 +304,15 @@ not. These are not bugs — do not "fix" them:
 | `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:215`** — a new file here does nothing until it is added there |
 | `dot_config/nvim/` | LazyVim + custom specs. See `KEYBINDINGS.md` |
 | `dot_config/tmux/` | tmux.conf + mobile/web/backend/sec/arch project layouts |
-| `dot_aider.conf.yml` | aider's model and defaults. Managed because it holds no credentials — aider runs a local Ollama model, so there is no key at all |
+| `dot_aider.conf.yml` | aider's non-model defaults. There is deliberately no model here: Neovim selects one per process with `:AiModel`, and shell use passes `--model` explicitly |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. **`num_ctx` must be set here, not via `OLLAMA_CONTEXT_LENGTH`** — `brew services` starts ollama through launchd, which does not inherit a shell's environment, so an export would look correct and change nothing. Ollama's 2k default silently truncates instead of erroring |
+| `dot_aider.model.metadata.json` | Per-model prompt/output budgets. Keep `max_tokens` equal to `num_ctx`, reserve 1024 in `max_output_tokens`, and set `max_input_tokens` to the difference. Without it aider trusts the model's advertised 32k/262k window and can overrun the smaller local context silently |
 | `dot_claude/skills/` | Claude Code skills, currently `c4-architect`. The **only** managed path under `~/.claude` — `.chezmoiignore` denies the rest of that tree, which holds session transcripts and memory files |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig` holds identity and is **not** managed |
 | `.chezmoitemplates/Brewfile` | Baseline package list. One list, no variants |
 | `.chezmoitemplates/Brewfile.optional` | Opt-in groups, installed by hand via `brewopt`. Never applied |
-| `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one reaches Android Studio, Xcode and Cursor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
+| `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one also reaches any unmanaged GUI editor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
 | `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout |
 | `bootstrap.sh` | Scripted bootstrap + look-and-feel verification. `.chezmoiignore`d, so it is not a target |
 | `INSTALL.md` | The same bootstrap, written for a human |

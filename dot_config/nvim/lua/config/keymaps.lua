@@ -222,10 +222,7 @@ map('n', '<leader>mr', '<cmd>SatelliteRefresh<cr>', { desc = 'Refresh overview s
 map('n', '<leader>mo', '<cmd>AerialToggle!<cr>', { desc = 'Toggle symbol outline' })
 map('n', '<leader>mf', '<cmd>AerialToggle<cr>', { desc = 'Focus symbol outline' })
 
--- ── Local AI (<leader>aM / <leader>aR) ─────────────────────────
-map('n', '<leader>aM', function()
-  require('util.ai_model').toggle()
-end, { desc = 'Cycle local AI model' })
+-- ── Local AI memory (<leader>aR; model selection is in avante.lua) ────────
 map('n', '<leader>aR', function()
   require('util.ai_memory').check()
 end, { desc = 'AI memory check' })

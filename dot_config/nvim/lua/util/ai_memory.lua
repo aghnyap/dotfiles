@@ -64,18 +64,20 @@ end
 
 local function notify_memory(total_bytes, vm_stat_output, swap_output)
   local ai_model = require 'util.ai_model'
+  local model = ai_model.current()
   local stats = parse_vm_stat(vm_stat_output)
   local total_gb = gb(total_bytes)
   local available_gb = gb((stats.free + stats.inactive + stats.speculative) * stats.page_size)
   local purgeable_gb = gb(stats.purgeable * stats.page_size)
   local swap_used_gb = parse_swap_used_gb(swap_output)
   local level = available_gb < LOW_MEMORY_GB and vim.log.levels.WARN or vim.log.levels.INFO
+  local model_status = 'No local model selected (:AiModel)'
+  if model then
+    model_status = ('%s at %dk context'):format(model, ai_model.context(model) / 1024)
+  end
 
-  -- Naming the model and window matters most on a 16 GB machine, where the
-  -- margin between what is loaded and what fits is a few hundred megabytes.
-  local message = ('%s at %dk context\nAvailable %.1f GB / %.1f GB (purgeable %.1f GB, swap used %.1f GB)'):format(
-    ai_model.current(),
-    ai_model.context() / 1024,
+  local message = ('%s\nAvailable %.1f GB / %.1f GB (purgeable %.1f GB, swap used %.1f GB)'):format(
+    model_status,
     available_gb,
     total_gb,
     purgeable_gb,
@@ -96,7 +98,7 @@ function M.check()
   end
 
   local results = {}
-  local remaining = 3
+  local remaining = 2
 
   local function done(key, result)
     results[key] = result
@@ -107,18 +109,15 @@ function M.check()
     end
 
     vim.schedule(function()
-      if results.memsize.code ~= 0 or results.vm_stat.code ~= 0 then
+      if results.vm_stat.code ~= 0 then
         vim.notify('Could not read macOS memory stats.', vim.log.levels.ERROR, { title = 'AI memory' })
         return
       end
 
-      notify_memory(tonumber(vim.trim(results.memsize.stdout or '0')) or 0, results.vm_stat.stdout, results.swap.stdout)
+      notify_memory(vim.uv.get_total_memory(), results.vm_stat.stdout, results.swap.stdout)
     end)
   end
 
-  vim.system({ 'sysctl', '-n', 'hw.memsize' }, { text = true }, function(result)
-    done('memsize', result)
-  end)
   vim.system({ 'vm_stat' }, { text = true }, function(result)
     done('vm_stat', result)
   end)

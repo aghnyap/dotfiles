@@ -301,22 +301,24 @@ Filters are retroactive — they apply to what already scrolled past.
 | --- | --- |
 | `<leader>aa` | Avante: ask / open sidebar |
 | `<leader>aA` | Avante: refresh context |
-| `<leader>aM` | Cycle the local model within this machine's tier |
-| `<leader>aR` | AI memory check (active model + macOS RAM + swap) |
-| `<leader>av…` | Avante extras: new/edit/focus/stop/zen/toggles/files/model/history |
+| `<leader>aM` | Select the local model for this Neovim session (`:AiModel`) |
+| `<leader>aR` | On-demand AI memory check (selected model + macOS RAM + swap) |
+| `<leader>av…` | Avante extras: new/edit/focus/stop/zen/toggles/files/history |
 
-The model is picked from total RAM at startup, so the same config gets the
-largest model each machine can actually hold. `<leader>aM` cycles within the
-tier; the context window travels with the model.
+No model is selected at startup and nothing is persisted. Run `:AiModel` or
+press `<leader>aM` once in each Neovim process; the picker offers every supported
+profile, and the human decides what this Mac should run.
 
-| RAM | Default | `<leader>aM` |
+| Model | Ollama `num_ctx` | Prompt budget |
 | --- | --- | --- |
-| 32 GB+ | `qwen3-coder:30b` @ 16k | `qwen2.5-coder:7b` @ 16k |
-| 16 GB | `qwen2.5-coder:7b` @ 16k | `qwen2.5-coder:14b` @ 8k |
+| `qwen2.5-coder:7b` | 16,384 | 15,360 |
+| `qwen2.5-coder:14b` | 8,192 | 7,168 |
+| `qwen3-coder:30b` | 16,384 | 15,360 |
 
-The 16 GB Air leads with the 7b even though the 14b fits: the M3 has half an M1
-Pro's memory bandwidth and no fan, so the 14b runs at roughly 9 tok/s against
-the 7b's 18-20, and aider re-sends whole files on every edit.
+The selector updates Avante and the next aider launch; Avante's independent
+selector is hidden because it cannot update shared state. Close aider before
+changing the selection — its live `/model` path can discard the managed prompt
+budget.
 
 There is **no inline ghost-text completion**, by choice — see the note in
 `README.md`.
@@ -327,6 +329,7 @@ There is **no inline ghost-text completion**, by choice — see the note in
 
 | Command | Action |
 | --- | --- |
+| `:AiModel [tag]` | Pick this session's local model (no argument opens the picker) |
 | `:Semgrep [config]` | Scan into the problems panel (default `p/security-audit`) |
 | `:Gitleaks` / `:Gitleaks!` | Secrets in the tree / including git history |
 | `:Trivy` | Dependency vulns, misconfig, secrets |
@@ -463,18 +466,17 @@ a CLI, `cursor-agent -p '…'` for a scripted one-shot.
 In Neovim terminal agents live under `<leader>A` — `Aa` aider, `Ac`
 cursor-agent. Claude and Avante stay on `<leader>a`.
 
-**aider runs a local model, no key and no network.** The shell default remains
-`qwen2.5-coder:7b`; Neovim picks its model from total RAM and `<leader>aM`
-cycles the alternatives — see the tier table above. Ollama serves on
-`127.0.0.1:11434` (loopback only).
+**aider runs a local model, no key and no network.** Neovim uses the model
+selected for that process with `:AiModel`; at a shell, pass
+`--model ollama_chat/<tag>` explicitly. There is no configured default. Ollama
+serves on `127.0.0.1:11434` (loopback only).
 `brew services start ollama` · `ollama ls` what is downloaded · `ollama ps`
 what is loaded in RAM · `ollama stop <tag>` unload it · `ollama rm <tag>`
 delete it.
 
 Expect a real downgrade from a frontier model — roughly 8-16% against Sonnet's
 56% on aider's polyglot benchmark. Fine for single-file edits, weak on multi-file
-work. Adding a bigger model: see README, and the template in
-`~/.aider.model.settings.yml`.
+work. Model downloads and the three-file context contract are in README.
 
 cursor-agent still needs `cursor-agent login` once; check it with
 `cursor-agent --list-models`, not `status`.

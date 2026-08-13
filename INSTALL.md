@@ -232,22 +232,22 @@ Deliberately — these are secrets or machine state, and are excluded in
 - `~/.ssh` keys, `~/.aws`, `~/.config/gcloud`, `~/.netrc`, `~/.git-credentials`
 - Atuin's history database and sync key (only its `config.toml` travels)
 - Xcode, Android SDK, the Flutter SDKs — installed by their own tooling.
-- Android Studio — installed through JetBrains Toolbox, which the Brewfile
-  does install. Open Toolbox once on a new machine and pull Android Studio
-  from it; installing the `android-studio` cask instead would give you a
-  second copy in a different directory.
+- GUI editors — Cursor, Android Studio and Xcode are not installed or configured
+  by this repository. Install only the ones needed on that Mac, using their own
+  supported distribution channels.
   Flutter is intentionally per-repo via FVM, so there is nothing global to move.
 - `~/.config/zsh/plugins/` and `~/.config/tmux/plugins/` — upstream git clones
   the installer re-fetches.
 - `~/.config/zsh/local/` — machine-local shell modules. Employer-specific and
   credential-adjacent config lives here (VPN helpers, work-only tooling) and is
   sourced last so it can override any module. Deliberately never captured.
-- **The Ollama model weights.** aider runs a local model, so it needs no API key
-  at all — but the weights are several GB of binary and are not, and should not
-  be, in a dotfiles repo. On a new machine: `brew services start ollama` then
-  `ollama pull qwen2.5-coder:7b` (4.7 GB). `bootstrap.sh` checks for the model
-  named in `~/.aider.conf.yml` and reports it missing, because otherwise aider
-  fails at request time long after the bootstrap said everything was fine.
+- **The Ollama model weights.** aider runs locally, so it needs no API key, but
+  the weights are several GB and do not belong in a dotfiles repo. Start with
+  `brew services start ollama`, then pull at least one supported tag:
+  `qwen2.5-coder:7b`, `qwen2.5-coder:14b`, or `qwen3-coder:30b`.
+  `bootstrap.sh` reports whether one is present but never downloads or selects
+  it. In Neovim run `:AiModel` once per process; at a shell pass
+  `--model ollama_chat/<tag>` explicitly.
 - **`cursor-agent login`.** A browser flow, and therefore the one step here that
   `bootstrap.sh` genuinely cannot automate. `CURSOR_API_KEY` in
   `~/.config/zsh/local/` is the scriptable alternative. Verify with
@@ -256,9 +256,11 @@ Deliberately — these are secrets or machine state, and are excluded in
 - aider's own state — `.aider.chat.history.md`, `.aider.input.history` and the
   `.aider.tags.cache.v*` symbol cache. aider writes these into whatever
   directory it runs in and offers to gitignore them per project; `.chezmoiignore`
-  denies `.aider*` here with holes for the two managed files,
-  `~/.aider.conf.yml` and `~/.aider.model.settings.yml`. The chat transcript is
-  the most sensitive file this setup produces, because it contains whatever
+  denies `.aider*` here with holes for the three managed files:
+  `~/.aider.conf.yml`, `~/.aider.model.settings.yml`, and
+  `~/.aider.model.metadata.json`. The last one keeps aider's prompt budget below
+  Ollama's real per-model context; none carries credentials. The chat transcript
+  is the most sensitive file this setup produces, because it contains whatever
   source was in context.
 - `~/.claude.json` — Claude Code session state next to, not inside, `~/.claude/`.
   The `.claude/**` rule does not match a sibling file; without this line a
@@ -273,9 +275,9 @@ Deliberately — these are secrets or machine state, and are excluded in
   (pager, editor, delta theme); git reads both files, and `~/.gitconfig` wins on
   any key set in both.
 - `~/Library/Application Support/Code/` — VS Code. Not an editor this setup uses:
-  the IDE is Neovim and the one GUI editor is Cursor, whose settings are also
-  unmanaged. The file is owned by its extensions, which rewrite it, so managing
-  it only ever committed things nobody chose.
+  the managed IDE is Neovim and all GUI editor state is unmanaged. The file is
+  owned by its extensions, which rewrite it, so managing it only ever committed
+  things nobody chose.
 - `~/.config/karabiner/` — the remaps are keyed to one external keyboard's
   `vendor_id`/`product_id`, and the profile holds a work VPN hotkey. Karabiner
   owns and rewrites the file, so set it up by hand on a new machine.

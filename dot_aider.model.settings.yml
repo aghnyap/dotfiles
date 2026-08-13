@@ -21,12 +21,12 @@
 # ~/.zshenv would look correct and do nothing. Setting num_ctx here travels with
 # the request instead, so it works no matter how the server was started.
 #
-# These windows are shared with Neovim. Every num_ctx below matches the CONTEXT
-# table in dot_config/nvim/lua/util/ai_model.lua. Neovim picks a model from
-# total RAM and passes `--model ollama_chat/<tag>`, but the window still comes
-# from this file, so the two have to agree -- otherwise an editor session gets a
-# different context than the same model gets from the shell. Change one, change
-# the other.
+# These totals are shared with Neovim. Every num_ctx below matches the CONTEXT
+# table in dot_config/nvim/lua/util/ai_model.lua. The corresponding entry in
+# ~/.aider.model.metadata.json tells aider the smaller prompt budget after a
+# 1024-token output reserve. All three values are one contract: if they drift,
+# either aider rejects usable context or Ollama silently truncates an oversized
+# prompt. Change all three together.
 #
 # edit_format: whole. Aider defaults unfamiliar models to `whole` because it is
 # the easiest format for a model to produce correctly -- it returns the entire
@@ -45,26 +45,25 @@
   extra_params:
     # 16k. `whole` sends entire files, so the window fills faster than it would
     # with diffs -- but a 7B's KV cache at 16k is only ~0.5 GB, small enough to
-    # stay well inside the GPU's share of unified memory anywhere. Neovim makes
-    # this the default on a 16 GB M3 Air and the toggle target on 32 GB.
+    # stay well inside the GPU's share of unified memory anywhere.
     num_ctx: 16384
 
 - name: ollama_chat/qwen2.5-coder:14b
   edit_format: whole
   use_repo_map: true
   extra_params:
-    # 8k, not 16k. The 16 GB M3 Air is the only machine that selects the 14b,
-    # and 9 GB of weights plus a 16k cache exceeds that machine's ~10.5 GB
-    # ceiling outright. At 8k it lands near 10.2 GB -- it fits, barely.
+    # 8k, not 16k. On a 16 GB M3 Air, 9 GB of weights plus a 16k cache exceeds
+    # the GPU's ~10.5 GB ceiling outright. At 8k it lands near 10.2 GB -- it
+    # fits, barely.
     num_ctx: 8192
 
 - name: ollama_chat/qwen3-coder:30b
   edit_format: whole
   use_repo_map: true
   extra_params:
-    # qwen3-coder:30b is a 19 GB MoE, the Neovim default on 32 GB machines. 16k
-    # keeps weights plus KV cache near 19.8 GB, under the ~21.3 GB the GPU gets
-    # by default; 32k adds another 0.8 GB and leaves nothing spare.
+    # qwen3-coder:30b is a 19 GB MoE for a 32 GB-class Mac. 16k keeps weights
+    # plus KV cache near 19.8 GB, under the ~21.3 GB the GPU gets by default;
+    # 32k adds another 0.8 GB and leaves nothing spare.
     num_ctx: 16384
 
 # ── Adding another model ─────────────────────────────────────────────────────
@@ -73,10 +72,9 @@
 #   2. add a block above (the name must match the tag exactly)
 #   3. aider --model ollama_chat/gpt-oss:20b            # try it for a session
 #
-# Keep it by pointing `model:` in ~/.aider.conf.yml at it and running
-# `chezmoi apply`; drop it with `ollama rm <tag>`. If Neovim should be able to
-# select it too, add it to both tables in
-# dot_config/nvim/lua/util/ai_model.lua.
+# Keep it by adding matching metadata to ~/.aider.model.metadata.json and a
+# profile to dot_config/nvim/lua/util/ai_model.lua, then select it with
+# :AiModel. Drop it with `ollama rm <tag>`.
 #
 # Keep edit_format: whole for anything in this size class. Raise num_ctx only if
 # you have the memory to spare -- the KV cache scales with it, and a context
@@ -91,14 +89,11 @@
 # generation is bandwidth-bound and the Air has 100 GB/s against the Pro's 200,
 # with no fan to hold the clock up over a long session.
 #
-#   qwen2.5-coder:7b    4.7 GB   ~22 tok/s     23 s measured      (shell default;
-#                                              Neovim's default on a 16 GB Air)
-#   qwen2.5-coder:14b   9.0 GB   ~15-20 tok/s  45-70 s per edit   best published;
-#                                              Neovim's toggle target on 16 GB
+#   qwen2.5-coder:7b    4.7 GB   ~22 tok/s     23 s measured; practical on 16 GB
+#   qwen2.5-coder:14b   9.0 GB   ~15-20 tok/s  45-70 s per edit; tight on 16 GB
 #   gpt-oss:20b        13.8 GB   ~14b speed    Apache 2.0, MoE; unverified
 #                                              against aider's edit parsing
-#   qwen3-coder:30b    19.0 GB   unmeasured    MoE; Neovim's default on 32 GB,
-#                                              16k context to protect memory
+#   qwen3-coder:30b    19.0 GB   unmeasured    MoE; 32 GB-class, 16k context
 #   qwen2.5-coder:32b  19.9 GB   ~8-10 tok/s   1.5-2 min per edit -- NOT worth
 #                                              it: scores below the 14b and sits
 #                                              at this machine's Metal ceiling

@@ -11,7 +11,7 @@
 
 local opt = vim.opt
 
--- Initialise the local Ollama model before plugin specs read it.
+-- Register :AiModel before plugin specs read the session-only selection state.
 require 'util.ai_model'
 
 -- Absolute line numbers only. LazyVim defaults to relativenumber; Cursor and

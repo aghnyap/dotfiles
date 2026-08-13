@@ -189,13 +189,29 @@ check "ollama"                 'command -v ollama'
 # from a healthy one by process name alone. Start it with:
 #     brew services start ollama
 check "ollama serving"         'curl -sf --max-time 5 http://127.0.0.1:11434/api/tags'
-# The model aider is configured to use, read out of its own config rather than
-# hardcoded, so this keeps telling the truth after the model is switched. The
-# pull is several GB and is the one part of this setup that never travels
-# between machines -- without it aider fails at request time, long after
-# bootstrap has said everything is fine.
-check "aider's model pulled" \
-  'ollama ls 2>/dev/null | grep -qF "$(sed -n "s|^model: ollama_chat/||p" "$HOME/.aider.conf.yml")"'
+# Model weights are the one part of this setup that never travels between
+# machines. There is no default: :AiModel presents the supported catalog and a
+# human chooses once per Neovim session. Require at least one catalog model so
+# local pairing is possible without deciding which one belongs on this Mac.
+# `ollama show` is an exact lookup; grepping `ollama ls` would let one tag
+# accidentally satisfy another.
+check "at least one local AI model pulled" '
+  models=$(nvim --headless \
+    -c "lua io.write(table.concat(require(\"util.ai_model\").models(), \"\\n\"))" \
+    -c qa 2>/dev/null)
+  if [[ -z $models ]]; then
+    found=0
+  else
+    found=0
+    while IFS= read -r model; do
+      if ollama show "$model" >/dev/null 2>&1; then
+        found=1
+        break
+      fi
+    done <<< "$models"
+  fi
+  (( found == 1 ))
+'
 # The c4 module is checked separately from the binary because it fails in its own
 # way: dot_zshrc's `_mods` array names every module individually, so a module
 # that exists on disk but is missing from that list never loads, silently, and
@@ -269,40 +285,23 @@ if ! git config --get user.email >/dev/null 2>&1; then
 EOF
 fi
 
-# Model credentials, reported for the same reason as git identity: they are the
-# machine's, not the repo's. Deliberately NOT a `check` -- a fresh machine is
-# supposed to lack these, and failing the run for it would make a correct
-# bootstrap look broken.
-# Gated on the API key only. `cursor-agent status` looks like the obvious second
-# condition and is not trustworthy: on the machine this was written on it printed
-# "Login successful! / Logged in" while `cursor-agent --list-models` answered
-# "No models available for this account". Reporting on a signal known to be wrong
-# is worse than not reporting -- so the text below names the command that does
-# tell the truth, and this only decides whether to print at all.
-if [[ -z ${ANTHROPIC_API_KEY:-} ]]; then
+# cursor-agent credentials are the machine's, not the repo's. Deliberately NOT a
+# `check` -- a fresh machine is supposed to lack them, and failing the run for
+# it would make a correct bootstrap look broken. aider is absent here on
+# purpose: it uses the local Ollama models verified above and needs no key.
+#
+# A non-empty model listing is the only signal that proves it can work. Neither
+# CURSOR_API_KEY's presence nor `cursor-agent status` is sufficient: an invalid
+# key and a browser-authenticated account with no model entitlement have both
+# looked logged in while being unable to run an agent.
+cursor_models=$(cursor-agent --list-models 2>/dev/null || true)
+if ! grep -q '^auto - ' <<< "$cursor_models"; then
   cat <<'EOF'
 
-==> The AI tools are installed but not authenticated. Both are per-machine and
-    neither belongs in this repo:
-
-      aider         needs ANTHROPIC_API_KEY. Put it in a machine-local module,
-                    which ~/.zshrc sources last and chezmoi never captures:
-
-                      mkdir -p ~/.config/zsh/local
-                      # then add:  export ANTHROPIC_API_KEY=...
-                      $EDITOR ~/.config/zsh/local/ai.zsh
-
-      cursor-agent  needs `cursor-agent login`, a browser flow -- the one step
-                    here no script can do for you. CURSOR_API_KEY in the same
-                    file is the scriptable alternative.
-
-                    Check it with `cursor-agent --list-models`, not with
-                    `cursor-agent status`: status has been seen reporting
-                    "Login successful" for an account that then had no models
-                    available at all.
-
-    Until then <leader>Aa and <leader>Ac open sessions that cannot talk to
-    anything. The model and the rest of aider's defaults are already set, in
-    the managed ~/.aider.conf.yml.
+==> cursor-agent needs `cursor-agent login`, a browser flow -- the one step here
+    no script can do for you. CURSOR_API_KEY in ~/.config/zsh/local/ is the
+    scriptable alternative. Check it with `cursor-agent --list-models`, not
+    `status`: status has reported "Login successful" for an account with no
+    models available. Until then <leader>Ac cannot talk to anything.
 EOF
 fi

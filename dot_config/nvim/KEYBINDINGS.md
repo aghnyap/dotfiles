@@ -274,38 +274,40 @@ resolve against real files, and edits arrive as native Neovim diffs.
 
 ## Local AI — Ollama / Avante
 
-Avante talks to the local Ollama server on `127.0.0.1:11434`. The active model is
-global inside Neovim: `_G.ai_model` is set at startup from `vim.uv.get_total_memory()`,
-so one config gets the largest model each machine can actually hold.
+Avante talks to the local Ollama server on `127.0.0.1:11434`. No local model is
+selected at startup or saved to disk. Run `:AiModel` or press `<leader>aM` once
+per Neovim process; the picker presents every supported profile and the choice
+becomes global only inside that process.
 
-| RAM | Default | `<leader>aM` |
+| Model | Ollama `num_ctx` | Prompt budget |
 | --- | --- | --- |
-| 32 GB+ | `qwen3-coder:30b` @ 16k | `qwen2.5-coder:7b` @ 16k |
-| 16 GB | `qwen2.5-coder:7b` @ 16k | `qwen2.5-coder:14b` @ 8k |
+| `qwen2.5-coder:7b` | 16,384 | 15,360 |
+| `qwen2.5-coder:14b` | 8,192 | 7,168 |
+| `qwen3-coder:30b` | 16,384 | 15,360 |
 
-The context window is a property of the model, not the tier, so the same tag gets
-the same window in Avante and in aider. The tiers and the arithmetic behind those
-numbers are in `lua/util/ai_model.lua`; the matching aider windows are in
-`~/.aider.model.settings.yml`. Change one, change the other.
-
-The 16 GB Air leads with the 7b even though the 14b fits at 8k: the M3 has half an
-M1 Pro's memory bandwidth and no fan, so the 14b runs near 9 tok/s against the 7b's
-18-20, and aider's `whole` format re-sends entire files on every edit.
+The table shows Ollama's total window. Avante and aider reserve 1024 tokens for
+output. The catalog and arithmetic are in `lua/util/ai_model.lua`, aider's
+request totals are in `~/.aider.model.settings.yml`, and its prompt/output
+budgets are in `~/.aider.model.metadata.json`. Change all three together.
 
 | Keys | Action |
 | --- | --- |
 | `<leader>aa` | Avante: ask / open the sidebar |
 | `<leader>aA` | Avante: refresh context |
-| `<leader>aM` | Cycle the local model for Avante and the active aider session |
-| `<leader>aR` | AI memory check — active model, macOS RAM and swap guard |
+| `<leader>aM` | Select this session's local model (close aider before changing it) |
+| `<leader>aR` | On-demand memory check — selected model, macOS RAM and swap |
 | `<leader>avn` | Avante: new ask |
 | `<leader>ave` / `<leader>avf` | Avante: edit / focus |
 | `<leader>avs` / `<leader>avz` | Avante: stop / zen mode |
 | `<leader>avt` / `<leader>avd` | Avante: toggle sidebar / debug |
 | `<leader>avg` / `<leader>avr` / `<leader>avv` | Avante: suggestion / repo map / selection toggles |
 | `<leader>avc` / `<leader>avB` | Avante: add current file / all buffers |
-| `<leader>avm` / `<leader>avh` | Avante: select model / history |
+| `<leader>avh` | Avante: select history |
 | `<leader>avM` / `<leader>avp` | Avante: select ACP model / mode |
+
+Changing the selection is blocked while an aider terminal is running. aider
+0.86.2 can lose the managed prompt budget on its live `/model` path, so close
+the terminal, select, then reopen it; the new launch keeps the correct metadata.
 
 ## Agents — aider and cursor-agent
 
@@ -344,9 +346,10 @@ Saving the file is what fires it. `AI?` asks a question instead of editing. This
 is upstream's own editor-integration story and works in any editor; the plugin
 is convenience on top of it.
 
-> **Neither is set up until you add a key.** aider needs `ANTHROPIC_API_KEY` in
-> `~/.config/zsh/local/*.zsh`, and cursor-agent needs `cursor-agent login` once
-> per machine. Both are machine-local by design and neither is in this repo.
+> **aider needs no key** — it uses the local Ollama model selected with
+> `:AiModel`. cursor-agent still needs `cursor-agent login` once per machine (or
+> `CURSOR_API_KEY` in `~/.config/zsh/local/*.zsh`). Its credentials remain
+> machine-local.
 
 ## Trade-offs to know about
 

@@ -18,24 +18,10 @@ brew "sesh"
 
 # ── Editors ────────────────────────────────────────────────────────────────
 # This setup is terminal-first: the IDE is Neovim, installed below with the rest
-# of the CLI. Cursor is the one GUI editor here, kept for its model rather than
-# its editing surface. No Cursor settings are managed -- only the app.
+# of the CLI. GUI editors are outside the reproducible baseline. Cursor,
+# Android Studio and Xcode may be installed by their user, but this repo neither
+# installs them nor manages their application-owned settings.
 #
-# Android Studio is installed through JetBrains Toolbox, not brew -- which is why
-# it lives in ~/Applications and `brew list` has never heard of it. Adding
-# `cask "android-studio"` would therefore install a SECOND copy into
-# /Applications, two apps sharing one set of config dirs. So Toolbox is what
-# belongs here, and Android Studio comes from it.
-#
-# Toolbox also earns its place for a reason the Brewfile can check: ~/.zprofile
-# puts Toolbox's scripts directory on PATH, which is where the `studio1` and
-# `idea` launchers live. That PATH entry was managed while the thing that creates
-# it was not.
-#
-# Xcode stays absent: not a cask at all, only the App Store or a developer.apple
-# download. Both ship their own JDK and manage their own SDKs, so nothing in this
-# repo depends on either.
-cask "cursor"
 # The Cursor agent as a terminal CLI, wired to <leader>A in Neovim. Installed as
 # a cask rather than by Cursor's `curl https://cursor.com/install | bash`, which
 # self-manages versions under ~/.local/share and leaves a fresh Mac with nothing
@@ -59,9 +45,9 @@ cask "cursor-cli"
 # OLLAMA_CONTEXT_LENGTH exported from ~/.zshenv would do nothing at all.
 #
 # Model weights are NOT installed here -- several GB, pulled per machine with
-# `ollama pull`, and checked by bootstrap.sh.
+# `ollama pull`. There is no default; :AiModel presents the supported catalog
+# once per Neovim session, and bootstrap.sh only checks that one is available.
 brew "ollama"
-cask "jetbrains-toolbox"
 
 # ── Core CLI ───────────────────────────────────────────────────────────────
 brew "neovim"

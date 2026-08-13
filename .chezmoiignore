@@ -59,8 +59,8 @@
 .config/karabiner/**
 
 # VS Code, for the same app-owned reason as Karabiner plus one of its own. This
-# setup is terminal-first -- the IDE is Neovim, and the one GUI editor kept is
-# Cursor -- so a VS Code config has nothing to say here.
+# setup is terminal-first -- the managed IDE is Neovim, and GUI editor settings
+# are outside this repository -- so a VS Code config has nothing to say here.
 #
 # Its settings.json used to be managed, and it was never really authored: it was
 # captured off one Mac wholesale, so whatever the installed extensions had
@@ -77,9 +77,9 @@ Library/Application Support/Code/**
 # 09:37, regenerated with an internal GitLab URL in it.
 .vscode/**
 
-# Cursor, for the same reason and then some. It is the one GUI editor on the
-# keep-list, installed by the Brewfile and configured by whoever owns the
-# machine -- nothing here manages a Cursor setting.
+# Cursor, for the same reason and then some. The GUI app is neither installed
+# nor configured by this repository; keep the guards because a manual install
+# can still create sensitive machine-local state.
 #
 # These entries exist for `add`, not for `apply`: nothing is managed at these
 # paths, so there is nothing to skip on apply. What they refuse is the accidental
@@ -96,18 +96,19 @@ Library/Application Support/Code/**
 .cursor/**
 Library/Application Support/Cursor/**
 
-# aider's own state, denied with one hole for the config.
+# aider's own state, denied with holes for its three managed configs.
 #
 # aider writes .aider.input.history, .aider.chat.history.md and a
 # .aider.tags.cache.v* symbol cache into whatever directory it runs in. In a
 # project it offers to gitignore them itself; in $HOME nothing would, and a
 # chat transcript is the single most sensitive file this setup can produce --
-# it contains whatever source was in context. ~/.aider.conf.yml is the one
-# managed file and carries no credentials; the API key lives in
-# ~/.config/zsh/local/ with everything else machine-specific.
+# it contains whatever source was in context. The config, model settings and
+# model metadata files below carry no credentials. aider uses local Ollama and
+# has no API key at all.
 .aider*
 !.aider.conf.yml
 !.aider.model.settings.yml
+!.aider.model.metadata.json
 
 # ~/.claude, denied as a tree with one hole in it.
 #

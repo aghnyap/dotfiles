@@ -8,11 +8,10 @@ Covers mobile (Flutter, Android/Kotlin, iOS/Swift, React Native), web
 (React/TS), backend (Kotlin/JVM), and mobile/web security work.
 
 **Neovim is the IDE**, which is why every editor concern here is a terminal
-concern. The GUI editors that remain are deliberately unmanaged: Cursor is kept
-for its model rather than its editing surface, and Android Studio and Xcode are
-the fallback for mobile work. None of the three has config in this repo, so
-moving to another machine carries the environment without dragging along an
-editor's accumulated state.
+concern. GUI editors are deliberately outside this repository: Cursor, Android
+Studio and Xcode may be installed when needed, but none is installed or
+configured here. Moving to another machine carries the development environment
+without dragging along an editor's accumulated state.
 
 ## Bootstrap a new machine
 
@@ -97,8 +96,9 @@ terminal browser (chawan).
 | `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4`, plus `git-aliases` as a fallback when oh-my-zsh is absent. Each is named in `_mods` in `dot_zshrc` — a file added here loads only once it is listed there |
 | `dot_config/nvim/` | LazyVim + custom plugin specs. See `KEYBINDINGS.md`. |
 | `dot_config/tmux/` | tmux.conf + project layouts (mobile/web/backend/sec/arch) |
-| `dot_aider.conf.yml` | aider's model and defaults — no credentials, so it is managed |
+| `dot_aider.conf.yml` | aider's non-model defaults — no credentials, so it is managed |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. Both are load-bearing: Ollama's 2k default silently truncates, and `whole` beats `diff` on a small model |
+| `dot_aider.model.metadata.json` | Per-model prompt/output limits. Keeps aider's own token budget below the `num_ctx` Ollama actually allocates |
 | `dot_claude/skills/` | Claude Code skills (`c4-architect`). The only managed path under `~/.claude`; the rest of that tree is denied in `.chezmoiignore` |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig`, which holds identity, is not managed |
@@ -188,9 +188,9 @@ preview and export, **Structurizr DSL** (Jakub Jirák, `29351`) is the only plug
 that has them, and it is paid.
 
 The IDE terminal needs no setup — it starts a login shell, which sources
-`~/.zshrc`, which sources `c4.zsh`, so `c4-local` and `c4-export` are there. The
-one gotcha: Toolbox-launched IDEs inherit the GUI environment, so `structurizr`
-is visible only because `/opt/homebrew/bin` is on the login-shell PATH.
+`~/.zshrc`, which sources `c4.zsh`, so `c4-local` and `c4-export` are there.
+`/opt/homebrew/bin` is restored by the managed login-shell PATH, so
+`structurizr` is available regardless of how the IDE was installed.
 
 There is no embedded-browser option. JetBrains has no general-purpose webview to
 point at `localhost:8081` — the choices are *Open in Browser* or plugin `29351`'s
@@ -309,14 +309,26 @@ editor. `<leader>A` is the group: `Aa` toggle aider, `Am` its command menu,
 `Ac`/`Ar` cursor-agent toggle/resume. Full table in
 `~/.config/nvim/KEYBINDINGS.md`.
 
-**aider needs no key at all — it runs a local model.** Ollama serves
-`qwen2.5-coder:7b` on `127.0.0.1:11434`; nothing leaves the machine and there is
-nothing to authenticate. The one per-machine step is the model download:
+**aider needs no key at all — it runs a local model.** Ollama serves on
+`127.0.0.1:11434`; nothing leaves the machine and there is nothing to
+authenticate. Model weights are the one per-machine step. Pull whichever
+supported profile belongs on that Mac; there is no configured default:
 
 ```sh
 brew services start ollama
-ollama pull qwen2.5-coder:7b        # 4.7 GB
+ollama pull qwen2.5-coder:7b        # 4.7 GB; 16k context
+ollama pull qwen2.5-coder:14b       # 9.0 GB; 8k context
+ollama pull qwen3-coder:30b         # 19.0 GB; 16k context, 32 GB-class Mac
 ```
+
+`bootstrap.sh` asks the same Lua catalog and reports whether at least one of
+these weights exists; it never downloads or selects a multi-gigabyte model.
+Run `:AiModel` or press `<leader>aM` once per Neovim process. The selection is
+not persisted. At a shell, pass `--model ollama_chat/<tag>` explicitly.
+
+Close an active aider terminal before changing the selection, then reopen it.
+aider 0.86.2 can replace the managed context metadata on its live `/model`
+path; a fresh launch always reads the safe local budget.
 
 cursor-agent still needs `cursor-agent login` once per machine — a browser flow,
 which is why `bootstrap.sh` cannot do it. `CURSOR_API_KEY` is the scriptable
@@ -329,47 +341,50 @@ Single-file, conventional edits are usually fine; multi-file refactors and
 cross-language work fail noticeably more often. That is the trade for free and
 offline, and no amount of configuration tunes it away.
 
-Two managed files, neither holding credentials: `~/.aider.conf.yml` (model,
-`auto-commits: false` so aider does not commit on your behalf) and
-`~/.aider.model.settings.yml` (context size and edit format). Both live in
-`$HOME`, the lowest-priority location aider searches — home → repo root → cwd —
-so any project can override them.
+Three managed files, none holding credentials: `~/.aider.conf.yml` (non-model
+defaults), `~/.aider.model.settings.yml` (request context and edit format), and
+`~/.aider.model.metadata.json` (the smaller prompt/output budgets aider uses
+before sending that request). They live in `$HOME`, the lowest-priority location
+aider searches — home → repo root → cwd — so a project can override them.
 
 ### Adding another model
 
-```sh
-ollama pull qwen2.5-coder:14b                     # 1. fetch it
-$EDITOR ~/dotfiles/dot_aider.model.settings.yml   # 2. uncomment the template
-aider --model ollama_chat/qwen2.5-coder:14b       # 3. try it for a session
-```
-
-Keep it by pointing `model:` in `dot_aider.conf.yml` at it and running
-`chezmoi apply`. Drop it with `ollama rm <tag>`.
+The 7b, 14b and 30b are already configured. To add a different tag, pull it,
+add matching entries to `dot_aider.model.settings.yml` and
+`dot_aider.model.metadata.json`, then add its total context to the catalog in
+`lua/util/ai_model.lua`. Those three values are one contract: Ollama gets the
+total `num_ctx`, while aider and Avante get that total minus the 1024-token
+output reserve. Drop unused weights with `ollama rm <tag>`.
 
 Only the first row is measured — on an M1 Pro, warm, 21.1 and 23.2 tok/s over two
 runs, and a real aider edit (one-line fix in a small file) took **23 s** end to
 end. The rest are sourced estimates scaled from published benchmarks, because
-those models were never pulled here. Treat them as the right order of magnitude
+they have not been benchmarked here. Treat them as the right order of magnitude
 and nothing more. Note also that `whole` format re-emits the entire file, so time
 scales with file size rather than with the size of the change:
 
 | Tag | Disk | Speed here | |
 | --- | --- | --- | --- |
-| `qwen2.5-coder:7b` | 4.7 GB | **~22 tok/s, 23 s for a one-line fix — measured** | the default |
-| `qwen2.5-coder:14b` | 9.0 GB | ~15-20 tok/s, 45-70 s/edit | best score aider has published at a runnable size |
+| `qwen2.5-coder:7b` | 4.7 GB | **~22 tok/s, 23 s for a one-line fix — measured** | practical 16 GB choice |
+| `qwen2.5-coder:14b` | 9.0 GB | ~15-20 tok/s, 45-70 s/edit | 8k context; tight on 16 GB |
+| `qwen3-coder:30b` | 19.0 GB | unmeasured | 32 GB-class; 16k context stays below the Metal ceiling |
 | `gpt-oss:20b` | 13.8 GB | ≈14b (MoE) | Apache 2.0; unverified against aider's edit parsing |
 | `qwen2.5-coder:32b` | 19.9 GB | ~8-10 tok/s, 1.5-2 min/edit | **skip it** — scores *below* the 14b and sits at this machine's Metal ceiling |
 | `codestral` | — | — | **licence forbids commercial use** |
 
-Two settings in `~/.aider.model.settings.yml` are load-bearing and easy to get
-wrong. `num_ctx` exists because *"Ollama uses a 2k context window by default…
+The context settings are load-bearing and easy to get wrong. `num_ctx` in
+`~/.aider.model.settings.yml` exists because *"Ollama uses a 2k context window by default…
 It also silently discards context that exceeds the window"* — the failure is
 invisible, you simply get worse edits. And it is set **per-request** rather than
 via `OLLAMA_CONTEXT_LENGTH`, because `brew services` starts ollama through
 launchd, which does not inherit your shell environment — exporting it would look
-right and do nothing. `edit_format: whole` is the second: returning a whole file
-is far easier for a small model than a byte-exact search/replace block, and the
-same 32B model scores 8.0% with diff against 16.4% with whole.
+right and do nothing. `~/.aider.model.metadata.json` prevents the opposite side
+of the same bug: aider otherwise budgets against the model's advertised 32k or
+262k window and can hand a 16k Ollama runner a prompt it silently truncates. The
+metadata reserves 1024 tokens for output. `edit_format: whole` is the third
+setting: returning a whole file is far easier for a small model than a byte-exact
+search/replace block, and the same 32B model scores 8.0% with diff against 16.4%
+with whole.
 
 **aider is installed with `uv`, not Homebrew,** although the formula exists and
 is current. Upstream's docs are blunt about it: *"While aider is available in a
