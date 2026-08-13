@@ -11,6 +11,9 @@
 
 local opt = vim.opt
 
+-- Initialise the local Ollama model before plugin specs read it.
+require 'util.ai_model'
+
 -- Absolute line numbers only. LazyVim defaults to relativenumber; Cursor and
 -- VS Code do not, and this config is deliberately shaped like them.
 opt.relativenumber = false

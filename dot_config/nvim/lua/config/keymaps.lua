@@ -222,6 +222,14 @@ map('n', '<leader>mr', '<cmd>SatelliteRefresh<cr>', { desc = 'Refresh overview s
 map('n', '<leader>mo', '<cmd>AerialToggle!<cr>', { desc = 'Toggle symbol outline' })
 map('n', '<leader>mf', '<cmd>AerialToggle<cr>', { desc = 'Focus symbol outline' })
 
+-- ── Local AI (<leader>aM / <leader>aR) ─────────────────────────
+map('n', '<leader>aM', function()
+  require('util.ai_model').toggle()
+end, { desc = 'Toggle local AI model' })
+map('n', '<leader>aR', function()
+  require('util.ai_memory').check()
+end, { desc = 'AI memory check' })
+
 -- Sticky scroll: jump up to the enclosing scope pinned at the top of the
 -- window. `[c` is free here -- gitsigns uses `]h` / `[h` for hunks.
 map('n', '[c', function()

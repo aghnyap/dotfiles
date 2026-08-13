@@ -238,7 +238,8 @@ selection. In blockwise, `I` / `A` insert on every line.
 | `F` | Flutter |
 | `X` | Xcode / Swift |
 | `h` | HTTP (kulala) |
-| `a` | AI / Claude |
+| `a` | AI / Claude / Avante |
+| `A` | agents (aider / cursor-agent) |
 | `m` | overview & outline |
 | `D` | database UI |
 
@@ -294,6 +295,15 @@ Filters are retroactive — they apply to what already scrolled past.
 | `<leader>as` / `<leader>ab` | Send selection / add buffer |
 | `<leader>ai` (in explorer) | Add the highlighted file |
 | `<leader>am` / `<leader>at` | Pick model / connection status |
+
+### Local AI — Ollama / Avante
+| Keys | Action |
+| --- | --- |
+| `<leader>aa` | Avante: ask / open sidebar |
+| `<leader>aA` | Avante: refresh context |
+| `<leader>aM` | Toggle local model (`qwen3-coder:30b` ⇄ `qwen2.5-coder:7b`) |
+| `<leader>aR` | AI memory check (macOS RAM + swap) |
+| `<leader>av…` | Avante extras: new/edit/focus/stop/zen/toggles/files/model/history |
 
 There is **no inline ghost-text completion**, by choice — see the note in
 `README.md`.
@@ -437,11 +447,13 @@ with debugger on `:5005`.
 `AI?` comments when you save, no plugin needed · `cursor-agent` Cursor's agent as
 a CLI, `cursor-agent -p '…'` for a scripted one-shot.
 
-In Neovim both live under `<leader>A` — `Aa` aider, `Ac` cursor-agent. Claude
-stays on `<leader>a`.
+In Neovim terminal agents live under `<leader>A` — `Aa` aider, `Ac`
+cursor-agent. Claude and Avante stay on `<leader>a`.
 
-**aider runs a local model, no key and no network.** Ollama serves
-`qwen2.5-coder:7b` on `127.0.0.1:11434` (loopback only).
+**aider runs a local model, no key and no network.** The shell default remains
+`qwen2.5-coder:7b`; Neovim starts local AI on `qwen3-coder:30b` and
+`<leader>aM` toggles it between the two. Ollama serves on
+`127.0.0.1:11434` (loopback only).
 `brew services start ollama` · `ollama ls` what is downloaded · `ollama ps`
 what is loaded in RAM · `ollama stop <tag>` unload it · `ollama rm <tag>`
 delete it.

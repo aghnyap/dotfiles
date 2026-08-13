@@ -41,6 +41,14 @@
     # inside the GPU's share of unified memory on a 32 GB machine.
     num_ctx: 16384
 
+- name: ollama_chat/qwen3-coder:30b
+  edit_format: whole
+  use_repo_map: true
+  extra_params:
+    # qwen3-coder:30b is a 19 GB MoE. Keep the same 16k window as Avante so the
+    # model has room to work without crowding unified memory into swap.
+    num_ctx: 16384
+
 # ── Adding another model ─────────────────────────────────────────────────────
 #
 #   1. ollama pull qwen2.5-coder:14b
@@ -65,6 +73,8 @@
 #   qwen2.5-coder:14b   9.0 GB   ~15-20 tok/s  45-70 s per edit   best published
 #   gpt-oss:20b        13.8 GB   ~14b speed    Apache 2.0, MoE; unverified
 #                                              against aider's edit parsing
+#   qwen3-coder:30b    19.0 GB   unmeasured    MoE; Neovim-local default,
+#                                              16k context to protect memory
 #   qwen2.5-coder:32b  19.9 GB   ~8-10 tok/s   1.5-2 min per edit -- NOT worth
 #                                              it: scores below the 14b and sits
 #                                              at this machine's Metal ceiling

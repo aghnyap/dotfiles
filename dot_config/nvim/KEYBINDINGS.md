@@ -272,6 +272,27 @@ open.
 Claude sees your active buffer and selection automatically, `@`-mentions
 resolve against real files, and edits arrive as native Neovim diffs.
 
+## Local AI — Ollama / Avante
+
+Avante talks to the local Ollama server on `127.0.0.1:11434`. The active model is
+global inside Neovim: `_G.ai_model` starts at `qwen3-coder:30b` and toggles to
+`qwen2.5-coder:7b`.
+
+| Keys | Action |
+| --- | --- |
+| `<leader>aa` | Avante: ask / open the sidebar |
+| `<leader>aA` | Avante: refresh context |
+| `<leader>aM` | Toggle the local model for Avante and the active aider session |
+| `<leader>aR` | AI memory check — macOS RAM and swap guard |
+| `<leader>avn` | Avante: new ask |
+| `<leader>ave` / `<leader>avf` | Avante: edit / focus |
+| `<leader>avs` / `<leader>avz` | Avante: stop / zen mode |
+| `<leader>avt` / `<leader>avd` | Avante: toggle sidebar / debug |
+| `<leader>avg` / `<leader>avr` / `<leader>avv` | Avante: suggestion / repo map / selection toggles |
+| `<leader>avc` / `<leader>avB` | Avante: add current file / all buffers |
+| `<leader>avm` / `<leader>avh` | Avante: select model / history |
+| `<leader>avM` / `<leader>avp` | Avante: select ACP model / mode |
+
 ## Agents — aider and cursor-agent
 
 Both drive a CLI in a terminal split on the right. That is a different thing from
@@ -279,14 +300,16 @@ the Claude integration above: claudecode.nvim makes Neovim the editor Claude Cod
 *drives* — it sees the buffer, resolves `@`-mentions against real files and
 returns native diffs. These two edit files on disk and the buffer reloads.
 
-`<leader>A`, not `<leader>a`, because the AI group already holds 13 Claude
+`<leader>A`, not `<leader>a`, because the AI group holds Claude and Avante
 bindings and this keeps that muscle memory intact.
 
 | Keys | Action |
 | --- | --- |
 | `<leader>Aa` | aider: toggle the session |
+| `<leader>Ao` | aider: toggle the same session; first open uses a float |
 | `<leader>Am` | aider: command menu (fuzzy over its slash-commands) |
 | `<leader>Ab` / `<leader>Ad` | aider: add / drop this buffer |
+| `<leader>AO` | aider: add this buffer read-only |
 | `<leader>As` | aider: send selection (visual) or buffer |
 | `<leader>AR` | aider: reset the session |
 | `<leader>AH` | aider: health check — run this first if something looks wrong |

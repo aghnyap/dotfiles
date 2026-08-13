@@ -39,9 +39,8 @@ end
 -- plugin below is convenience on top -- add/drop files, send a selection --
 -- not capability aider lacks.
 --
--- Its own terminal, separate from the plugin's, because the plugin's args are
--- fixed at setup time and this mode is a different way of working rather than
--- a toggle within the same session.
+-- Its own terminal, separate from the plugin's, because watch-files mode is a
+-- different way of working rather than a toggle within the same session.
 local function aider_watch()
   if vim.fn.executable('aider') == 0 then
     vim.notify('aider is not installed -- see run_onchange_before_install-packages.sh', vim.log.levels.ERROR, { title = 'agents' })
@@ -63,21 +62,39 @@ return {
     -- despite 558 stars, and aweis89/aider.nvim is deprecated by its own author
     -- in favour of a non-aider-specific successor. This one is the maintained
     -- choice, not the popular one.
-    opts = {
+    opts = function()
+      local ai_model = require 'util.ai_model'
+
       -- Defaults are --no-auto-commits --pretty --stream. The first matters and
       -- is kept: aider commits every edit otherwise, and ~/.aider.conf.yml sets
       -- auto-commits: false for the same reason outside Neovim.
-      args = { '--no-auto-commits', '--pretty', '--stream' },
-      -- aider edits files on disk, so without this the buffer keeps showing the
-      -- old contents until something forces a re-read. Needs 'autoread', which
-      -- LazyVim sets.
-      auto_reload = true,
-      win = { position = 'right', wo = { winbar = 'Aider' } },
-    },
+      return {
+        args = ai_model.aider_args(),
+        -- aider edits files on disk, so without this the buffer keeps showing the
+        -- old contents until something forces a re-read. Needs 'autoread', which
+        -- LazyVim sets.
+        auto_reload = true,
+        win = { position = 'right', wo = { winbar = 'Aider' } },
+      }
+    end,
     keys = {
       { '<leader>Aa', '<cmd>Aider toggle<cr>', desc = 'aider: toggle' },
+      {
+        '<leader>Ao',
+        function()
+          require('nvim_aider.api').toggle_terminal { win = { position = 'float' } }
+        end,
+        desc = 'aider: toggle float',
+      },
       { '<leader>Am', '<cmd>Aider command<cr>', desc = 'aider: command menu' },
       { '<leader>Ab', '<cmd>Aider add<cr>', desc = 'aider: add buffer' },
+      {
+        '<leader>AO',
+        function()
+          require('nvim_aider.api').add_read_only_file()
+        end,
+        desc = 'aider: add buffer read-only',
+      },
       { '<leader>Ad', '<cmd>Aider drop<cr>', desc = 'aider: drop buffer' },
       { '<leader>As', '<cmd>Aider send<cr>', mode = { 'n', 'v' }, desc = 'aider: send selection/buffer' },
       { '<leader>AR', '<cmd>Aider reset<cr>', desc = 'aider: reset session' },
@@ -101,6 +118,7 @@ return {
     opts = {
       spec = {
         { '<leader>A', group = 'agents', mode = { 'n', 'v' } },
+        { '<leader>av', group = 'avante', mode = 'n' },
       },
     },
   },
