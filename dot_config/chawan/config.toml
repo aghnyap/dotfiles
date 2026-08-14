@@ -58,9 +58,18 @@ download-dir = "$HOME/Downloads/"
 # and ~/.config/zsh/aliases.zsh exports both as nvim.
 
 # ── Per-site escapes ────────────────────────────────────────────────────────
-# Override scripting or cookies for one host. `url` matches the whole URL.
-#
-# [[siteconf]]
-# url = '^https://(www\.)?example\.com/'
-# scripting = true
-# cookie = true
+# GitLab OmniAuth: the Google control is a POST form, but GitLab's JS
+# intercepts submit and then dies (no MutationObserver). JS off on sign-in
+# so Enter submits the form. Google's own pages keep JS in "app" mode.
+[[siteconf]]
+url = '^https://[^/]+/users/(sign_in|auth)/'
+scripting = false
+cookie = "save"
+referer-from = true
+
+[[siteconf]]
+host = '(.*\.)?google\.com'
+scripting = "app"
+cookie = "save"
+referer-from = true
+share-cookie-jar = "google.com"

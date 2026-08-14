@@ -384,6 +384,7 @@ like it is about your data rather than about the alias. `\grep` works too.
 `f [query]` fuzzy-find and edit · `rgf <pattern>` ripgrep with preview ·
 `mkcd` · `extract <archive>` · `port <n>` · `killport <n>` · `ips` ·
 `serve` · `jsonf` · `path` · `reload` · `localip` · `now` · `cha [url]` terminal browser ·
+`term-tab [cmd]` Ghostty tab (never a new window) · `cha-tab [url]` same for `$BROWSER` ·
 `mancha <page>` man pages in the browser.
 
 Git: `gs` `gla` `gpl` `lg` (lazygit) · `gbf` fuzzy branch switch ·
@@ -587,9 +588,16 @@ toggles cookies for the current page; a `[[siteconf]]` block can pin them per
 host. `M-j` toggles JS for the current page if you want it off somewhere.
 
 Neovim never calls macOS `open`. `gx`, `:Open`, `<leader>gB` (git browse),
-markdown preview, and C4 `<leader>Cb` all start `cha` in a new tmux window
-named `cha` (or a Neovim terminal split if you are not in tmux). The shell
-exports `BROWSER=cha` for anything else that honours it.
+markdown preview, C4 `<leader>Cb`, and `mancha` all start `cha` in a **new
+Ghostty tab** of the current window (`term-tab`), never a new window. The
+shell exports `BROWSER=cha-tab`. `term-tab <cmd>` is the generic opener.
+
+GitLab's "Google" control is a form, not a link. Put the cursor on it with
+`]` or `f`, then **Enter** (mouse highlight does not submit). JS is off on
+`/users/sign_in` so that POST is not swallowed. After redirect, Google's
+pages use `scripting = "app"`. If Google's account picker is still blank,
+the OAuth SPA is beyond chawan — log in once in a GUI browser and stop;
+chawan cannot complete that flow.
 
 Worth knowing with global JS: this build reports itself as `not sandboxed`
 (`cha -v`), so buffer processes are not isolated — running arbitrary sites'
@@ -627,4 +635,5 @@ here without applying the configuration.
 | `dot_config/zsh/{aliases,functions,dev,sec,fzf,tools,csiu,c4}.zsh` | shell |
 | `dot_config/zsh/git-aliases.zsh` | fallback only — skipped when oh-my-zsh is present |
 | `dot_config/chawan/config.toml` | terminal browser |
+| `dot_local/bin/executable_term-tab` | Ghostty new-tab launcher |
 | `dot_config/nvim/KEYBINDINGS.md` | the exhaustive Neovim reference |

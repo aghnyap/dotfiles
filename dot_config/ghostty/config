@@ -27,6 +27,9 @@ window-padding-balance = true
 window-colorspace = display-p3
 window-save-state = always
 macos-titlebar-style = tabs
+# Dock drops and scripted launches (`term-tab`, $BROWSER) join this window.
+macos-dock-drop-behavior = new-tab
+macos-applescript = true
 mouse-hide-while-typing = true
 confirm-close-surface = false
 shell-integration = detect

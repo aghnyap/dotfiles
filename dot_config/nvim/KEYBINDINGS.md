@@ -85,7 +85,7 @@ Neovim splits and tmux panes with no prefix and no mode change. It needs the
 matching plugin in `~/.config/tmux/tmux.conf`, which is installed.
 
 URLs open in **chawan**, not Chrome/Arc. `gx`, `:Open`, `<leader>gB`, markdown
-preview, and `<leader>Cb` all run `cha` (new tmux window named `cha`).
+preview, and `<leader>Cb` all run `cha` in a new Ghostty tab (`term-tab`).
 
 ## Debug (nvim-dap)
 

@@ -56,7 +56,7 @@ alias vi='nvim'
 alias vim='nvim'
 export EDITOR='nvim'
 export VISUAL='nvim'
-export BROWSER='cha'
+export BROWSER='cha-tab'
 
 
 # ── Config shortcuts ────────────────────────────────────────────────────────

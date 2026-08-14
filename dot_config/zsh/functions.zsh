@@ -198,10 +198,16 @@ mancha() {
     print -u2 'usage: mancha [section] <name>'
     return 1
   fi
+  local target
   if (( $# >= 2 )) && [[ $1 == <-> ]]; then
-    cha "man:$2($1)"
+    target="man:$2($1)"
   else
-    cha "man:$1"
+    target="man:$1"
+  fi
+  if (( $+commands[term-tab] )); then
+    term-tab cha "$target"
+  else
+    cha "$target"
   fi
 }
 

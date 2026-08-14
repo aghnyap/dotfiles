@@ -32,9 +32,10 @@ export ANDROID_SDK_ROOT=$ANDROID_HOME   # legacy name; some Gradle/CI tooling st
 # 127.0.0.1, not localhost: ollama binds loopback v4 by default.
 export OLLAMA_API_BASE=http://127.0.0.1:11434
 
-# Terminal browser. Neovim still wraps vim.ui.open (macOS `open` ignores this);
-# the export covers shells, `gx` helpers, and anything that does honour $BROWSER.
-export BROWSER=cha
+# Terminal browser in a Ghostty tab (never a new window). Neovim still wraps
+# vim.ui.open (macOS `open` ignores this); the export covers shells and anything
+# that does honour $BROWSER.
+export BROWSER=cha-tab
 
 # JAVA_HOME follows the mise pin first, because mise is what this repo installs
 # and its shims already come before $JAVA_HOME/bin below -- if the two disagreed,
