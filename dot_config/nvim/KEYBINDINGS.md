@@ -84,6 +84,9 @@ LazyVim's own.
 Neovim splits and tmux panes with no prefix and no mode change. It needs the
 matching plugin in `~/.config/tmux/tmux.conf`, which is installed.
 
+URLs open in **chawan**, not Chrome/Arc. `gx`, `:Open`, `<leader>gB`, markdown
+preview, and `<leader>Cb` all run `cha` (new tmux window named `cha`).
+
 ## Debug (nvim-dap)
 
 Breakpoints work in Dart, Kotlin/Java, JS/TS, React Native, Go and Swift.
@@ -213,7 +216,7 @@ guides name (`jfcherng/vim-structurizr`) does not exist.
 | Keys | Action |
 | --- | --- |
 | `<leader>Cs` | Serve the model in a terminal split (`c4-local`) |
-| `<leader>Cb` | Open `http://localhost:8081` in the browser |
+| `<leader>Cb` | Open `http://localhost:8081` in chawan |
 | `<leader>Ce` | Export every view to Mermaid |
 | `<leader>Cr` / `<leader>CR` | Render every view as an image — svg / png |
 | `<leader>Cv` | Validate, violations into the quickfix list |

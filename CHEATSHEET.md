@@ -581,10 +581,15 @@ the pane with `prefix + o` or `prefix` + arrow**.
 `C-a` is also a chawan binding (next exact match) but it is your tmux prefix, so
 it never arrives. Use `*`, which does the same thing.
 
-JavaScript is **on** globally. Cookies and `Referer` stay **off** — toggle
-cookies for the current page with `M-k`, or make it permanent for one host with
-a `[[siteconf]]` block (commented example in the config). `M-j` toggles JS for
-the current page if you want it off somewhere.
+JavaScript is **on** globally. Cookies are **saved** (`cookie = "save"`) so a
+login survives the next `cha` from Neovim; `Referer` stays **off**. `M-k`
+toggles cookies for the current page; a `[[siteconf]]` block can pin them per
+host. `M-j` toggles JS for the current page if you want it off somewhere.
+
+Neovim never calls macOS `open`. `gx`, `:Open`, `<leader>gB` (git browse),
+markdown preview, and C4 `<leader>Cb` all start `cha` in a new tmux window
+named `cha` (or a Neovim terminal split if you are not in tmux). The shell
+exports `BROWSER=cha` for anything else that honours it.
 
 Worth knowing with global JS: this build reports itself as `not sandboxed`
 (`cha -v`), so buffer processes are not isolated — running arbitrary sites'

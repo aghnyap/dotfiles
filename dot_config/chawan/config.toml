@@ -28,11 +28,11 @@ styling = true
 #     mode, which does not wait. Verified: with scripting on, `cha -d` still
 #     returns immediately and executes the page's JS.
 #
-# Cookies and Referer stay off: a separate tracking surface, and most reading
-# does not need them. M-k toggles cookies for the current page; [[siteconf]]
-# below makes it permanent for one host.
+# Cookies persist so a login (GitLab SSO, etc.) survives the next `cha` from
+# Neovim. Referer stays off. M-k still toggles cookies for the current page;
+# [[siteconf]] can tighten this to one host if you want them off everywhere else.
 scripting = true
-cookie = false
+cookie = "save"
 referer-from = false
 
 [display]
@@ -58,8 +58,7 @@ download-dir = "$HOME/Downloads/"
 # and ~/.config/zsh/aliases.zsh exports both as nvim.
 
 # ── Per-site escapes ────────────────────────────────────────────────────────
-# Turn JavaScript on only where a page genuinely needs it. Uncomment and edit;
-# `url` is a regex matched against the whole URL.
+# Override scripting or cookies for one host. `url` matches the whole URL.
 #
 # [[siteconf]]
 # url = '^https://(www\.)?example\.com/'

@@ -83,3 +83,8 @@ vim.g.lazyvim_explorer = 'neo-tree'
 -- for the duration of its own writes (see the callbacks in plugins/editor.lua)
 -- so formatting never fires mid-keystroke. `<leader>uf` toggles it by hand.
 vim.g.autoformat = true
+
+-- gx, :Open, git-browse, markdown preview, C4 <leader>Cb. Darwin's vim.ui.open
+-- is `open` and ignores $BROWSER; this wrap sends everything to chawan.
+require('util.chawan').setup()
+

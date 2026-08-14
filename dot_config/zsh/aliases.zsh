@@ -56,6 +56,8 @@ alias vi='nvim'
 alias vim='nvim'
 export EDITOR='nvim'
 export VISUAL='nvim'
+export BROWSER='cha'
+
 
 # ── Config shortcuts ────────────────────────────────────────────────────────
 alias zc='nvim ~/.zshrc'
