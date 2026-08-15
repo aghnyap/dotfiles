@@ -84,8 +84,10 @@ LazyVim's own.
 Neovim splits and tmux panes with no prefix and no mode change. It needs the
 matching plugin in `~/.config/tmux/tmux.conf`, which is installed.
 
-URLs open in **chawan**, not Chrome/Arc. `gx`, `:Open`, `<leader>gB`, markdown
-preview, and `<leader>Cb` all run `cha` in a new Ghostty tab (`term-tab`).
+URLs open in **Chrome**, not chawan. `gx`, `:Open`, `<leader>gB`, markdown
+preview, and `<leader>Cb` all run `open -a 'Google Chrome'`. To open the same
+URL in chawan instead, run `cha <url>` (or `term-tab cha <url>` for a Ghostty
+tab) from a terminal.
 
 ## Debug (nvim-dap)
 
@@ -216,7 +218,7 @@ guides name (`jfcherng/vim-structurizr`) does not exist.
 | Keys | Action |
 | --- | --- |
 | `<leader>Cs` | Serve the model in a terminal split (`c4-local`) |
-| `<leader>Cb` | Open `http://localhost:8081` in chawan |
+| `<leader>Cb` | Open `http://localhost:8081` in Chrome |
 | `<leader>Ce` | Export every view to Mermaid |
 | `<leader>Cr` / `<leader>CR` | Render every view as an image — svg / png |
 | `<leader>Cv` | Validate, violations into the quickfix list |

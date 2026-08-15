@@ -384,7 +384,7 @@ like it is about your data rather than about the alias. `\grep` works too.
 `f [query]` fuzzy-find and edit · `rgf <pattern>` ripgrep with preview ·
 `mkcd` · `extract <archive>` · `port <n>` · `killport <n>` · `ips` ·
 `serve` · `jsonf` · `path` · `reload` · `localip` · `now` · `cha [url]` terminal browser ·
-`term-tab [cmd]` Ghostty tab (never a new window) · `cha-tab [url]` same for `$BROWSER` ·
+`term-tab [cmd]` Ghostty tab (never a new window) · `chrome-open [url]` same for `$BROWSER` ·
 `mancha <page>` man pages in the browser.
 
 Git: `gs` `gla` `gpl` `lg` (lazygit) · `gbf` fuzzy branch switch ·
@@ -587,10 +587,12 @@ login survives the next `cha` from Neovim; `Referer` stays **off**. `M-k`
 toggles cookies for the current page; a `[[siteconf]]` block can pin them per
 host. `M-j` toggles JS for the current page if you want it off somewhere.
 
-Neovim never calls macOS `open`. `gx`, `:Open`, `<leader>gB` (git browse),
-markdown preview, C4 `<leader>Cb`, and `mancha` all start `cha` in a **new
-Ghostty tab** of the current window (`term-tab`), never a new window. The
-shell exports `BROWSER=cha-tab`. `term-tab <cmd>` is the generic opener.
+Neovim opens Chrome, not chawan. `gx`, `:Open`, `<leader>gB` (git browse),
+markdown preview, and C4 `<leader>Cb` all run `open -a 'Google Chrome'`. The
+shell exports `BROWSER=chrome-open`. `mancha` is unrelated to `$BROWSER`
+routing and still starts `cha` in a **new Ghostty tab** (`term-tab`), never a
+new window — the rest of this section documents that manual chawan path.
+`term-tab <cmd>` is the generic Ghostty-tab opener.
 
 GitLab's "Google" control is a form, not a link. Put the cursor on it with
 `]` or `f`, then **Enter** (mouse highlight does not submit). JS is off on

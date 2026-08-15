@@ -1,4 +1,0 @@
-#!/usr/bin/env zsh
-# $BROWSER entry point: chawan in a Ghostty tab, never a new window.
-set -euo pipefail
-exec term-tab cha "$@"

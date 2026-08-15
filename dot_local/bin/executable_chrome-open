@@ -1,0 +1,6 @@
+#!/usr/bin/env zsh
+# $BROWSER entry point: Google Chrome via macOS `open`, explicit and not
+# dependent on the OS-level default browser (this repo doesn't manage that
+# setting, and doesn't install Chrome itself -- see Brewfile.optional).
+set -euo pipefail
+exec open -a 'Google Chrome' "$@"
