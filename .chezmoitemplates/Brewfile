@@ -97,6 +97,14 @@ brew "fontconfig"
 # half-block characters and looked pixelated regardless of terminal.
 brew "chawan"
 
+# GUI browser dedicated to sshbrowse's SOCKS5-tunneled traffic (see
+# ~/.config/zsh/functions.zsh). Not Chrome: a work-managed Chrome install may
+# have MDM policy blocking the custom launch flags and profile that function
+# needs, and Firefox -- a fully separate binary and profile -- is guaranteed
+# untouched by any policy aimed at Chrome. Never used for anything else;
+# $BROWSER stays Chrome (~/.config/nvim/lua/util/browser.lua).
+cask "firefox"
+
 # yazi -- terminal file manager. The gap it fills: file browsing otherwise only
 # exists inside Neovim (neo-tree), with nothing for navigating and previewing
 # outside the editor. No config needed; the `y` cd-on-exit wrapper from upstream

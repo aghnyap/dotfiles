@@ -249,3 +249,90 @@ brewopt() {
   print -P "%F{blue}==>%f brew bundle: $1"
   print -r -- "$body" | brew bundle --file=/dev/stdin
 }
+
+# ── SSH remote access ───────────────────────────────────────────────────────
+# Working entirely through SSH + a browser, nothing else installed locally.
+#
+# sshsocks/sshsocks-stop/sshbrowse route browser traffic through the remote
+# host's network -- VPN-gated internal tools, or an SSO login chawan cannot
+# complete (see CHEATSHEET.md's chawan section: a text/CSS browser cannot run
+# an OAuth SPA). Firefox carries that traffic, not Chrome: a work-managed
+# Chrome install may have MDM policy blocking custom launch flags or
+# extensions, and this needs neither -- a separate Firefox binary and profile
+# are untouched by any policy aimed at Chrome.
+#
+# sshflutter is unrelated: a plain port-forward (no proxy, no browser forced)
+# for viewing a `flutter run -d web-server` dev build. A vanilla localhost
+# visit, so corporate Chrome works fine there unmodified.
+
+_sshsocks_pidfile() { print -r -- "${TMPDIR:-/tmp}/sshsocks-${1:-1337}.pid"; }
+
+# sshsocks <host> [port=1337] -- open a SOCKS5 tunnel through <host>.
+sshsocks() {
+  [[ -n $1 ]] || { print -u2 "usage: sshsocks <host> [port=1337]"; return 1; }
+  local host=$1 port=${2:-1337} pidfile
+  pidfile=$(_sshsocks_pidfile "$port")
+  if [[ -f $pidfile ]] && kill -0 "$(<$pidfile)" 2>/dev/null; then
+    print -u2 "sshsocks: already running on :$port (pid $(<$pidfile))"
+    return 1
+  fi
+  ssh -D "$port" -f -C -q -N "$host" || return
+  # -f backgrounds after auth, so $! never sees it -- pgrep is the only way
+  # to recover the pid it left behind.
+  pgrep -fn "ssh -D $port .*-N $host" > "$pidfile"
+  print "sshsocks: tunnel to $host up on :$port"
+}
+
+# sshsocks-stop [port=1337] -- tear down a tunnel started by sshsocks.
+sshsocks-stop() {
+  local port=${1:-1337} pidfile
+  pidfile=$(_sshsocks_pidfile "$port")
+  [[ -f $pidfile ]] || { print -u2 "sshsocks-stop: nothing tracked on :$port"; return 1; }
+  kill "$(<$pidfile)" 2>/dev/null
+  rm -f "$pidfile"
+  print "sshsocks-stop: tunnel on :$port closed"
+}
+
+# sshbrowse <host> [port=1337] -- browse through <host> in an isolated Firefox
+# profile, proxied over a SOCKS5 tunnel (started automatically if not already
+# running). DNS resolves through the tunnel too, so hostnames only visible
+# from the remote network work.
+sshbrowse() {
+  [[ -n $1 ]] || { print -u2 "usage: sshbrowse <host> [port=1337]"; return 1; }
+  (( $+commands[firefox] )) || { print -u2 "sshbrowse: firefox not installed -- chezmoi apply first"; return 1; }
+  local host=$1 port=${2:-1337} pidfile profile_dir
+  local base="$HOME/Library/Application Support/Firefox/Profiles"
+
+  pidfile=$(_sshsocks_pidfile "$port")
+  if [[ ! -f $pidfile ]] || ! kill -0 "$(<$pidfile)" 2>/dev/null; then
+    sshsocks "$host" "$port" || return
+  fi
+
+  profile_dir=$(find "$base" -maxdepth 1 -iname '*.ssh-tunnel' -print -quit 2>/dev/null)
+  if [[ -z $profile_dir ]]; then
+    firefox -CreateProfile ssh-tunnel >/dev/null 2>&1
+    profile_dir=$(find "$base" -maxdepth 1 -iname '*.ssh-tunnel' -print -quit 2>/dev/null)
+  fi
+  [[ -n $profile_dir ]] || { print -u2 "sshbrowse: could not create/locate the ssh-tunnel profile"; return 1; }
+
+  # Rewritten on every call so a different port takes effect immediately.
+  cat > "$profile_dir/user.js" <<-EOF
+	user_pref("network.proxy.type", 1);
+	user_pref("network.proxy.socks", "127.0.0.1");
+	user_pref("network.proxy.socks_port", $port);
+	user_pref("network.proxy.socks_remote_dns", true);
+	EOF
+
+  firefox -P ssh-tunnel --no-remote &!
+}
+
+# sshflutter <host> [web-port=8765] [dds-port=8766] -- forward a `flutter run
+# -d web-server` dev build to a local browser.
+sshflutter() {
+  [[ -n $1 ]] || { print -u2 "usage: sshflutter <host> [web-port=8765] [dds-port=8766]"; return 1; }
+  local host=$1 web=${2:-8765} dds=${3:-8766}
+  print "sshflutter: forwarding :$web (app) and :$dds (DevTools) from $host -- Ctrl-C to stop"
+  print "  on $host:   flutter run -d web-server --web-port=$web --dds-port=$dds"
+  print "  then open: http://localhost:$web"
+  ssh -N -L "$web:localhost:$web" -L "$dds:localhost:$dds" "$host"
+}

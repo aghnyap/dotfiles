@@ -616,6 +616,47 @@ changelogs, RFCs, GitHub blob views.
 
 ---
 
+## SSH remote access
+
+Working on the project from any machine — including one where nothing else
+gets installed — using only a terminal and a browser. `dot_config/zsh/functions.zsh`.
+
+**SSO login for a CLI tool** (`gcloud`, `gh`, `aws`) needs no tooling at all —
+use the device-code flow they already support: the CLI prints a URL and a
+short code, open it in *any* browser (this machine, your phone, doesn't
+matter), approve, the CLI polls and picks up the token. Nothing renders
+remotely, so there's no pixelation question and no tunnel to set up.
+
+| Command | Does |
+| --- | --- |
+| `gcloud auth login --no-browser` | Device-code login, prints URL + code |
+| `gh auth login` | Auto-offers the device code when no local browser is detected over SSH |
+| `aws sso login` | Opens a device-code URL the same way |
+
+**Browsing an SSO-gated or VPN-only site through the remote host's network**
+needs a real tunneled browser — chawan can't run an OAuth SPA (above).
+
+| Command | Does |
+| --- | --- |
+| `sshsocks <host> [port=1337]` | Open a SOCKS5 tunnel through `<host>` (`ssh -D`) |
+| `sshsocks-stop [port=1337]` | Tear it down |
+| `sshbrowse <host> [port=1337]` | Tunnel (starting one if needed) + launch a dedicated Firefox profile (`ssh-tunnel`) proxied through it, DNS included |
+
+Firefox, not Chrome: a work-managed Chrome can have MDM policy blocking custom
+launch flags or extensions, and this needs neither — a separate binary and
+profile are untouched by any policy aimed at Chrome. The `ssh-tunnel` profile
+is dedicated to this traffic only; day-to-day browsing (`$BROWSER`, `gx`,
+`:Open`) stays on Chrome as before.
+
+**Flutter web dev** needs neither of the above — Chrome is already on the
+remote box (it's a machine built from this same repo), and Flutter DevTools
+runs over the Dart VM Service protocol, not Chrome's DevTools Protocol, so any
+local browser works, corporate Chrome included, with no special config.
+
+| Command | Does |
+| --- | --- |
+| `sshflutter <host> [web-port=8765] [dds-port=8766]` | Plain port-forward (no proxy) for a `flutter run -d web-server` build; open the printed `localhost` URLs in any local browser |
+
 ## Maintaining this file
 
 This is a source file in the chezmoi repo, not a generated one. The only templates left are `.chezmoi.toml.tmpl` and the
