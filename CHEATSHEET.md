@@ -632,6 +632,7 @@ remotely, so there's no pixelation question and no tunnel to set up.
 | --- | --- |
 | `gcloud auth login --no-browser` | Device-code login, prints URL + code |
 | `gh auth login` | Auto-offers the device code when no local browser is detected over SSH |
+| `glab auth login` | Same device-code flow for GitLab |
 | `aws sso login` | Opens a device-code URL the same way |
 
 **Browsing an SSO-gated or VPN-only site through the remote host's network**
