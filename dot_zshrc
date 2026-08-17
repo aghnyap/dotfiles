@@ -195,6 +195,7 @@ bindkey '^[[1;5C' forward-word                 # Ctrl-Right
 bindkey '^[[1;5D' backward-word                # Ctrl-Left
 bindkey '^[[3~' delete-char
 bindkey '^H' backward-kill-word                # Ctrl-Backspace
+bindkey '^?' backward-kill-word                # Backspace: word, not char
 
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#565f89'   # tokyonight comment grey
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
