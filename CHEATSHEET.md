@@ -51,6 +51,7 @@ suggests.
 | `Cmd+Shift+N` / `Cmd+Shift+T` | New window / new tab (reclaimed) |
 | `Cmd+Shift+,` | Open Ghostty config |
 | `Cmd+Shift+R` | Reload Ghostty config |
+| `Cmd+Up` / `Cmd+Down` | Scroll to top / bottom of scrollback (unlimited) |
 
 **Ghostty actions this config gives up** to the editor — pressing these does the
 Neovim thing, not the terminal thing: `Cmd+F` (was find), `Cmd+K` (clear

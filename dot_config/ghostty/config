@@ -42,9 +42,16 @@ background-blur-radius = 20
 unfocused-split-opacity = 0.85
 mouse-scroll-multiplier = 2
 
-# tmux owns scrollback now (history-limit 100000 per pane), so Ghostty
-# does not need a 10-million-line buffer per surface.
-scrollback-limit = 1000000
+# Native scroll-buffer jump, separate from the CSI-u forwarding block below
+# (that block is Neovim chords, not scrolling).
+keybind = super+up=scroll_to_top
+keybind = super+down=scroll_to_bottom
+
+# 0 = unlimited. tmux owns its own scrollback inside a tmux pane
+# (history-limit 100000), but a plain Ghostty tab or the quick terminal has
+# no tmux underneath and was hitting this limit directly, trimming old
+# output.
+scrollback-limit = 0
 
 # Drop-down scratch terminal on Cmd+Escape, available from any app.
 quick-terminal-position = top
