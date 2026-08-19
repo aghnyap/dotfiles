@@ -26,6 +26,13 @@ window-padding-y = 6
 window-padding-balance = true
 window-colorspace = display-p3
 window-save-state = always
+# Standalone Ghostty only — does not affect Cursor or Neovim integrated terminals.
+# New windows (Cmd+N, Dock) and tabs (Cmd+T, term-tab) start in $HOME.
+# Splits keep the current directory so a project pane can still be split in place.
+working-directory = home
+window-inherit-working-directory = false
+tab-inherit-working-directory = false
+split-inherit-working-directory = true
 macos-titlebar-style = tabs
 # Dock drops and scripted launches (`term-tab`, $BROWSER) join this window.
 macos-dock-drop-behavior = new-tab

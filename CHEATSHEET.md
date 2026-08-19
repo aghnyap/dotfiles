@@ -53,6 +53,10 @@ suggests.
 | `Cmd+Shift+R` | Reload Ghostty config |
 | `Cmd+Up` / `Cmd+Down` | Scroll to top / bottom of scrollback (unlimited) |
 
+**Working directory:** standalone Ghostty and Terminal.app open new windows and
+tabs in `~`; Ghostty splits inherit the current pane. IDE terminals (Cursor
+`` Ctrl+` ``, Neovim ToggleTerm) are unaffected and stay at the project root.
+
 **Ghostty actions this config gives up** to the editor — pressing these does the
 Neovim thing, not the terminal thing: `Cmd+F` (was find), `Cmd+K` (clear
 screen), `Cmd+A` (select all), `Cmd+D` (new split), `Cmd+Z` (undo), `Cmd+J`

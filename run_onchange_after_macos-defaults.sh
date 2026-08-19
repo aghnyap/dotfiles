@@ -55,6 +55,14 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
+# ── Terminal.app ──────────────────────────────────────────────────────────────
+# New windows and tabs open in $HOME, not the last focused tab's directory.
+# GUI equivalent: Terminal → Settings → General → "Default Working Directory"
+# for both "New windows open with" and "New tabs open with".
+# 2 = same directory as the active window/tab; 0 = default (home).
+defaults write com.apple.Terminal NewWindowWorkingDirectoryBehavior -int 0
+defaults write com.apple.Terminal NewTabWorkingDirectoryBehavior -int 0
+
 # ── Screenshots ─────────────────────────────────────────────────────────────
 # Out of the Desktop, which is otherwise where they accumulate forever. $HOME is
 # resolved at run time, so this carries no absolute path.
