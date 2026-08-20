@@ -366,7 +366,8 @@ Decompiler output goes to `stdpath('cache')/apk/`, never into your repo.
 | `Ctrl+y` | Copy the highlighted fzf entry |
 | `Tab` | fzf-tab completion |
 | `cd` | zoxide — frecency-ranked, replaces cd entirely |
-| `Backspace` | Delete whole word (hold to chew through several) |
+| `Backspace` | Delete one character (hold repeats; macOS KeyRepeat is already fast) |
+| `Ctrl+Backspace` | Delete whole word |
 
 ### Modern replacements — these rebind commands you already type
 `ls`/`ll`/`la`/`lt` → eza · `cat` → bat (`catp` pages) · `grep` → **rg** ·
