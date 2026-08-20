@@ -160,6 +160,14 @@ else
   bad "known orphaned tooling remains removed"
 fi
 
+# Ghostty special-cases 0 as .no_scrollback. That is not unlimited — it
+# disables native scroll so the trackpad appears dead. See discussion #9982.
+if ! rg -q '^scrollback-limit[[:space:]]*=[[:space:]]*0\b' dot_config/ghostty/config; then
+  ok "Ghostty scrollback-limit is not zero"
+else
+  bad "Ghostty scrollback-limit is not zero"
+fi
+
 # Lock in the two lazy.nvim ownership traps that otherwise fail silently.
 if ! rg -q 'config =|init =' dot_config/nvim/lua/plugins/structurizr.lua \
   && ! rg -q "cmd = 'Aider'" dot_config/nvim/lua/plugins/agents.lua; then

@@ -54,11 +54,13 @@ mouse-scroll-multiplier = 2
 keybind = super+up=scroll_to_top
 keybind = super+down=scroll_to_bottom
 
-# 0 = unlimited. tmux owns its own scrollback inside a tmux pane
-# (history-limit 100000), but a plain Ghostty tab or the quick terminal has
-# no tmux underneath and was hitting this limit directly, trimming old
-# output.
-scrollback-limit = 0
+# Bytes, not lines. Ghostty treats 0 as "no scrollback" (the visible
+# screen only), which makes two-finger trackpad scroll look completely
+# dead. Unlimited is the 1.4 keyword `unlimited`, not 0; this machine
+# is on 1.3.x so 100 MB is the portable stand-in. tmux still owns its
+# own history-limit inside a pane. Takes effect on new surfaces only
+# — quit Ghostty fully; Cmd+Shift+R is not enough.
+scrollback-limit = 100000000
 
 # Drop-down scratch terminal on Cmd+Escape, available from any app.
 quick-terminal-position = top

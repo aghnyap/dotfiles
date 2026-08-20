@@ -51,7 +51,7 @@ suggests.
 | `Cmd+Shift+N` / `Cmd+Shift+T` | New window / new tab (reclaimed) |
 | `Cmd+Shift+,` | Open Ghostty config |
 | `Cmd+Shift+R` | Reload Ghostty config |
-| `Cmd+Up` / `Cmd+Down` | Scroll to top / bottom of scrollback (unlimited) |
+| `Cmd+Up` / `Cmd+Down` | Jump to top / bottom of Ghostty scrollback |
 
 **Working directory:** standalone Ghostty and Terminal.app open new windows and
 tabs in `~`; Ghostty splits inherit the current pane. IDE terminals (Cursor
