@@ -53,6 +53,12 @@ suggests.
 | `Cmd+Shift+R` | Reload Ghostty config |
 | `Cmd+Up` / `Cmd+Down` | Jump to top / bottom of Ghostty scrollback |
 
+Scroll needs a real `scrollback-limit` (never `0`) **and** a surface created
+after that setting. With `window-save-state = always`, Cmd+Q can restore old
+no-scrollback tabs — open a new tab, or delete
+`~/Library/Saved Application State/com.mitchellh.ghostty.savedState` and
+relaunch, after changing the limit.
+
 **Working directory:** standalone Ghostty and Terminal.app open new windows and
 tabs in `~`; Ghostty splits inherit the current pane. IDE terminals (Cursor
 `` Ctrl+` ``, Neovim ToggleTerm) are unaffected and stay at the project root.

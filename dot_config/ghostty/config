@@ -56,10 +56,16 @@ keybind = super+down=scroll_to_bottom
 
 # Bytes, not lines. Ghostty treats 0 as "no scrollback" (the visible
 # screen only), which makes two-finger trackpad scroll look completely
-# dead. Unlimited is the 1.4 keyword `unlimited`, not 0; this machine
-# is on 1.3.x so 100 MB is the portable stand-in. tmux still owns its
-# own history-limit inside a pane. Takes effect on new surfaces only
-# — quit Ghostty fully; Cmd+Shift+R is not enough.
+# dead (Cmd+Up / scroll_to_top also no-ops). Unlimited is the 1.4
+# keyword `unlimited`, not 0; this machine is on 1.3.x so 100 MB is the
+# portable stand-in. tmux still owns its own history-limit inside a pane.
+#
+# Takes effect on new surfaces only. Cmd+Shift+R is not enough, and with
+# window-save-state = always (and macOS "Reopen windows"), Cmd+Q alone
+# restores the old no-scrollback tabs. After changing this value: quit
+# Ghostty, then either open a brand-new tab/window or wipe
+# ~/Library/Saved Application State/com.mitchellh.ghostty.savedState
+# before relaunching.
 scrollback-limit = 100000000
 
 # Drop-down scratch terminal on Cmd+Escape, available from any app.
