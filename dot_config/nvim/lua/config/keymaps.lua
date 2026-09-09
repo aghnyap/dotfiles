@@ -212,6 +212,15 @@ map('n', '<F2>', vim.lsp.buf.rename, { desc = 'Rename symbol' })
 -- C-hjkl is deliberately NOT mapped here: vim-tmux-navigator owns it so the
 -- same chord crosses the Neovim/tmux boundary. See plugins/editor.lua.
 map('n', '<D-\\>', '<cmd>vsplit<cr>', { desc = 'Split editor right' })
+-- LazyVim's <leader>| reuses the current buffer. Start with an empty buffer
+-- instead, preserving the current buffer kind so terminal panes stay useful.
+map('n', '<leader>|', function()
+  if vim.bo.buftype == 'terminal' then
+    vim.cmd 'vnew | terminal'
+  else
+    vim.cmd 'vnew'
+  end
+end, { desc = 'Open independent empty split' })
 
 -- ── Quality-of-life ────────────────────────────────────────────
 map('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })

@@ -189,7 +189,8 @@ selection. In blockwise, `I` / `A` insert on every line.
 | `Cmd+Shift+]` / `Cmd+Shift+[` | Next / previous editor tab |
 | `Tab` / `Shift+Tab` (normal) | Next / previous editor tab |
 | `Cmd+S` | Save (also formats) |
-| `Cmd+\` | Split editor right |
+| `Cmd+\` | Split current window right (a terminal split reuses the same shell) |
+| `<leader>|` | Open an independent empty vertical split (terminal-aware) |
 | `Cmd+,` | Open config files |
 
 ### Editing
@@ -223,7 +224,7 @@ selection. In blockwise, `I` / `A` insert on every line.
 | Keys | Action |
 | --- | --- |
 | ``Cmd+` `` or `Cmd+J` | Toggle bottom terminal |
-| ``Cmd+Shift+` `` | Toggle terminal (vertical split, beside the bottom one) |
+| ``Cmd+Shift+` `` | Toggle an independent terminal (vertical split, beside the bottom one) |
 | `Cmd+Shift+G` | Git UI (lazygit) |
 | `Cmd+Shift+U` / `<leader>mo` | Symbol outline (aerial) |
 | `<leader>mm` / `<leader>mr` | Toggle / redraw overview scrollbar |

@@ -32,6 +32,7 @@ LazyVim's own.
 | `Tab` / `Shift+Tab` (normal mode) | Next / previous editor tab |
 | `Cmd+S` | Save (also formats) |
 | `Cmd+\` | Split editor right |
+| `<leader>|` | Open an independent empty vertical split (terminal-aware) |
 | `Cmd+,` | Open config files |
 
 ## Editing
