@@ -326,12 +326,12 @@ Ambient ghost-text stays off. `Cmd+K` is the cloud Claude inline edit;
 `<leader>ave` is the explicit local equivalent, and `<leader>avg` opts into
 local suggestions for the current session.
 
-## Agents — aider and cursor-agent
+## Agents — aider, cursor-agent, and Codex
 
-Both drive a CLI in a terminal split on the right. That is a different thing from
+These drive a CLI in a terminal split on the right. That is a different thing from
 the Claude integration above: claudecode.nvim makes Neovim the editor Claude Code
 *drives* — it sees the buffer, resolves `@`-mentions against real files and
-returns native diffs. These two edit files on disk and the buffer reloads.
+returns native diffs. These agents edit files on disk and the buffer reloads.
 
 `<leader>A`, not `<leader>a`, because the AI group holds Claude and Avante
 bindings and this keeps that muscle memory intact.
@@ -349,6 +349,7 @@ bindings and this keeps that muscle memory intact.
 | `<leader>Aw` | local aider: **watch-files mode** |
 | `<leader>Ac` | cloud cursor-agent: toggle |
 | `<leader>Ar` | cloud cursor-agent: resume the last session |
+| `<leader>Ax` | Codex CLI: toggle in a project-root terminal split |
 
 **Watch-files mode is the interesting one, and it needs no plugin at all.**
 `aider --watch-files` watches files on disk for one-line comments ending in `AI`,
@@ -367,6 +368,9 @@ is convenience on top of it.
 > `:AiModel`. cursor-agent still needs `cursor-agent login` once per machine (or
 > `CURSOR_API_KEY` in `~/.config/zsh/local/*.zsh`). Its credentials remain
 > machine-local.
+
+Codex is a terminal workflow here, not a native Neovim diff integration.
+`<leader>Ax` toggles the Codex CLI in a project-root terminal split.
 
 ## Trade-offs to know about
 

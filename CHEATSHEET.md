@@ -480,11 +480,12 @@ with debugger on `:5005`.
 ### AI agents
 `aider` local pair-programming in the terminal · `aider --watch-files` acts on
 `AI!` / `AI?` comments when you save, no plugin needed · `cursor-agent` cloud
-agent as a CLI, `cursor-agent -p '…'` for a scripted one-shot.
+agent as a CLI, `cursor-agent -p '…'` for a scripted one-shot · `codex` Codex CLI
+agent in a project-root terminal split.
 
 In Neovim terminal agents live under `<leader>A` — `Aa` local aider, `Ac` cloud
-cursor-agent. Cloud Claude and local Avante stay on `<leader>a`; which-key names
-the boundary on every request-producing action.
+cursor-agent, `Ax` Codex. Cloud Claude and local Avante stay on `<leader>a`;
+which-key names the boundary on every request-producing action.
 
 **aider runs a local model, no key and no network.** Neovim uses the model
 selected for that process with `:AiModel`; at a shell, pass

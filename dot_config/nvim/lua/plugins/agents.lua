@@ -1,11 +1,11 @@
 -- ╭──────────────────────────────────────────────────────────────╮
--- │  Terminal AI agents: aider and cursor-agent                  │
+-- │  Terminal AI agents: aider, cursor-agent, and Codex           │
 -- │                                                              │
--- │  Both drive a CLI in a terminal split. That is a different    │
+-- │  All drive a CLI in a terminal split. That is a different      │
 -- │  thing from ai.lua, where claudecode.nvim makes Neovim the    │
 -- │  editor Claude Code drives -- it sees the buffer, resolves    │
 -- │  @-mentions against real files and returns native diffs.      │
--- │  These two edit files on disk and you reload.                 │
+-- │  These edit files on disk and you reload.                    │
 -- ╰──────────────────────────────────────────────────────────────╯
 --
 -- <leader>A, not <leader>a. The AI group already holds 13 Claude bindings and
@@ -28,6 +28,17 @@ local function cursor_agent(extra)
   end
   local cmd = 'cursor-agent' .. (extra and (' ' .. extra) or '')
   Snacks.terminal.toggle(cmd, {
+    cwd = vim.fs.root(0, '.git') or vim.uv.cwd(),
+    win = { position = 'right', width = 0.35 },
+  })
+end
+
+local function codex_agent()
+  if vim.fn.executable('codex') == 0 then
+    vim.notify('codex is not installed -- install the Codex CLI separately', vim.log.levels.ERROR, { title = 'agents' })
+    return
+  end
+  Snacks.terminal.toggle('codex', {
     cwd = vim.fs.root(0, '.git') or vim.uv.cwd(),
     win = { position = 'right', width = 0.35 },
   })
@@ -228,6 +239,7 @@ return {
     keys = {
       { '<leader>Ac', function() cursor_agent() end, desc = 'cursor-agent (cloud): toggle' },
       { '<leader>Ar', function() cursor_agent('--resume') end, desc = 'cursor-agent (cloud): resume' },
+      { '<leader>Ax', codex_agent, desc = 'Codex CLI: toggle' },
     },
   },
 
