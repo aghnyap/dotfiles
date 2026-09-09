@@ -91,6 +91,7 @@ Prefix is <kbd>Ctrl</kbd>+<kbd>a</kbd>. `prefix + a` sends a literal Ctrl+a.
 | `Ctrl+h/j/k/l` | Move between panes **and Neovim splits** — no prefix |
 | `prefix` `H/J/K/L` | Resize pane (repeatable) |
 | `prefix` `m` | Zoom pane toggle |
+| `prefix` `e` | Broadcast typing to every pane in the window (toggle; shows ON/OFF). If input looks duplicated across panes, this is on |
 | `prefix` `Ctrl+h` / `Ctrl+l` | Previous / next window |
 | `prefix` `Tab` | Last window |
 | `prefix` `o` | Session switcher (sesh: live sessions, zoxide dirs, configs) |
