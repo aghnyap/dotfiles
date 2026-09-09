@@ -1,7 +1,15 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# A cold first call to a language tool (the Dart VM loading its snapshot, java
+# spinning up the JVM) can exceed starship's 500 ms default and print a
+# "command timed out" warning into the shell. Doubling the ceiling covers the
+# cold case; starship only ever waits when a command is genuinely slow, so warm
+# prompts are unaffected. This is global -- there is no per-module timeout.
+# MUST stay above every [table] below, or TOML scopes it into the last one.
+command_timeout = 1000
+
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │  Intentionally empty: starship's built-in defaults.                      │
+# │  Almost empty: starship's built-in defaults, minus two noisy modules.    │
 # ╰──────────────────────────────────────────────────────────────────────────╯
 #
 # The default format is the one with the connecting words:
@@ -71,4 +79,13 @@
 # Turn it back on with a format that omits $account if you start setting a
 # region: format = 'on [$symbol$region]($style) '
 [gcloud]
+disabled = true
+
+# dart off. Flutter and Dart are deliberately kept off PATH (FVM pins them
+# per-repo), so this module only fires inside Dart repos and only ever shows a
+# version FVM already governs -- low value for a subprocess on every prompt.
+# It is also the module that triggered the command-timeout warning above, on a
+# cold Dart VM start. Re-enable by deleting this block if you want the version
+# segment back.
+[dart]
 disabled = true
