@@ -34,10 +34,11 @@ local map = vim.keymap.set
 -- │  working unchanged -- including the lazy-loaded `keys` specs   │
 -- │  in plugins/ai.lua and the multicursor maps in editor.lua.    │
 -- │                                                              │
--- │  The four odd ones out (Cmd+J, Cmd+`, Cmd+Shift+M,           │
--- │  Cmd+Shift+[) ride on spare letters because Ctrl+J/`/M/[      │
--- │  collapse to NL/NUL/CR/Esc before any modifier is reported.   │
--- │  The key you press is unchanged; only the wire encoding is.   │
+-- │  The five odd ones out (Cmd+J, Cmd+`, Cmd+Shift+`,           │
+-- │  Cmd+Shift+M, Cmd+Shift+[) ride on spare letters because     │
+-- │  Ctrl+J/`/M/[ collapse to NL/NUL/CR/Esc before any modifier  │
+-- │  is reported. The key you press is unchanged; only the       │
+-- │  wire encoding is.                                           │
 -- │                                                              │
 -- │  Key names here are exactly what nvim reports for the bytes   │
 -- │  tmux delivers -- verified, not derived.                      │
@@ -75,6 +76,7 @@ local cmd_aliases = {
   ['<M-C-S-]>'] = '<D-S-]>',
   ['<M-C-S-R>'] = '<D-S-m>', -- Cmd+Shift+M  (Ctrl+M is CR)
   ['<M-C-S-T>'] = '<D-S-[>', -- Cmd+Shift+[  (Ctrl+[ is Esc)
+  ['<M-C-S-Q>'] = '<D-S-`>', -- Cmd+Shift+`  (Ctrl+` is NUL)
 }
 for from, to in pairs(cmd_aliases) do
   map({ 'n', 'i', 'v', 't' }, from, to, { remap = true, desc = 'Cmd chord → ' .. to })
@@ -117,6 +119,10 @@ map({ 'n', 'i', 'v' }, '<D-b>', '<cmd>Neotree toggle<cr>', { desc = 'Toggle side
 map({ 'n', 'i', 'v' }, '<D-S-e>', '<cmd>Neotree focus<cr>', { desc = 'Focus explorer' })
 map({ 'n', 'i', 'v', 't' }, '<D-`>', '<cmd>ToggleTerm<cr>', { desc = 'Toggle terminal panel' })
 map({ 'n', 'i', 'v', 't' }, '<D-j>', '<cmd>ToggleTerm<cr>', { desc = 'Toggle bottom panel' })
+-- Cmd+Shift+` opens a SECOND terminal (id 2) as a vertical split, so it stands
+-- beside the bottom horizontal one rather than replacing it. size is columns
+-- here, not rows, so the opts.size = 15 default (rows) would be far too narrow.
+map({ 'n', 'i', 'v', 't' }, '<D-S-`>', '<cmd>2ToggleTerm direction=vertical size=80<cr>', { desc = 'Toggle terminal (vertical split)' })
 
 -- The outline gets a Cmd chord rather than a <leader> one because <leader> is
 -- a space, and space is unreachable exactly where you tend to be sitting: in a

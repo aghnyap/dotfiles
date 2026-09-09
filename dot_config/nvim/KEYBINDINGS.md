@@ -71,6 +71,7 @@ LazyVim's own.
 | Keys | Action |
 | --- | --- |
 | ``Cmd+` `` or `Cmd+J` | Toggle bottom terminal |
+| ``Cmd+Shift+` `` | Toggle terminal (vertical split, beside the bottom one) |
 | `Cmd+Shift+G` | Git UI (lazygit) |
 | `<leader>mm` | Toggle the overview scrollbar |
 | `<leader>mr` | Redraw the overview scrollbar |

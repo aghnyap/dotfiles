@@ -105,7 +105,7 @@ macos-option-as-alt = true
 # │  downgrades them to legacy ESC+char, which arrives as TWO      │
 # │  keys (<Esc> then the character).                              │
 # │                                                              │
-# │  FOUR chords cannot use their own codepoint, because Ctrl+key  │
+# │  FIVE chords cannot use their own codepoint, because Ctrl+key  │
 # │  collapses to an ASCII control code before any modifier is     │
 # │  reported -- Ctrl+M is CR, Ctrl+J is NL, Ctrl+[ is Esc and     │
 # │  Ctrl+` is NUL. Those arrive as <S-CR>/<S-NL>/<S-Esc>/<S-Nul>.  │
@@ -114,6 +114,7 @@ macos-option-as-alt = true
 # │  press is unchanged; only the wire encoding differs:            │
 # │      Cmd+J        -> 'n' (110)   Cmd+`       -> 'q' (113)       │
 # │      Cmd+Shift+M  -> 'r' (114)   Cmd+Shift+[ -> 't' (116)       │
+# │      Cmd+Shift+`  -> 'q' (113)  (mods 8, like p/P and Cmd+`)    │
 # │                                                              │
 # │  Neovim maps these back onto the <D-...> names in              │
 # │  ~/.config/nvim/lua/config/keymaps.lua, so every real binding  │
@@ -143,6 +144,8 @@ keybind = super+shift+g=text:\x1b[103;8u
 keybind = super+j=text:\x1b[110;6u
 # Cmd+`: '`' would be Ctrl+` = NUL, so it rides on 'q' (113).
 keybind = super+grave_accent=text:\x1b[113;6u
+# Cmd+Shift+`: same 'q' (113) rider, mods 8 (Ctrl+Alt+Shift). Vertical-split terminal.
+keybind = super+shift+grave_accent=text:\x1b[113;8u
 
 # File operations  (overrides: Cmd+, open-config)
 keybind = super+s=text:\x1b[115;6u

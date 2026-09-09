@@ -25,9 +25,10 @@ collapses it onto Meta, which killed every one of them inside a pane. So:
 | `Cmd+Shift+X` | `\E[<code>;8u` | `<M-C-S-X>` → aliased to `<D-S-x>` |
 | `Cmd+Alt+Arrow` | `\E[1;7A/B` | `<M-C-Arrow>` → aliased to `<M-D-Arrow>` |
 
-Four ride a different letter on the wire, because Ctrl+that key *is* an ASCII
+Five ride a different letter on the wire, because Ctrl+that key *is* an ASCII
 control code (`Ctrl+J`=NL, `Ctrl+M`=CR, `Ctrl+[`=Esc, ``Ctrl+` ``=NUL):
-`Cmd+J`→`n`, ``Cmd+` ``→`q`, `Cmd+Shift+M`→`r`, `Cmd+Shift+[`→`t`.
+`Cmd+J`→`n`, ``Cmd+` ``→`q`, ``Cmd+Shift+` ``→`q` (mods 8), `Cmd+Shift+M`→`r`,
+`Cmd+Shift+[`→`t`.
 The key you press never changes. Full derivation in `dot_config/ghostty/config`.
 
 **Consequence:** these chords are sent to whatever is running, and only Neovim
@@ -221,6 +222,7 @@ selection. In blockwise, `I` / `A` insert on every line.
 | Keys | Action |
 | --- | --- |
 | ``Cmd+` `` or `Cmd+J` | Toggle bottom terminal |
+| ``Cmd+Shift+` `` | Toggle terminal (vertical split, beside the bottom one) |
 | `Cmd+Shift+G` | Git UI (lazygit) |
 | `Cmd+Shift+U` / `<leader>mo` | Symbol outline (aerial) |
 | `<leader>mm` / `<leader>mr` | Toggle / redraw overview scrollbar |
