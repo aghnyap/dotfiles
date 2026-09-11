@@ -86,8 +86,8 @@ LazyVim's own.
 Neovim splits and tmux panes with no prefix and no mode change. It needs the
 matching plugin in `~/.config/tmux/tmux.conf`, which is installed.
 
-URLs open in **Chrome**, not chawan. `gx`, `:Open`, `<leader>gB`, markdown
-preview, and `<leader>Cb` all run `open -a 'Google Chrome'`. To open the same
+URLs open in **Arc**, not chawan. `gx`, `:Open`, `<leader>gB`, markdown
+preview, and `<leader>Cb` all run `open -a 'Arc'`. To open the same
 URL in chawan instead, run `cha <url>` (or `term-tab cha <url>` for a Ghostty
 tab) from a terminal.
 

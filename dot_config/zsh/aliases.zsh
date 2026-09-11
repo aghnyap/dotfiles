@@ -56,7 +56,7 @@ alias vi='nvim'
 alias vim='nvim'
 export EDITOR='nvim'
 export VISUAL='nvim'
-export BROWSER='chrome-open'
+export BROWSER='arc-open'
 
 
 # ── Config shortcuts ────────────────────────────────────────────────────────

@@ -85,6 +85,6 @@ vim.g.lazyvim_explorer = 'neo-tree'
 vim.g.autoformat = true
 
 -- gx, :Open, git-browse, markdown preview, C4 <leader>Cb. Darwin's vim.ui.open
--- is `open` and ignores $BROWSER; this wrap sends everything to Chrome.
+-- is `open` and ignores $BROWSER; this wrap sends everything to Arc.
 require('util.browser').setup()
 

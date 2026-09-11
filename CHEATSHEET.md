@@ -401,7 +401,7 @@ like it is about your data rather than about the alias. `\grep` works too.
 `f [query]` fuzzy-find and edit · `rgf <pattern>` ripgrep with preview ·
 `mkcd` · `extract <archive>` · `port <n>` · `killport <n>` · `ips` ·
 `serve` · `jsonf` · `path` · `reload` · `localip` · `now` · `cha [url]` terminal browser ·
-`term-tab [cmd]` Ghostty tab (never a new window) · `chrome-open [url]` same for `$BROWSER` ·
+`term-tab [cmd]` Ghostty tab (never a new window) · `arc-open [url]` same for `$BROWSER` ·
 `mancha <page>` man pages in the browser.
 
 Git: `gs` `gla` `gpl` `lg` (lazygit) · `gbf` fuzzy branch switch ·
@@ -605,9 +605,9 @@ login survives the next `cha` from Neovim; `Referer` stays **off**. `M-k`
 toggles cookies for the current page; a `[[siteconf]]` block can pin them per
 host. `M-j` toggles JS for the current page if you want it off somewhere.
 
-Neovim opens Chrome, not chawan. `gx`, `:Open`, `<leader>gB` (git browse),
-markdown preview, and C4 `<leader>Cb` all run `open -a 'Google Chrome'`. The
-shell exports `BROWSER=chrome-open`. `mancha` is unrelated to `$BROWSER`
+Neovim opens Arc, not chawan. `gx`, `:Open`, `<leader>gB` (git browse),
+markdown preview, and C4 `<leader>Cb` all run `open -a 'Arc'`. The
+shell exports `BROWSER=arc-open`. `mancha` is unrelated to `$BROWSER`
 routing and still starts `cha` in a **new Ghostty tab** (`term-tab`), never a
 new window — the rest of this section documents that manual chawan path.
 `term-tab <cmd>` is the generic Ghostty-tab opener.
@@ -660,16 +660,16 @@ needs a real tunneled browser — chawan can't run an OAuth SPA (above).
 | `sshsocks-stop [port=1337]` | Tear it down |
 | `sshbrowse <host> [port=1337]` | Tunnel (starting one if needed) + launch a dedicated Firefox profile (`ssh-tunnel`) proxied through it, DNS included |
 
-Firefox, not Chrome: a work-managed Chrome can have MDM policy blocking custom
+Firefox, not Arc: a work-managed Arc can have MDM policy blocking custom
 launch flags or extensions, and this needs neither — a separate binary and
-profile are untouched by any policy aimed at Chrome. The `ssh-tunnel` profile
+profile are untouched by any policy aimed at Arc. The `ssh-tunnel` profile
 is dedicated to this traffic only; day-to-day browsing (`$BROWSER`, `gx`,
-`:Open`) stays on Chrome as before.
+`:Open`) stays on Arc as before.
 
-**Flutter web dev** needs neither of the above — Chrome is already on the
+**Flutter web dev** needs neither of the above — Arc is already on the
 remote box (it's a machine built from this same repo), and Flutter DevTools
-runs over the Dart VM Service protocol, not Chrome's DevTools Protocol, so any
-local browser works, corporate Chrome included, with no special config.
+runs over the Dart VM Service protocol, not Arc's DevTools Protocol, so any
+local browser works, corporate Arc included, with no special config.
 
 | Command | Does |
 | --- | --- |
