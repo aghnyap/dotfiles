@@ -1,1 +1,20 @@
 .config/zsh/completions/_openspec
+
+# v12.0-audited migration: source files deleted or renamed on this branch
+# that were already applied to $HOME from before it. `chezmoi apply` never
+# removes a target just because its source disappeared -- that is what this
+# file is for. Caught by `chezmoi diff` showing these as neither modified
+# nor removed (nothing to diff, since they are no longer managed at all)
+# while `ls ~/.config/...` proved they were still sitting there.
+#
+# The nvim ones matter most: lazy.nvim's `{ import = "plugins" }` loads
+# every *.lua file in that directory with no allowlist, unlike the zsh
+# modules' explicit `_mods` array -- a stale plugins/avante.lua or
+# structurizr.lua left on disk would still load and define plugins/keymaps
+# this repo no longer configures.
+.config/nvim/lua/plugins/avante.lua
+.config/nvim/lua/plugins/structurizr.lua
+.config/nvim/KEYBINDINGS.md
+.config/zsh/c4.zsh
+.config/chawan/config.toml
+.local/bin/arc-open
