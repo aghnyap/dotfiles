@@ -4,10 +4,27 @@ This is a **chezmoi source repository**. It manages the whole terminal
 environment: Ghostty, zsh (+ oh-my-zsh), tmux, Neovim (LazyVim), starship, bat,
 delta, lazygit, btop, git config, and a security toolchain.
 
-It produces **one** environment. There is no work variant and no personal
-variant: a work MacBook and a personal Mac built from this repo are identical,
-because everything that would make them differ — identity, employer network
-config, per-project SDK pins — is not configuration this repo owns.
+It produces **one** environment per platform. There is no work variant and no
+personal variant: a work MacBook and a personal Mac built from this repo are
+identical, because everything that would make them differ — identity, employer
+network config, per-project SDK pins — is not configuration this repo owns.
+"Per platform" is the one exception, tracked since the v12.0-audited migration:
+this repo now targets macOS **and** Ubuntu Linux from the same source, so a
+config may branch on `.chezmoi.os` / `.chezmoi.arch` — see *Templating
+conventions* below for what that is allowed to mean.
+
+**Migration in progress:** the repo is moving to the v12.0-audited manifest on
+`feature/v12-migration`, tagged for rollback at `backup-pre-v12`. See *Git
+workflow for large changes* below for the convention that migration follows.
+
+**`just` is a hard prerequisite** for working in this repo. Install it with
+Homebrew (`brew install just`) if `bootstrap.sh` has not yet been updated to do
+it for you. Once it is on PATH, run repo maintenance through the root
+`justfile` (`just --list` for the full set) rather than typing the commands it
+wraps by hand — `just check` before every commit, `just pre-push` before every
+push. `bootstrap.sh` itself is being narrowed to install exactly Homebrew (or
+apt on Ubuntu), `chezmoi`, and `just`; everything past that point is a
+`justfile` recipe, not a bash step.
 
 ---
 
@@ -150,12 +167,20 @@ re-apply. It is not a mis-answered prompt — there are no prompts.
   reference (Ghostty, tmux, Neovim, vim, shell, security tooling, chawan);
   `dot_config/nvim/KEYBINDINGS.md` remains the exhaustive Neovim one, and
   usually needs the same edit. Keep employer-specific values out of both.
-- **One configuration, no variants.** Every machine built from this repo is
-  identical. Do not add a work/personal flag, a hostname check, a `.work`
-  datum, or any other branch on *which machine this is* — that split existed,
-  and removing it is why the repo now has no prompts and `bootstrap.sh` takes
-  no flags. If two machines need to differ, the difference is not configuration
-  this repo owns.
+- **One configuration per platform, no other variants.** Every Mac built from
+  this repo is identical to every other Mac, and every Ubuntu box identical to
+  every other Ubuntu box. Do not add a work/personal flag, a hostname check, a
+  `.work` datum, or any other branch on *which machine this is* — that split
+  existed, and removing it is why the repo has no prompts and `bootstrap.sh`
+  takes no flags. If two machines on the **same** platform need to differ, the
+  difference is not configuration this repo owns.
+
+  The one axis allowed to branch is platform capability: `.chezmoi.os` (and,
+  where it matters, `.chezmoi.arch`) — never a hostname, a role, or anything
+  that identifies a person or employer. Use it only for install mechanics that
+  a platform genuinely forces (a cask on macOS vs. a formula or `apt` package
+  on Linux, `bubblewrap` vs. `sandbox-exec` for agent sandboxing), never to
+  decide *whether* a manifest tool is installed. See *Templating conventions*.
 
   `.chezmoitemplates/Brewfile.optional` is **not** an exception to this. Nothing
   reads it at apply time and no data decides anything: it is a list a human
@@ -196,6 +221,72 @@ re-apply. It is not a mis-answered prompt — there are no prompts.
 - **Never commit secrets.** `.chezmoiignore` excludes `~/.ssh`, `~/.aws`,
   `~/.config/gcloud`, `~/.netrc`, `~/.git-credentials`. Run
   `gitleaks detect --no-git -s .` before any push.
+
+---
+
+## Templating conventions (v12.0-audited)
+
+chezmoi templates are Go `text/template`. Two rules keep them from becoming
+the identity leak or the silent-drop trap the rest of this file warns about:
+
+- **The only data a template may branch on is `.chezmoi.os` and
+  `.chezmoi.arch`.** No `.chezmoi.hostname`, no custom `.chezmoi.toml.tmpl`
+  prompt data, nothing that names a person, a team or an employer. A block
+  reads `{{ if eq .chezmoi.os "darwin" }}` / `{{ if eq .chezmoi.os "linux" }}`;
+  reach for `.chezmoi.arch` only when a platform itself forks by CPU (a cask
+  with no arm64 build, say).
+- **`include` does not evaluate templates; `includeTemplate` does.** In a
+  chezmoi template, `include` inserts a file verbatim — template actions
+  inside it are not run. Use `includeTemplate` against `.chezmoitemplates/`,
+  which is why the Brewfile lives there and is pulled in via
+  `{{ includeTemplate "Brewfile" . }}` rather than `include`.
+- **`{{-` trims the newline on the side it faces.** A careless trim once glued
+  two JSON keys onto one line in a managed `settings.json` — still valid JSON,
+  so `jq` passed it; only diffing the render against the live file caught it.
+  Diff the rendered output, not just lint it, after touching whitespace control.
+- **No managed file is a `.tmpl` except the two load-bearing ones:**
+  `.chezmoi.toml.tmpl` and `run_onchange_before_install-packages.sh.tmpl`.
+  Neither is a config file anyone hand-edits under `$HOME`, which is what
+  keeps `chezmoi re-add` safe everywhere else — it cannot reverse templating,
+  so an edit to a live file whose source is templated is silently dropped by
+  `re-add` and lost on the next `apply`. Adding a new `.tmpl` anywhere else
+  reopens that trap; if you do, document it here.
+- **OS-conditional blocks inside `Brewfile` stay install-mechanics only.**
+  `{{ if eq .chezmoi.os "darwin" }}cask "firefox"{{ else }}brew "firefox"{{ end }}`
+  is the intended shape — same tool, different package type. A tool that
+  exists on one platform and not the other at all is a *manifest* decision
+  (does it belong in the baseline?), not a templating one — see the Brewfile
+  rule above it.
+
+---
+
+## Git workflow for large changes
+
+Any change big enough to span several commits and touch the package manifest,
+the OS-branching structure, or more than a couple of the hard rules above
+follows this sequence — it is how the v12.0-audited migration itself is being
+done, on `feature/v12-migration`:
+
+1. Confirm `git status` is clean before starting.
+2. Tag the starting point (`git tag backup-pre-<name>`) so rollback is a tag
+   checkout away, not a `reflog` hunt. Tag, don't branch, for the rollback
+   point — the feature branch is what moves.
+3. Branch (`git checkout -b feature/<name>`); never work the change directly
+   on `main`.
+4. Land each reviewed, working slice as its own commit
+   (`git commit -m "checkpoint(phase-N): <what>"`), and stop there for
+   sign-off before starting the next slice. A checkpoint that fails `just
+   check` is not done.
+5. Never `git reset --hard`, `git push --force`, or rewrite history that has
+   already been pushed — this repo's remote is public (see the secrets rule
+   above), so a force-push does not make a mistake unpublished, it just hides
+   it from `git log`.
+6. Never run `chezmoi apply` as part of a checkpoint without saying so first
+   and getting it confirmed. `just diff` / `just dry-run` (or `chezmoi diff` /
+   `chezmoi apply --dry-run`) show what a checkpoint *would* do — that is the
+   verification step, not `apply` itself.
+7. Roll back with `git checkout main && git branch -D feature/<name>`; the
+   tag stays, so the abandoned attempt is still reachable if needed later.
 
 ---
 
@@ -323,6 +414,8 @@ not. These are not bugs — do not "fix" them:
 | `.chezmoitemplates/Brewfile.optional` | Opt-in groups, installed by hand via `brewopt`. Never applied |
 | `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one also reaches any unmanaged GUI editor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
 | `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout |
-| `bootstrap.sh` | Scripted bootstrap + look-and-feel verification. `.chezmoiignore`d, so it is not a target |
-| `audit.sh` | Non-mutating source-contract checks (syntax, AI budgets, key ownership, templates, Brewfile scope, gitleaks). Run before committing; also `.chezmoiignore`d |
+| `bootstrap.sh` | Scripted bootstrap + look-and-feel verification. `.chezmoiignore`d, so it is not a target. Being narrowed to Homebrew/apt + `chezmoi` + `just` only — see the migration note at the top of this file |
+| `audit.sh` | Non-mutating source-contract checks (syntax, AI budgets, key ownership, templates, Brewfile scope, gitleaks). Run via `just audit`; also `.chezmoiignore`d |
+| `justfile` | Task runner for repo maintenance — `just check` (audit + gitleaks), `just diff` / `just dry-run` (read-only chezmoi previews), `just apply` (confirms first), `just pre-push`. `.chezmoiignore`d, same reason as `bootstrap.sh`/`audit.sh`: it is repo tooling, not a dotfile for `$HOME` |
+| `dot_config/tealdeer/pages/` | Custom `tldr` pages for this repo's own commands and aliases, replacing the command lists that lived in `CHEATSHEET.md`. Scaffolding only as of the v12.0-audited migration's Phase 1 — populated in a later checkpoint |
 | `INSTALL.md` | The same bootstrap, written for a human |

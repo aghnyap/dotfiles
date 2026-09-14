@@ -169,6 +169,7 @@ CLAUDE.md
 CHEATSHEET.md
 bootstrap.sh
 audit.sh
+justfile
 # The previous two-line powerline starship config. Kept as a file rather than
 # left in git history, because the history gets squashed and rewritten -- a
 # comment pointing at a commit is a promise this repo cannot keep.
