@@ -1,214 +1,167 @@
 # Reproduces the toolchain on a new machine.
 # Applied automatically by run_onchange_before_install-packages.sh.tmpl,
 # which re-runs whenever this file changes.
+#
+# v12.0-audited baseline: cross-platform (macOS + Ubuntu Linux), strictly the
+# tools named in that manifest plus the handful of implied dependencies noted
+# where they appear. Everything else this environment used to install by
+# default now lives in Brewfile.optional, installed by hand with `brewopt`.
 
 # `brew bundle` is built into Homebrew now; no tap needed.
 
-# ── Terminal ───────────────────────────────────────────────────────────────
+# ── Terminal / core workspace ────────────────────────────────────────────
 cask "ghostty"
+# Implied dependency of Ghostty (and of starship's prompt glyphs below) --
+# not itself named in the manifest, but nothing renders correctly without it.
 cask "font-jetbrains-mono-nerd-font"
-brew "tmux"
 brew "starship"
-brew "sesh"
-# zsh-autosuggestions and zsh-syntax-highlighting are NOT here. .zshrc lists
-# them in oh-my-zsh's `plugins` array, so omz loads its own clones from
-# ~/.oh-my-zsh/custom/plugins (created by the installer) and the Homebrew copies
-# sat installed and never sourced. One source of truth per plugin, and the one
-# kept is the framework's own convention.
+brew "direnv"
+brew "zellij"
+brew "neovim"
+brew "chezmoi"
+# Implied dependency: chezmoi itself, and git-based plugin/theme installs in
+# the installer script, need a real git.
+brew "git"
 
-# ── Editors ────────────────────────────────────────────────────────────────
-# This setup is terminal-first: the IDE is Neovim, installed below with the rest
-# of the CLI. GUI editors are outside the reproducible baseline. Cursor,
-# Android Studio and Xcode may be installed by their user, but this repo neither
-# installs them nor manages their application-owned settings.
-#
-# The Cursor agent as a terminal CLI, wired to <leader>A in Neovim. Installed as
-# a cask rather than by Cursor's `curl https://cursor.com/install | bash`, which
-# self-manages versions under ~/.local/share and leaves a fresh Mac with nothing
-# until someone remembers to run it. /opt/homebrew/bin precedes ~/.local/bin
-# here, so this copy wins if both exist.
-#
-# It needs `cursor-agent login` once per machine -- a browser flow that cannot
-# run in bootstrap.sh. CURSOR_API_KEY is the scriptable alternative and belongs
-# in ~/.config/zsh/local/, not here.
-cask "cursor-cli"
+# Task runner. `bootstrap.sh` also installs this directly, before chezmoi
+# exists to run this file at all -- see CLAUDE.md, "just is a hard
+# prerequisite". Listed here too so `brew bundle` keeps it current.
+brew "just"
+
+# ── Security & networking ────────────────────────────────────────────────
+# Password manager and secrets-manager CLIs. Installed as clients only -- no
+# vault URL, no project token, no key material ships from this repo. See
+# CLAUDE.md's secrets hard rule.
+brew "bitwarden-cli"
+brew "infisical"
+brew "tailscale"
+brew "mosh"
+brew "gitleaks"
+brew "trivy"
+brew "sops"
+brew "age"
+# Agent sandboxing. bubblewrap is Linux-only -- macOS has no equivalent
+# package because sandbox-exec ships with the OS. See CLAUDE.md's templating
+# conventions: this is install-mechanics, not a manifest decision.
+{{ if eq .chezmoi.os "linux" -}}
+brew "bubblewrap"
+{{ end -}}
+
+# ── AI & speech ───────────────────────────────────────────────────────────
 # The local model server aider talks to, so aider needs no API key and no
-# network. The FORMULA, not the `ollama-app` cask: the two conflict, and the cask
-# installs an Electron menu-bar GUI this setup has no use for. The formula is the
-# CLI and server only.
+# network. The FORMULA, not the `ollama-app` cask: the two conflict, and the
+# cask installs an Electron menu-bar GUI this setup has no use for.
 #
 # Its Homebrew service block is worth knowing about -- `brew services start
 # ollama` runs it under launchd with OLLAMA_FLASH_ATTENTION=1 and
 # OLLAMA_KV_CACHE_TYPE=q8_0, both better than upstream's defaults. The same
 # launchd path is why context size is set per-request in
-# ~/.aider.model.settings.yml: launchd does not inherit a shell's environment, so
-# OLLAMA_CONTEXT_LENGTH exported from ~/.zshenv would do nothing at all.
+# ~/.aider.model.settings.yml: launchd does not inherit a shell's environment,
+# so OLLAMA_CONTEXT_LENGTH exported from ~/.zshenv would do nothing at all.
 #
 # Model weights are NOT installed here -- several GB, pulled per machine with
 # `ollama pull`. There is no default; :AiModel presents the supported catalog
 # once per Neovim session, and bootstrap.sh only checks that one is available.
 brew "ollama"
+brew "whisper-cpp"
+brew "sox"
+# uv -- implied dependency of aider, litellm and harlequin below, all three
+# installed as `uv tool install` in run_onchange_before_install-packages.sh
+# rather than as brew formulae. uv manages its own interpreter per tool, so a
+# `brew upgrade python` cannot orphan them the way pipx-installed tools broke
+# before (see the installer script for the frida/objection history of that
+# failure mode, now moved to Brewfile.optional).
+brew "uv"
 
-# ── Core CLI ───────────────────────────────────────────────────────────────
-brew "neovim"
-brew "chezmoi"
-brew "git"
-brew "git-delta"
-brew "lazygit"
-brew "gh"
-brew "glab"
-brew "ripgrep"
-brew "fd"
+# ── Architecture & diagrams ───────────────────────────────────────────────
+brew "d2"
+brew "adr-tools"
+
+# ── Developer utilities ───────────────────────────────────────────────────
+# mise owns node, java and ruby -- see ~/.config/mise/config.toml, the single
+# place those versions are pinned.
+brew "mise"
+# ruby-build without rbenv: mise's ruby backend uses it to build interpreters.
+brew "ruby-build"
 brew "fzf"
+brew "yazi"
 brew "bat"
 brew "eza"
 brew "zoxide"
-brew "atuin"
-brew "jq"
-brew "btop"
-brew "direnv"
-brew "tlrc"
-brew "hexyl"
-brew "duf"
-brew "dust"
+# tealdeer, not tlrc: same `tldr` binary, but tealdeer is the client this
+# repo's custom pages (dot_config/tealdeer/pages/) target. Do not install
+# both -- they conflict on the same binary name.
+brew "tealdeer"
+brew "atac"
+brew "curlie"
+brew "git-delta"
 brew "procs"
-brew "sd"
+brew "duf"
+brew "bore-cli"
 brew "hyperfine"
+brew "jq"
+brew "yq"
+brew "duckdb"
+brew "ripgrep"
+brew "fd"
 
-# BOTH tree-sitter formulae are needed and neither is redundant. `tree-sitter` is
-# the library; `tree-sitter-cli` is the `tree-sitter` binary. nvim-treesitter is
-# pinned to its `main` branch (see lazy-lock.json), which compiles parsers by
-# shelling out to that binary -- without it, parsers fail to build and the only
-# symptom is missing highlighting. This machine had the CLI installed by hand and
-# the Brewfile never captured it, so a fresh Mac silently lost treesitter.
+# BOTH tree-sitter formulae are needed and neither is redundant. `tree-sitter`
+# is the library; `tree-sitter-cli` is the `tree-sitter` binary. nvim-treesitter
+# is pinned to its `main` branch (see lazy-lock.json), which compiles parsers
+# by shelling out to that binary -- without it, parsers fail to build and the
+# only symptom is missing highlighting.
 brew "tree-sitter"
 brew "tree-sitter-cli"
 
-# fontconfig is listed on purpose even though it arrives anyway as a dependency
-# of apktool, jadx and friends. `fc-list` is what bootstrap.sh uses to prove a
-# Nerd Font glyph actually exists in the installed font -- the one check that
-# catches the failure mode where a stale codepoint renders as nothing rather than
-# tofu. That check is wrapped in `command -v fc-list`, so without an explicit
-# entry, trimming the security section would make it silently disappear instead
-# of fail.
+# fontconfig is listed on purpose even though it would otherwise arrive as a
+# transitive dependency. `fc-list` is what bootstrap.sh uses to prove a Nerd
+# Font glyph actually exists in the installed font. Wrapped in
+# `command -v fc-list` at the call site, so without an explicit entry that
+# check would silently disappear instead of fail.
 brew "fontconfig"
 
-# Terminal browser. chawan lays pages out with real CSS and draws text as
-# text, so it stays sharp; it replaced browsh, which rasterised the page into
-# half-block characters and looked pixelated regardless of terminal.
-brew "chawan"
+# ── Containers & code hosts ───────────────────────────────────────────────
+brew "podman"
+brew "lazydocker"
+brew "act"
+brew "lazygit"
+brew "gh"
+brew "glab"
+# gh-dash is a `gh` extension, not a formula -- installed via
+# `gh extension install dlvhdr/gh-dash` in the installer script.
 
-# GUI browser dedicated to sshbrowse's SOCKS5-tunneled traffic (see
-# ~/.config/zsh/functions.zsh). Not Arc: a work-managed Arc install may
-# have MDM policy blocking the custom launch flags and profile that function
-# needs, and Firefox -- a fully separate binary and profile -- is guaranteed
-# untouched by any policy aimed at Arc. Never used for anything else;
+# ── Observability & browsing ──────────────────────────────────────────────
+brew "btop"
+# GPU monitor. Homebrew's nvtop builds on both platforms since it added
+# Apple Silicon (Metal) support in 3.x, not only NVIDIA/Linux.
+brew "nvtop"
+brew "lnav"
+brew "k9s"
+brew "zk"
+brew "mpv"
+brew "yt-dlp"
+
+# GUI browser. Not Arc: a work-managed Arc install may have MDM policy
+# blocking the custom launch flags and profile that sshbrowse's SOCKS5 tunnel
+# needs (see ~/.config/zsh/functions.zsh), and Firefox -- a fully separate
+# binary and profile -- is guaranteed untouched by any policy aimed at Arc.
 # $BROWSER stays Arc (~/.config/nvim/lua/util/browser.lua).
 cask "firefox"
 
-# yazi -- terminal file manager. The gap it fills: file browsing otherwise only
-# exists inside Neovim (neo-tree), with nothing for navigating and previewing
-# outside the editor. No config needed; the `y` cd-on-exit wrapper from upstream
-# docs is deliberately NOT added, to keep hand-written shell minimal.
-brew "yazi"
+# ── Not yet portable to this baseline ─────────────────────────────────────
+# tmux + sesh: kept here deliberately, past the v12.0-audited cut, because
+# zellij (added above) has not yet absorbed tmux's project layouts
+# (mobile/web/backend/sec/arch) or the prefix+e sync toggle -- that port is
+# tracked as a later checkpoint of the v12 migration. Do not remove these
+# two lines until that port lands and dot_config/tmux/ is retired; removing
+# them first breaks the only working multiplexer config on the machine.
+brew "tmux"
+brew "sesh"
 
-# ── Runtimes ───────────────────────────────────────────────────────────────
-# mise owns node, java and ruby -- see ~/.config/mise/config.toml, the single
-# place those versions are pinned. Flutter is NOT here: it is pinned per-repo
-# by FVM, installed via `dart pub global activate fvm` or the fvm installer.
-brew "mise"
-
-# ruby-build without rbenv: mise's ruby backend uses it to build interpreters.
-# rbenv itself is gone -- mise pins ruby in ~/.config/mise/config.toml and
-# provides the shims, which is what rbenv was here for.
-brew "ruby-build"
-
-# ── Mobile / build ─────────────────────────────────────────────────────────
-# A standalone adb is baseline because logcat, the tmux sec layout and the
-# mobile-security MCP all call it on a fresh Mac before Android Studio or a full
-# SDK exists. If an SDK is installed later, ~/.zshenv puts its platform-tools
-# first, so that project-compatible adb wins without removing this fallback.
-cask "android-platform-tools"
-brew "cocoapods"
-brew "fastlane"
-brew "xcbeautify"
-brew "xcode-build-server"
-brew "swiftformat"
-brew "swiftlint"
-# ── Device mirroring ───────────────────────────────────────────────────────
-brew "scrcpy"
-
-# The container/Kubernetes toolchain is NOT here. It is roughly a gigabyte and
-# only earns that on a machine doing backend work, so it lives in
-# `Brewfile.optional` and is installed by hand with `brewopt`. This is not the
-# work/personal split coming back: nothing branches at apply time, every machine
-# still gets an identical baseline, and the extra group is a command a human runs
-# once. Dropping it from this file does not uninstall anything -- `brew bundle`
-# only ever installs -- so a machine that already has Docker keeps it.
-
-# ── Security ───────────────────────────────────────────────────────────────
-# For applications you are authorized to test.
-brew "semgrep"
-brew "gitleaks"
-# trufflehog, grype, dex2jar and ffuf were here and are now in the `secextra`
-# opt-in group: each duplicates a tool the config actually calls (gitleaks,
-# trivy, jadx) or targets web pentesting this baseline does not wire up.
-brew "trivy"
-brew "osv-scanner"
-brew "syft"
-brew "jadx"
-brew "apktool"
-brew "nmap"
-brew "nuclei"
-brew "jwt-cli"
-cask "mitmproxy"   # ships as a cask, not a formula
-# uv, not pipx, for the two Python security tools. pipx installed them against
-# Homebrew's python, so a `brew upgrade python` orphaned the venvs and broke
-# frida-ps/objection with an error pointing nowhere near the cause. uv manages an
-# interpreter per tool, so brew cannot reach them.
-brew "uv"
-
-# ── Architecture ───────────────────────────────────────────────────────────
-# C4 models as code. `structurizr` is the unified binary -- `local` serves the
-# browser UI (it replaces the end-of-life Structurizr Lite), `export` writes
-# Mermaid, and `validate`/`inspect` are the only diagnostics that exist for the
-# DSL. Driven by ~/.config/zsh/c4.zsh.
-#
-# NOT `structurizr-cli`: that formula is deprecated upstream and Homebrew
-# disables it on 2027-02-17. This is its named replacement. Do not "fix" this
-# back.
-#
-# No container runtime is needed. Every guide still says to run Structurizr Lite
-# under Docker; the native binary makes that unnecessary, which is why colima and
-# docker stayed in Brewfile.optional where they were.
-#
-# It depends on Homebrew's openjdk, already installed here as a dependency of
-# jadx and apktool. That dependency is load-bearing, not incidental: the war is
-# built for Java 21+, and Homebrew's launcher script does
-#
-#     export JAVA_HOME="${JAVA_HOME:-<brew openjdk>}"
-#
-# which is a FALLBACK, not a pin. ~/.zshenv exports mise's temurin-17 for Gradle
-# and jdtls, so out of the box every structurizr call inherits Java 17 and dies
-# with UnsupportedClassVersionError. `_c4_structurizr` in ~/.config/zsh/c4.zsh
-# overrides JAVA_HOME for this command only -- do not "simplify" that away, and
-# do not change the global JAVA_HOME to fix it, because the Android toolchain
-# needs 17 exactly.
-brew "structurizr"
-
-# The local image pipeline for C4 views: `c4-render` exports PlantUML and lets
-# PlantUML rasterise it, with Graphviz doing the layout. `plantuml -testdot` is
-# the check that the pair is wired up.
-#
-# This is a workaround for two things the exporter cannot do. `-format dot` is in
-# every older guide and the binary answers "Unknown export format: dot" -- the
-# Graphviz exporter is gone. And its PNG/SVG support is not a format: it needs
-# `-url` and a headless browser, which means the 1.98 GB `-playwright` container
-# variant. PlantUML gets images locally for ~8 MB and no container.
-#
-# graphviz is listed even though plantuml depends on it, so brew records it as
-# installed-on-request and `brew autoremove` cannot take it. It was already on
-# this machine and in no Brewfile, which is exactly how a second Mac ends up
-# quietly different.
-brew "graphviz"
-brew "plantuml"
+# chawan: kept here deliberately, past the v12.0-audited cut. The manifest's
+# tui_browser_sso is browsh, which chawan was meant to be replaced BY -- but
+# `brew info browsh` resolves to nothing; the formula is gone from
+# homebrew-core (upstream browsh has had no release since 2021). Until a
+# working install path for browsh is confirmed, chawan stays so there is a
+# terminal browser at all. See the Checkpoint 2 report for the open question.
+brew "chawan"

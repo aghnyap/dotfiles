@@ -35,26 +35,27 @@ MISECONFIG
 mise install
 
 # Ruby comes from mise, pinned in the config written above, so `mise install`
-# already built it. What mise cannot do is install the gems: cocoapods and
-# fastlane are what this toolchain actually needs on PATH.
-#
-# `mise exec` rather than a bare `gem`: this script runs BEFORE apply writes
-# ~/.zshenv, so mise's shims are not on PATH yet and a bare `gem` falls through to
-# /usr/bin/gem -- macOS's system ruby, which needs root and fails with
-# Gem::FilePermissionError. Routing through mise makes it independent of PATH.
-echo "==> ruby gems (cocoapods, fastlane)"
-mise exec ruby -- gem install --no-document cocoapods fastlane
+# already built it. cocoapods and fastlane are NOT gem-installed here any
+# more -- both moved to Brewfile.optional's `mobile` group in the
+# v12.0-audited migration, so installing their gems unconditionally would
+# defeat the point of moving them. `brewopt mobile` installs the formulae;
+# `mise exec ruby -- gem install --no-document cocoapods fastlane` is the
+# manual follow-up if a machine wants the gem versions specifically instead.
 mise reshim
 
-# Frida/objection via uv, never system pip. uv brings its own interpreter per
-# tool, so unlike pipx these do not break when Homebrew bumps python.
+# litellm and harlequin via uv, never system pip -- same reasoning as aider
+# below: uv manages its own interpreter per tool, so a `brew upgrade python`
+# cannot orphan them.
 #
 # No `|| true`: `uv tool install --force` is idempotent, so a failure here is a
-# real failure and should stop the script rather than be discovered later by
-# bootstrap.sh's frida-ps/objection checks.
-echo "==> uv tools (frida, objection)"
-uv tool install --force frida-tools
-uv tool install --force objection
+# real failure and should stop the script rather than be discovered later.
+echo "==> uv tools (litellm, harlequin)"
+uv tool install --force "litellm[proxy]"
+uv tool install --force harlequin
+
+# frida-tools and objection moved to the `sec` group in Brewfile.optional --
+# not installed here any more. `uv tool install --force frida-tools objection`
+# is the manual follow-up alongside `brewopt sec`.
 
 # aider, deliberately NOT `brew install aider` even though the formula exists and
 # is current. Upstream's install docs say plainly: "It's best to install aider
@@ -96,5 +97,17 @@ for repo in "Aloxaf/fzf-tab"; do
   dest="$HOME/.config/zsh/plugins/${repo##*/}"
   [[ -d $dest ]] || git clone --depth 1 "https://github.com/$repo" "$dest"
 done
+
+# gh-dash, a `gh` extension rather than a formula. Needs `gh auth status` to
+# succeed first -- `gh extension install` on an unauthenticated gh fails, and
+# this script has no browser to run `gh auth login` interactively. Skipped
+# with a notice rather than failing the whole run.
+echo "==> gh extension (gh-dash)"
+if gh auth status >/dev/null 2>&1; then
+  gh extension install dlvhdr/gh-dash 2>/dev/null || gh extension upgrade dlvhdr/gh-dash
+else
+  echo "    skipped: gh is not authenticated -- run 'gh auth login', then" \
+       "'gh extension install dlvhdr/gh-dash' by hand" >&2
+fi
 
 echo "==> done. Open nvim once for Mason to install its language servers."

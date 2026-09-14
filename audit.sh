@@ -140,14 +140,16 @@ else
   bad "local AI model/context contract"
 fi
 
-# Baseline and opt-in groups must remain disjoint. Flutter/Dart stay per-project.
+# Baseline and opt-in groups must remain disjoint. Flutter/Dart stay
+# per-project; adb moved to the `mobile` optional group in the
+# v12.0-audited migration, so it belongs in optional now, not baseline.
 rg '^(brew|cask) "' .chezmoitemplates/Brewfile |
   sed -E 's/^(brew|cask) "([^"]+)".*/\2/' | sort -u > "$TMP/baseline"
 rg '^(brew|cask) "' .chezmoitemplates/Brewfile.optional |
   sed -E 's/^(brew|cask) "([^"]+)".*/\2/' | sort -u > "$TMP/optional"
 if [[ -z $(comm -12 "$TMP/baseline" "$TMP/optional") ]] \
   && ! rg -q '^(brew|cask) "(flutter|dart)"' .chezmoitemplates/Brewfile \
-  && rg -q '^cask "android-platform-tools"$' .chezmoitemplates/Brewfile; then
+  && rg -q '^cask "android-platform-tools"$' .chezmoitemplates/Brewfile.optional; then
   ok "Brewfile baseline and optional groups are disjoint"
 else
   bad "Brewfile baseline and optional groups are disjoint"
