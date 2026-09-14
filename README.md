@@ -98,7 +98,7 @@ Brewfile scope and secrets before a commit or push.
 ## Cheatsheet
 
 `dot_config/tealdeer/pages/` is the command reference across every tool —
-shell, git, mobile, security, AI, C4/Structurizr, chezmoi and Neovim — as
+shell, git, mobile, security, AI, C4/d2, chezmoi and Neovim — as
 tealdeer custom pages, replacing the old CHEATSHEET.md and
 `dot_config/nvim/KEYBINDINGS.md`. Start with `tldr dotfiles`; each topic
 page is `tldr dotfiles-<topic>`.

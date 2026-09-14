@@ -82,6 +82,7 @@ check: audit leaks
 pre-push: check
     @test -z "$(chezmoi diff --source=. )" || { echo "chezmoi diff is not empty -- re-add or revert before pushing" >&2; exit 1; }
     @domain=$(git config user.email | cut -d@ -f2); \
+    if [ -z "$domain" ]; then echo "no git user.email set -- skipping the employer-domain check" >&2; exit 0; fi; \
     match=$(grep -rIl -iF "${domain%%.*}" ~/.config ~/Library/Application\ Support/Code 2>/dev/null); \
     if [ -n "$match" ]; then echo "employer-domain match found in managed config:" >&2; echo "$match" >&2; exit 1; fi
     @echo "pre-push checks passed"

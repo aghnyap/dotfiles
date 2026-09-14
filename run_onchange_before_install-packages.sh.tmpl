@@ -141,7 +141,13 @@ done
 # with a notice rather than failing the whole run.
 echo "==> gh extension (gh-dash)"
 if gh auth status >/dev/null 2>&1; then
-  gh extension install dlvhdr/gh-dash 2>/dev/null || gh extension upgrade dlvhdr/gh-dash
+  # No trailing `|| true`: without one, a real failure here (not just
+  # "already installed" -- a network blip, the repo renamed, a rate limit)
+  # trips `set -e` and aborts the rest of this script, contradicting the
+  # comment above about skipping this step rather than failing the run.
+  gh extension install dlvhdr/gh-dash 2>/dev/null \
+    || gh extension upgrade dlvhdr/gh-dash \
+    || echo "    warn: gh-dash install/upgrade failed -- try 'gh extension install dlvhdr/gh-dash' by hand" >&2
 else
   echo "    skipped: gh is not authenticated -- run 'gh auth login', then" \
        "'gh extension install dlvhdr/gh-dash' by hand" >&2
