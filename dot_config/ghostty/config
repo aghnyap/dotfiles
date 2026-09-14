@@ -3,7 +3,7 @@
 # ╰──────────────────────────────────────────────────────────────╯
 
 # ── Font ────────────────────────────────────────────────────────
-font-family = JetBrainsMono Nerd Font Mono
+font-family = FiraCode Nerd Font Mono
 font-size = 14
 font-thicken = true
 font-feature = calt
@@ -190,3 +190,16 @@ keybind = super+shift+n=new_window
 keybind = super+shift+t=new_tab
 keybind = super+shift+comma=open_config
 keybind = super+shift+r=reload_config
+
+# ── Checked against zellij (v12.0-audited) ───────────────────────
+# None of the CSI-u chords above collide with zellij's own default
+# keybinds: every one here rides mods 6/7/8 (Ctrl+Shift / Ctrl+Alt /
+# Ctrl+Alt+Shift), and zellij's defaults only bind plain Ctrl (mods 4)
+# or plain Alt (mods 2) -- disjoint modifier combinations, so nothing
+# forwarded from here is ever what zellij is listening for.
+#
+# The real collision was zellij's OWN defaults against pre-existing
+# Neovim/vim-tmux-navigator bindings that have nothing to do with this
+# file -- Ctrl+h (pane-left) and Alt+j/Alt+k (LazyVim move-line) both
+# get captured by zellij before Neovim sees them. Fixed in
+# ~/.config/zellij/config.kdl, not here; see its comments.

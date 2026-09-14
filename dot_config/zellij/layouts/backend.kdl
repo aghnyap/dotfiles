@@ -1,0 +1,20 @@
+// Kotlin/JVM project layout -- port of dot_config/tmux/layouts/executable_layout.sh's
+// "backend" case: gradle on top, a shell for http/db probing below (40% split,
+// matching the tmux `-p 40`). Not live-tested in this environment (no PTY) --
+// verify once with
+// `zellij --layout ~/.config/zellij/layouts/backend.kdl --session test-backend`.
+layout {
+    tab name="editor" {
+        pane command="nvim"
+    }
+    tab name="gradle" {
+        pane split_direction="horizontal" {
+            pane command="./gradlew" start_suspended=true {
+                args "bootRun" "--debug-jvm"
+            }
+            pane size="40%" command="docker" start_suspended=true {
+                args "compose" "up" "-d"
+            }
+        }
+    }
+}

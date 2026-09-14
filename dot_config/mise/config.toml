@@ -13,6 +13,15 @@
 [tools]
 node = "22"
 java = "temurin-17"
+# Added for the v12.0-audited manifest's Go/Rust/Python runtime coverage.
+# No existing workflow in this repo pins a more specific version yet -- these
+# are mise's own "latest stable" aliases, not hand-picked like the pins
+# above. Tighten to an exact version here the day something actually needs
+# one (a go.mod toolchain directive, a rust-toolchain.toml, a project's
+# pyproject.toml requires-python).
+go = "latest"
+rust = "stable"
+python = "3.12"
 # ruby was rbenv's until 2026-08-11. rbenv was the last version manager here that
 # mise could have owned, and keeping it cost a hand-written lazy-load wrapper (to
 # dodge a 119ms `rbenv init`), a shims PATH entry that had to precede system ruby,

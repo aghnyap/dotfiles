@@ -1,0 +1,63 @@
+// zellij -- persistent per-project sessions, alongside tmux during the
+// v12.0-audited migration (see .chezmoitemplates/Brewfile's "Not yet
+// portable to this baseline" note: tmux stays until this absorbs its
+// project layouts and the prefix+e sync toggle, which it now does below).
+//
+// Starting point: `zellij setup --dump-config` (the shipped defaults), with
+// two collisions fixed and one convenience added. NOT live-tested against a
+// running session in the environment this was written in (no PTY available
+// there) -- run `zellij setup --check` (parses this file) and then actually
+// use it once before trusting the keybind changes below.
+
+keybinds {
+    // ── Fix: LazyVim's <A-j>/<A-k> (move line) vs zellij's Alt+hjkl ────────
+    // zellij's shipped defaults bind bare Alt+h/j/k/l (and Alt+Left/Right) to
+    // MoveFocusOrTab/MoveFocus in every mode except locked -- that is
+    // zellij's native equivalent of vim-tmux-navigator, but it steals
+    // LazyVim's move-line keys before Neovim ever sees them. Keep pane focus
+    // movement on Alt+Arrow only (LazyVim does not bind those) and drop the
+    // letter variants.
+    shared_except "locked" {
+        unbind "Alt h" "Alt j" "Alt k" "Alt l"
+    }
+
+    // ── Fix: vim-tmux-navigator's Ctrl+h (pane-left) vs zellij's Ctrl+h ────
+    // Ctrl+h is also zellij's default entry key for "move" mode (which
+    // relocates a pane's POSITION, a rarely-used feature) -- it would steal
+    // Ctrl+h from Neovim's own pane navigation the same way. There is no
+    // zellij-native equivalent of vim-tmux-navigator's focused-pane
+    // detection (tmux.conf's @vim_navigator_pattern), so this only fixes
+    // the entry key, not full Neovim-awareness: move "move" mode off
+    // Ctrl+h onto Alt+m instead of losing the key.
+    shared_except "move" "locked" {
+        unbind "Ctrl h"
+        bind "Alt m" { SwitchToMode "Move"; }
+    }
+
+    // ── Convenience: direct sync-panes toggle ──────────────────────────────
+    // zellij's built-in equivalent of tmux's synchronize-panes is
+    // ToggleActiveSyncTab, bound by default only inside tab mode (Ctrl+t
+    // then s). tmux.conf added a direct `prefix + e` toggle for the same
+    // feature (see its git history) because a silently-on broadcast looks
+    // exactly like "everything I type is duplicated" -- mirror that here as
+    // a direct binding instead of a two-step one. The tab bar also shows a
+    // synced tab visually, so there is no separate "display message" step
+    // like tmux needed.
+    shared_except "locked" {
+        bind "Ctrl y" { ToggleActiveSyncTab; }
+    }
+
+    // ── Project layout picker: Ctrl+o then p ───────────────────────────────
+    // Parallels tmux's `prefix + P` (dot_config/tmux/tmux.conf). Ctrl+o is
+    // zellij's existing "session" mode entry key, so this rides that
+    // instead of claiming a new top-level binding.
+    session {
+        bind "p" {
+            Run "bash" "-c" "~/.config/zellij/layouts/pick.sh" {
+                floating true
+                close_on_exit false
+            }
+            SwitchToMode "Normal"
+        }
+    }
+}

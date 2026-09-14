@@ -1,0 +1,28 @@
+# zk -- plain-text notes as a linked wiki. v12.0-audited manifest: pkm_notes.
+# Notebook lives at ~/notes -- not `.local/share` or anything hidden, since
+# notes are content you browse and back up like any other directory, not
+# app state. `zk init ~/notes` creates it on first use; this file configures
+# whatever notebook zk is pointed at, empty or not.
+[note]
+language = "en"
+default-title = "Untitled"
+filename = "{{id}}-{{slug title}}"
+extension = "md"
+template = "default.md"
+
+[note.extra]
+
+[format.markdown]
+hashtags = true
+colon-tags = false
+multiword-tags = false
+
+[tool]
+# render-markdown.nvim (dot_config/nvim/lua/plugins/render-markdown.lua)
+# reads the same files directly, so no external editor/pager is set here --
+# `zk edit` falls through to $EDITOR (nvim).
+
+[lsp]
+# zk's own LSP server, if wired into Neovim later (not done as part of this
+# scaffolding pass): completion for [[wiki-links]] and #tags, diagnostics
+# for dead links.

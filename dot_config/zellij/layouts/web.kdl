@@ -1,0 +1,18 @@
+// React/TS project layout -- port of dot_config/tmux/layouts/executable_layout.sh's
+// "web" case. Not live-tested in this environment (no PTY) -- verify once
+// with `zellij --layout ~/.config/zellij/layouts/web.kdl --session test-web`.
+layout {
+    tab name="editor" {
+        pane command="nvim"
+    }
+    tab name="dev" {
+        pane split_direction="vertical" {
+            pane command="npm" start_suspended=true {
+                args "run" "dev"
+            }
+            pane command="npm" start_suspended=true {
+                args "run" "test" "--" "--watch"
+            }
+        }
+    }
+}

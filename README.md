@@ -88,7 +88,7 @@ Brewfile scope and secrets before a commit or push.
 
 [`CHEATSHEET.md`](CHEATSHEET.md) is the one-page reference across every tool —
 Ghostty, tmux, Neovim, vim itself, the shell, the security toolchain and the
-terminal browser (chawan).
+terminal browser (terminal-browser).
 `dot_config/nvim/KEYBINDINGS.md` stays the exhaustive Neovim reference.
 
 ## Layout
@@ -251,13 +251,13 @@ permanent.
   cheatsheet:
 
   ```sh
-  fc-list ':charset=F0035' family | grep -i 'jetbrainsmono nerd font'
+  fc-list ':charset=F0035' family | grep -i 'firacode nerd font'
   ```
 
   Output means the font can draw `U+F0035`; silence means it cannot, and the
   icon would vanish. That answers *whether* a codepoint exists but not *what it
   draws* — for that, read the `cmap` and `post` tables of the file
-  `fc-match 'JetBrainsMono Nerd Font Mono' file` resolves to, where the patched
+  `fc-match 'FiraCode Nerd Font Mono' file` resolves to, where the patched
   glyph names (`md-apple`, `md-cpu_64_bit`, …) are recorded.
 - **If you re-customise starship, `palette = "…"` must sit ABOVE
   `[palettes.…]`.** TOML assigns every key after a table header to that table,
@@ -292,8 +292,8 @@ VS Code and Cursor. `Cmd+L` toggles the panel, `Cmd+Shift+L` adds the selection
 or file, and `Cmd+K` is an inline edit — it prompts in a float and returns the
 answer as an inline diff over the selection (`diff_opts.layout = 'unified'`).
 These actions send their selected context to Claude. The explicit local
-equivalent is visual `<leader>ave` through Avante; ambient local suggestions
-remain off unless `<leader>avg` enables them.
+equivalent is `<leader>ai` through codecompanion; ambient local suggestions
+remain off -- codecompanion has no ghost-text suggestion mode configured.
 
 `~/.config/claude/mobilesec-mcp.py` is an MCP server exposing this machine's
 toolchain as structured data: `adb_devices`, `logcat` (scoped to an app's pid),
@@ -362,7 +362,7 @@ The 7b and 30b are already configured. To add a different tag, pull it,
 add matching entries to `dot_aider.model.settings.yml` and
 `dot_aider.model.metadata.json`, then add its total context to the catalog in
 `lua/util/ai_model.lua`. Those three values are one contract: Ollama gets the
-total `num_ctx`, while aider and Avante get that total minus the 8192-token
+total `num_ctx`, while aider and codecompanion get that total minus the 8192-token
 output reserve. Drop unused weights with `ollama rm <tag>`.
 
 The two configured rows are measured on an M1 Pro, warm, at a 32k window, both

@@ -253,7 +253,7 @@ selection. In blockwise, `I` / `A` insert on every line.
 | `F` | Flutter |
 | `X` | Xcode / Swift |
 | `h` | HTTP (kulala) |
-| `a` | AI / Claude / Avante |
+| `a` | AI / Claude / codecompanion |
 | `A` | agents (aider / cursor-agent) |
 | `m` | overview & outline |
 | `D` | database UI |
@@ -311,16 +311,18 @@ Filters are retroactive — they apply to what already scrolled past.
 | `<leader>ai` (in explorer) | Add the highlighted file |
 | `<leader>am` / `<leader>at` | Pick model / connection status |
 
-### Local AI — Ollama / Avante
+### Local AI — Ollama / codecompanion
+codecompanion.nvim replaced Avante in the v12.0-audited migration: an `ollama`
+adapter for the local model below, and a `litellm` adapter (OpenAI-compatible,
+`127.0.0.1:4000`) for whatever LiteLLM aggregates when that proxy is running.
+
 | Keys | Action |
 | --- | --- |
-| `<leader>aa` | Avante: ask / open sidebar (opens the model picker on first use) |
-| `<leader>aA` | Avante: refresh context |
-| `<leader>aM` | Select the local model for this Neovim session (`:AiModel`) |
+| `<leader>aa` | Toggle the chat |
+| `<leader>ai` | Inline prompt (normal buffers; inside the file explorer this is Claude's "add file" instead) |
+| `<leader>ax` | Actions menu |
+| `<leader>aM` | Select the local model for this Neovim session (`:AiModel`, shared with aider) |
 | `<leader>aR` | On-demand AI memory check (selected model + macOS RAM + swap) |
-| `<leader>ave` | Local inline edit of the visual selection |
-| `<leader>avg` | Opt-in local suggestions; ambient ghost text stays off |
-| `<leader>av…` | Avante extras: new/focus/stop/zen/toggles/files/history |
 
 No model is selected at startup and nothing is persisted. The first request
 opens the same picker as `:AiModel` / `<leader>aM`, verifies that Ollama serves
@@ -331,13 +333,14 @@ the exact tag, then resumes the requested action.
 | `qwen2.5-coder:7b` | 32,768 | 24,576 |
 | `qwen3-coder:30b` | 32,768 | 24,576 |
 
-The selector updates Avante and the next aider launch; Avante's independent
-selector is hidden because it cannot update shared state. Close aider before
+The selector updates both codecompanion and the next aider launch: unlike
+Avante, codecompanion's ollama adapter is a function re-evaluated per
+request, so there is no separate cache to refresh. Close aider before
 changing the selection — its live `/model` path can discard the managed prompt
 budget.
 
 There is **no ambient ghost-text completion**, by choice. `Cmd+K` is the cloud
-Claude inline-edit path; visual `<leader>ave` is the explicit local equivalent.
+Claude inline-edit path; `<leader>ai` is the local equivalent.
 
 ---
 
@@ -400,9 +403,9 @@ like it is about your data rather than about the alias. `\grep` works too.
 `ide [dir]` open a project as an IDE · `tm [name]` bare tmux session ·
 `f [query]` fuzzy-find and edit · `rgf <pattern>` ripgrep with preview ·
 `mkcd` · `extract <archive>` · `port <n>` · `killport <n>` · `ips` ·
-`serve` · `jsonf` · `path` · `reload` · `localip` · `now` · `cha [url]` terminal browser ·
-`term-tab [cmd]` Ghostty tab (never a new window) · `arc-open [url]` same for `$BROWSER` ·
-`mancha <page>` man pages in the browser.
+`serve` · `jsonf` · `path` · `reload` · `localip` · `now` ·
+`terminal-browser open [url]` terminal browser ·
+`term-tab [cmd]` Ghostty tab (never a new window) · `arc-open [url]` same for `$BROWSER`.
 
 Git: `gs` `gla` `gpl` `lg` (lazygit) · `gbf` fuzzy branch switch ·
 `gfc` fuzzy commit browser. oh-my-zsh's 197 `g*` aliases are also loaded.
@@ -484,7 +487,7 @@ agent as a CLI, `cursor-agent -p '…'` for a scripted one-shot · `codex` Codex
 agent in a project-root terminal split.
 
 In Neovim terminal agents live under `<leader>A` — `Aa` local aider, `Ac` cloud
-cursor-agent, `Ax` Codex. Cloud Claude and local Avante stay on `<leader>a`;
+cursor-agent, `Ax` Codex. Cloud Claude and local codecompanion stay on `<leader>a`;
 which-key names the boundary on every request-producing action.
 
 **aider runs a local model, no key and no network.** Neovim uses the model
@@ -529,107 +532,58 @@ that exist. In Neovim it is `<leader>Cv`, straight into the quickfix list.
 
 ---
 
-## chawan — `cha` (terminal browser)
+## terminal-browser (terminal browser)
 
-Lays pages out with real CSS and draws text as *text*, so it stays sharp at any
-font size. Images render inline through sixel or the Kitty protocol
-(`image-mode = "auto"` probes for both). This replaced browsh, which rasterised
-the whole page into half-block characters and so looked pixelated regardless of
-terminal. Config: `dot_config/chawan/config.toml`.
+Replaced chawan in the v12.0-audited migration. Where chawan laid out real
+CSS but had no JS runtime, terminal-browser renders actual Chromium (an
+Electron app drawn into the terminal via the Kitty graphics protocol), so it
+can finish a JS-heavy OAuth/SSO login chawan could not. No config file is
+documented upstream — nothing under `dot_config/` for it. `mancha` (reading
+man pages through chawan's `man:` scheme) is gone with chawan; there is no
+replacement.
 
 ### Launching
 
 | Command | Does |
 | --- | --- |
-| `cha` | Open the visual home page |
-| `cha <url>` / `cha <file>` | Open a page or a local file |
-| `cha -d <url>` | Dump the rendered page to stdout — pipeable, scriptable |
-| `mancha <name>` | Read a man page **in chawan**, with the cross-references as real links (`mancha 5 cha-config`) |
-| `cha -M <url>` | Monochrome |
-| `cha -o buffer.images=true` | Override any config option for one run |
-| `cha -c 'a { color: red }'` | Inject a stylesheet for one run |
-| `cha -r <script>` | Run a script against the page |
+| `terminal-browser` | Launch the browser |
+| `terminal-browser open <url>` | Open a URL |
+| `terminal-browser open --ssh <user@host> <url>` | Route that page's requests through a remote host |
+| `terminal-browser --split right` | Open in a split pane to the right |
+| `terminal-browser ls` | List open browsers |
 
-`cha -d` is the useful one outside interactive browsing: it turns a page into
-plain text on stdout, so it pipes into `rg`, `bat` or a file like any other
-command. chawan also serves non-HTTP schemes itself — `man:ls`, `file:`,
-`gemini:`, `gopher:` and `ftp:` all load directly, which is what `mancha` is
-built on.
+Requires a terminal that speaks the Kitty graphics protocol: Ghostty, Kitty,
+and a handful of others — covered here since Ghostty is the managed terminal.
 
-### Keys
-
-Movement is vi-like — `hjkl`, `w`/`b`, `0`/`^`/`$`, `{`/`}`, `H`/`M`/`L`,
-`zz`/`zt`/`zb`, marks with `m`/`` ` ``, counts before a motion.
+### Keys (Linux; macOS swaps Ctrl for Cmd)
 
 | Keys | Action |
 | --- | --- |
-| `C-l` | Location bar (enter a URL) |
-| `C-k` | Web search |
-| `Enter` | Open URL under cursor |
-| `f` | Link hints — type the hint to jump |
-| `[` / `]` | Previous / next hyperlink |
-| `U` | Reload |
-| `,` / `.` | Previous / next buffer (tab) |
-| `D` | Discard this buffer and go back |
-| `C-d` / `C-u` | Half page down / up |
-| `C-f` / `C-b` | Full page down / up |
-| `J` / `K` | Scroll one row (also `C-e` / `C-y`) |
-| `/` `?` · `n` `N` | Search · next / previous match |
-| `*` / `#` | Next / previous exact match for the word under cursor |
-| `v` / `V` / `C-v` | Select char / line / block |
-| `y` | Copy selection |
-| `M-y` / `y u` / `y I` | Copy page URL / link under cursor / image link |
-| `u` | Show the link under the cursor |
-| `M-i` | Toggle image display |
-| `M-j` / `M-k` | Toggle JavaScript / cookies, and reload |
-| `M-p` | Open the URL on the clipboard |
-| `M-a` / `M-b` | Bookmark this page / open bookmarks |
-| `I` / `s I` | View image externally / save it |
-| `s e` / `s E` | Open rendered page / source in `$EDITOR` (nvim) |
-| `\` | Toggle page-source view |
-| `M-c` | Command input (`M-c M-c` for the console) |
-| `q` | Quit |
+| `Ctrl+l` | Edit URL |
+| `Ctrl+t` | New tab |
+| `Ctrl+k` / `Alt+k` | Command palette |
+| `Ctrl+r` | Reload |
+| `Ctrl+[` / `Ctrl+]` | Back / forward |
+| `Ctrl+shift+f` | Find in page |
+| `Ctrl+shift+i` / `F12` | Devtools |
+| `Ctrl+q` | Quit |
 
-**Inside tmux, `C-l` and `C-k` only work because of a deliberate tweak.**
-vim-tmux-navigator owns `C-hjkl` and switches panes for any pane that isn't
-vim-like, which would make chawan's address bar unreachable. `tmux.conf` adds
-`cha` to `@vim_navigator_pattern` so those keys are forwarded instead. The
-trade-off: while chawan is focused, `C-hjkl` belongs to the browser — **leave
-the pane with `prefix + o` or `prefix` + arrow**.
+**Same class of collision chawan had.** `Ctrl+l`/`Ctrl+k` are also
+vim-tmux-navigator's pane-switch keys; `tmux.conf`'s `@vim_navigator_pattern`
+lists the `terminal-browser` process for the same reason it used to list
+`cha`, so those keys reach the browser instead of switching tmux panes.
+Leave the pane with `prefix + o` or `prefix` + arrow while it's focused.
 
-`C-a` is also a chawan binding (next exact match) but it is your tmux prefix, so
-it never arrives. Use `*`, which does the same thing.
+Neovim still opens Arc, not terminal-browser — `gx`, `:Open`, `<leader>gB`,
+markdown preview, and C4 `<leader>Cb` all run `open -a 'Arc'`; the shell
+exports `BROWSER=arc-open`. Run `term-tab terminal-browser open <url>` for a
+manual terminal-browser tab.
 
-JavaScript is **on** globally. Cookies are **saved** (`cookie = "save"`) so a
-login survives the next `cha` from Neovim; `Referer` stays **off**. `M-k`
-toggles cookies for the current page; a `[[siteconf]]` block can pin them per
-host. `M-j` toggles JS for the current page if you want it off somewhere.
-
-Neovim opens Arc, not chawan. `gx`, `:Open`, `<leader>gB` (git browse),
-markdown preview, and C4 `<leader>Cb` all run `open -a 'Arc'`. The
-shell exports `BROWSER=arc-open`. `mancha` is unrelated to `$BROWSER`
-routing and still starts `cha` in a **new Ghostty tab** (`term-tab`), never a
-new window — the rest of this section documents that manual chawan path.
-`term-tab <cmd>` is the generic Ghostty-tab opener.
-
-GitLab's "Google" control is a form, not a link. Put the cursor on it with
-`]` or `f`, then **Enter** (mouse highlight does not submit). JS is off on
-`/users/sign_in` so that POST is not swallowed. After redirect, Google's
-pages use `scripting = "app"`. If Google's account picker is still blank,
-the OAuth SPA is beyond chawan — log in once in a GUI browser and stop;
-chawan cannot complete that flow.
-
-Worth knowing with global JS: this build reports itself as `not sandboxed`
-(`cha -v`), so buffer processes are not isolated — running arbitrary sites'
-scripts is a broader trust decision than in a mainstream browser. Scripted use
-is unaffected: `-d` and piping use dump mode, which does not wait for scripts,
-so `cha -d` still returns immediately. Only `start.headless = true` can hang
-forever, since it waits for every script and request to finish.
-
-Enabling JS does **not** rescue heavy SPAs. A Jira board still rendered 0 bytes
-with `scripting` and `cookie` both forced on — chawan has a JS engine, not a
-browser runtime. It excels at server-rendered content: docs, man pages,
-changelogs, RFCs, GitHub blob views.
+Upstream does not document an authentication mechanism of its own — being a
+real Chromium instance is what carries an OAuth SPA through, not a special
+SSO feature. No note yet on whether chawan's old Google/GitLab-sign-in quirks
+(needing JS forced on, a form control that only submits from a keypress) also
+apply here; unverified until someone actually runs an SSO login through it.
 
 ---
 
@@ -652,7 +606,8 @@ remotely, so there's no pixelation question and no tunnel to set up.
 | `aws sso login` | Opens a device-code URL the same way |
 
 **Browsing an SSO-gated or VPN-only site through the remote host's network**
-needs a real tunneled browser — chawan can't run an OAuth SPA (above).
+needs a real tunneled browser — terminal-browser's own `--ssh` flag (above)
+covers a single page; `sshbrowse` below is the persistent-tunnel alternative.
 
 | Command | Does |
 | --- | --- |
@@ -694,8 +649,8 @@ here without applying the configuration.
 | `dot_config/tmux/tmux.conf` | prefix, panes, sessions, copy mode |
 | `dot_config/nvim/lua/config/keymaps.lua` | Cmd aliases and core editor maps |
 | `dot_config/nvim/lua/plugins/*.lua` | per-domain groups and `:Commands` |
-| `dot_config/zsh/{aliases,functions,dev,sec,fzf,tools,csiu,c4}.zsh` | shell |
+| `dot_config/zsh/{aliases,functions,dev,sec,fzf,tools,csiu,c4,zellij}.zsh` | shell |
 | `dot_config/zsh/git-aliases.zsh` | fallback only — skipped when oh-my-zsh is present |
-| `dot_config/chawan/config.toml` | terminal browser |
+| `.chezmoitemplates/Brewfile` | terminal-browser install (macOS cask; no documented config file) |
 | `dot_local/bin/executable_term-tab` | Ghostty new-tab launcher |
 | `dot_config/nvim/KEYBINDINGS.md` | the exhaustive Neovim reference |

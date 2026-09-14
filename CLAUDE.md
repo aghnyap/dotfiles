@@ -217,7 +217,7 @@ The rule that catches everyone:
   toggleterm itself, or it silently replaces the block in `tasks.lua` and
   takes every `<leader>r` runner with it.
 - **A new `dot_config/zsh/*.zsh` module is not picked up automatically.**
-  `dot_zshrc:215` is an explicit `_mods=(…)` array, not a glob; a file
+  `dot_zshrc:216` is an explicit `_mods=(…)` array, not a glob; a file
   dropped in that directory without being listed there never loads, and
   nothing reports it. The array appends `.zsh`, so the extension is
   mandatory and a `.sh` file cannot be loaded at all.
@@ -233,12 +233,12 @@ The rule that catches everyone:
   indistinguishable from an icon that was never configured — seven
   keys in the old `fastfetch` greeting sat empty this way. Use `nf-md-*` (`U+F0xxx`) and prove the
   codepoint exists with
-  `fc-list ':charset=F0035' family | grep -i 'jetbrainsmono nerd font'`
+  `fc-list ':charset=F0035' family | grep -i 'firacode nerd font'`
   before committing it.
 - **`nf-md-*` being reliable is not the same as being portable.** That range is
   plane 15 (`U+F0xxx` — five digits, above the BMP), so it renders only where
   the patched font is genuinely active; astral-plane private use has no system
-  fallback, and a terminal that is not set to JetBrainsMono Nerd Font shows
+  fallback, and a terminal that is not set to FiraCode Nerd Font shows
   tofu or nothing. Only Ghostty is configured for that font here, so a glyph
   can look perfect in the terminal it was tested in and be broken in every
   other one. **For anything that leaves Ghostty — the starship prompt above all,
@@ -280,7 +280,7 @@ not. These are not bugs — do not "fix" them:
 | --- | --- |
 | `dot_zshenv` | Toolchain PATH/env for **all** shells; `dev_paths_prepend()` re-asserted from `.zprofile` because `/etc/zprofile`'s `path_helper` reorders PATH |
 | `dot_zshrc` | Interactive only. oh-my-zsh + the fork-elimination shims |
-| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:215`** — a new file here does nothing until it is added there |
+| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `zellij` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:216`** — a new file here does nothing until it is added there |
 | `dot_config/nvim/` | LazyVim + custom specs. See `KEYBINDINGS.md` |
 | `dot_aider.conf.yml` | aider's non-model defaults. There is deliberately no model here: Neovim selects one per process with `:AiModel`, and shell use passes `--model` explicitly |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. **`num_ctx` must be set here, not via `OLLAMA_CONTEXT_LENGTH`** — `brew services` starts ollama through launchd, which does not inherit a shell's environment, so an export would look correct and change nothing. Ollama's 2k default silently truncates instead of erroring |

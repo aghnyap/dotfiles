@@ -114,7 +114,7 @@ end
 
 -- The readiness check is asynchronous, so capture a visual selection before
 -- the picker or `ollama show` changes mode. Re-selecting with `gv` would work
--- for Avante, but aider accepts the text directly and needs no mode restoration.
+-- for a chat-based tool, but aider accepts the text directly and needs no mode restoration.
 local function aider_send()
   local mode = vim.fn.mode()
   local content
@@ -250,7 +250,6 @@ return {
     opts = {
       spec = {
         { '<leader>A', group = 'agents (local / cloud)', mode = { 'n', 'v' } },
-        { '<leader>av', group = 'avante', mode = 'n' },
       },
     },
   },

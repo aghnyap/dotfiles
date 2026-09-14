@@ -1,0 +1,26 @@
+// Mobile security project layout -- port of dot_config/tmux/layouts/executable_layout.sh's
+// "sec" case: interception on the left, device/instrumentation on the right,
+// plus a scan tab. All three tools here (mitmweb, frida-ps, semgrep) live in
+// Brewfile.optional's `sec` group -- `brewopt sec` first. Not live-tested in
+// this environment (no PTY) -- verify once with
+// `zellij --layout ~/.config/zellij/layouts/sec.kdl --session test-sec`.
+layout {
+    tab name="editor" {
+        pane command="nvim"
+    }
+    tab name="proxy" {
+        pane split_direction="vertical" {
+            pane command="mitmweb" start_suspended=true {
+                args "--listen-host" "127.0.0.1" "--listen-port" "8080"
+            }
+            pane command="frida-ps" start_suspended=true {
+                args "-U"
+            }
+        }
+    }
+    tab name="scan" {
+        pane command="semgrep" start_suspended=true {
+            args "--config" "p/security-audit" "."
+        }
+    }
+}

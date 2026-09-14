@@ -86,10 +86,10 @@ LazyVim's own.
 Neovim splits and tmux panes with no prefix and no mode change. It needs the
 matching plugin in `~/.config/tmux/tmux.conf`, which is installed.
 
-URLs open in **Arc**, not chawan. `gx`, `:Open`, `<leader>gB`, markdown
-preview, and `<leader>Cb` all run `open -a 'Arc'`. To open the same
-URL in chawan instead, run `cha <url>` (or `term-tab cha <url>` for a Ghostty
-tab) from a terminal.
+URLs open in **Arc**, not in the terminal. `gx`, `:Open`, `<leader>gB`,
+markdown preview, and `<leader>Cb` all run `open -a 'Arc'`. To open the same
+URL in terminal-browser instead, run `terminal-browser open <url>` (or
+`term-tab terminal-browser open <url>` for a Ghostty tab) from a terminal.
 
 ## Debug (nvim-dap)
 
@@ -279,12 +279,15 @@ open.
 Claude sees your active buffer and selection automatically, `@`-mentions
 resolve against real files, and edits arrive as native Neovim diffs.
 
-## Local AI — Ollama / Avante
+## Local AI — Ollama / codecompanion
 
-Avante talks to the local Ollama server on `127.0.0.1:11434`. No local model is
-selected at startup or saved to disk. The first request opens the same picker as
-`:AiModel` / `<leader>aM`, checks that Ollama serves the exact tag, then resumes
-the action. The choice becomes global only inside that Neovim process.
+codecompanion.nvim replaced Avante in the v12.0-audited migration. Its `ollama`
+adapter talks to the local Ollama server on `127.0.0.1:11434`; a second
+`litellm` adapter (`openai_compatible`, pointed at `127.0.0.1:4000`) reaches
+whatever LiteLLM aggregates when that proxy is running. No local model is
+selected at startup or saved to disk. The first request opens the same picker
+as `:AiModel` / `<leader>aM`, checks that Ollama serves the exact tag, then
+resumes the action. The choice becomes global only inside that Neovim process.
 
 | Model | Ollama `num_ctx` | Prompt budget |
 | --- | --- | --- |
@@ -296,26 +299,24 @@ separately: 32k is the 7b's native ceiling, while the 30b is stopped by memory
 well short of its trained 262k. Neither is capped to match the other, and
 nothing decides which one suits a given machine — `:AiModel` always asks.
 
-The table shows Ollama's total window. Avante and aider reserve 8192 tokens for
-output, which `edit_format: whole` needs because a reply carries a whole file
-rather than a diff. The catalog and arithmetic are in `lua/util/ai_model.lua`, aider's
-request totals are in `~/.aider.model.settings.yml`, and its prompt/output
-budgets are in `~/.aider.model.metadata.json`. Change all three together.
+The table shows Ollama's total window. codecompanion and aider reserve 8192
+tokens for output, which `edit_format: whole` needs because a reply carries a
+whole file rather than a diff. The catalog and arithmetic are in
+`lua/util/ai_model.lua`, aider's request totals are in
+`~/.aider.model.settings.yml`, and its prompt/output budgets are in
+`~/.aider.model.metadata.json`. Change all three together.
 
 | Keys | Action |
 | --- | --- |
-| `<leader>aa` | Avante: ask / open the sidebar (picker on first use) |
-| `<leader>aA` | Avante: refresh context |
-| `<leader>aM` | Select this session's local model (close aider before changing it) |
+| `<leader>aa` | codecompanion: toggle chat |
+| `<leader>ai` | codecompanion: inline prompt |
+| `<leader>ax` | codecompanion: actions menu |
+| `<leader>aM` | Select this session's local model (`:AiModel`, shared with aider — close aider before changing it) |
 | `<leader>aR` | On-demand memory check — selected model, macOS RAM and swap |
-| `<leader>avn` | Avante: new ask |
-| `<leader>ave` / `<leader>avf` | Local inline edit of visual selection / focus |
-| `<leader>avs` / `<leader>avz` | Avante: stop / zen mode |
-| `<leader>avt` / `<leader>avd` | Avante: toggle sidebar / debug |
-| `<leader>avg` / `<leader>avr` / `<leader>avv` | Opt-in local suggestions / repo map / selection toggles |
-| `<leader>avc` / `<leader>avB` | Avante: add current file / all buffers |
-| `<leader>avh` | Avante: select history |
-| `<leader>avM` / `<leader>avp` | Avante: select ACP model / mode |
+
+Unlike Avante, codecompanion's ollama adapter is a function re-evaluated on
+every chat/request, so switching the model via `<leader>aM` takes effect on
+the next request with no separate "refresh" or cache-drop step to run.
 
 Changing the selection is blocked while an aider terminal is running. The
 tested aider release can lose the managed prompt budget on its live `/model`
@@ -323,8 +324,7 @@ path, so close the terminal, select, then reopen it; the new launch keeps the
 correct metadata. The exact tested release is pinned in the installer template.
 
 Ambient ghost-text stays off. `Cmd+K` is the cloud Claude inline edit;
-`<leader>ave` is the explicit local equivalent, and `<leader>avg` opts into
-local suggestions for the current session.
+`<leader>ai` is the local equivalent.
 
 ## Agents — aider, cursor-agent, and Codex
 
@@ -333,7 +333,7 @@ the Claude integration above: claudecode.nvim makes Neovim the editor Claude Cod
 *drives* — it sees the buffer, resolves `@`-mentions against real files and
 returns native diffs. These agents edit files on disk and the buffer reloads.
 
-`<leader>A`, not `<leader>a`, because the AI group holds Claude and Avante
+`<leader>A`, not `<leader>a`, because the AI group holds Claude and codecompanion
 bindings and this keeps that muscle memory intact.
 
 | Keys | Action |

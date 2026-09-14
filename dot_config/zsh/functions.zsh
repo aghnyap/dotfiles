@@ -187,30 +187,6 @@ _ide_layout() {
   fi
 }
 
-# mancha [section] <name> -- read a man page in chawan, where the cross-references
-# are real links you can follow instead of names you have to retype.
-#
-# chawan serves the `man:` scheme itself, so this is only argument shuffling:
-# `mancha ls` -> man:ls, and `mancha 5 cha-config` -> man:cha-config(5), matching
-# how man itself takes an optional leading section.
-mancha() {
-  if (( $# == 0 )); then
-    print -u2 'usage: mancha [section] <name>'
-    return 1
-  fi
-  local target
-  if (( $# >= 2 )) && [[ $1 == <-> ]]; then
-    target="man:$2($1)"
-  else
-    target="man:$1"
-  fi
-  if (( $+commands[term-tab] )); then
-    term-tab cha "$target"
-  else
-    cha "$target"
-  fi
-}
-
 # ── Homebrew ────────────────────────────────────────────────────────────────
 
 # brewopt [group] -- install an optional package group.
@@ -254,12 +230,18 @@ brewopt() {
 # Working entirely through SSH + a browser, nothing else installed locally.
 #
 # sshsocks/sshsocks-stop/sshbrowse route browser traffic through the remote
-# host's network -- VPN-gated internal tools, or an SSO login chawan cannot
-# complete (see CHEATSHEET.md's chawan section: a text/CSS browser cannot run
-# an OAuth SPA). Firefox carries that traffic, not Chrome: a work-managed
-# Chrome install may have MDM policy blocking custom launch flags or
-# extensions, and this needs neither -- a separate Firefox binary and profile
-# are untouched by any policy aimed at Chrome.
+# host's network -- VPN-gated internal tools that are only reachable from
+# there. Firefox carries that traffic, not Chrome: a work-managed Chrome
+# install may have MDM policy blocking custom launch flags or extensions, and
+# this needs neither -- a separate Firefox binary and profile are untouched
+# by any policy aimed at Chrome.
+#
+# firefox is no longer part of this repo's baseline (see Brewfile) -- install
+# it by hand if you use sshbrowse. terminal-browser's own `--ssh <user@host>`
+# flag routes a single page through a remote host too, without a persistent
+# tunnel or a separate profile; worth switching sshbrowse to that instead of
+# maintaining this Firefox-profile approach, but that is a redesign, not done
+# here.
 #
 # sshflutter is unrelated: a plain port-forward (no proxy, no browser forced)
 # for viewing a `flutter run -d web-server` dev build. A vanilla localhost
@@ -299,7 +281,7 @@ sshsocks-stop() {
 # from the remote network work.
 sshbrowse() {
   [[ -n $1 ]] || { print -u2 "usage: sshbrowse <host> [port=1337]"; return 1; }
-  (( $+commands[firefox] )) || { print -u2 "sshbrowse: firefox not installed -- chezmoi apply first"; return 1; }
+  (( $+commands[firefox] )) || { print -u2 "sshbrowse: firefox not installed -- it is no longer in the baseline Brewfile, install by hand"; return 1; }
   local host=$1 port=${2:-1337} pidfile profile_dir
   local base="$HOME/Library/Application Support/Firefox/Profiles"
 

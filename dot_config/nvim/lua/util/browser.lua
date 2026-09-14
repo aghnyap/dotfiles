@@ -1,5 +1,5 @@
 -- Open URLs and paths in Arc, never macOS's OS-level default
--- browser (this repo doesn't manage that setting) and never chawan.
+-- browser (this repo doesn't manage that setting).
 --
 -- vim.ui.open on Darwin is hardcoded to `open`, which ignores $BROWSER. gx,
 -- :Open, Snacks.gitbrowse, markdown-preview, and <leader>Cb all go through

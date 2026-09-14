@@ -189,8 +189,7 @@ if command -v nvim >/dev/null 2>&1; then
   if XDG_CONFIG_HOME="$TMP/xdg" XDG_DATA_HOME="$TMP/data" XDG_STATE_HOME="$TMP/state" XDG_CACHE_HOME="$TMP/cache" \
     nvim --headless -i NONE \
     -c 'lua local m=require("util.ai_model"); assert(m.current()==nil); assert(vim.fn.exists(":AiModel")==2)' \
-    -c 'Lazy load avante.nvim' \
-    -c 'lua assert(vim.fn.maparg("<leader>aM", "n") ~= ""); assert(vim.fn.maparg("<leader>avm", "n") == ""); assert(vim.fn.maparg("<leader>aa", "n", false, true).desc=="Avante (local): ask"); assert(vim.fn.maparg("<leader>ave", "v", false, true).desc=="Avante (local): edit selection"); assert(vim.fn.maparg("<leader>avg", "n", false, true).desc=="Avante (local): toggle suggestions"); assert(vim.fn.exists(":Aider")==0)' \
+    -c 'lua assert(vim.fn.maparg("<leader>aM", "n") ~= ""); assert(vim.fn.maparg("<leader>aa", "n", false, true).desc=="CodeCompanion: toggle chat"); assert(vim.fn.maparg("<leader>ai", "n", false, true).desc=="CodeCompanion: inline prompt"); assert(vim.fn.maparg("<leader>ax", "n", false, true).desc=="CodeCompanion: actions menu"); assert(vim.fn.exists(":Aider")==0)' \
     -c qa >/dev/null 2>&1; then
     ok "headless Neovim source and AI key ownership"
   else

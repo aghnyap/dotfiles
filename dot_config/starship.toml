@@ -54,7 +54,7 @@ command_timeout = 1000
 #            private use gets no system font fallback -- so anything not
 #            already rendering in the patched font shows tofu or nothing.
 #
-# Only Ghostty is configured to JetBrainsMono Nerd Font here, so the override
+# Only Ghostty is configured to FiraCode Nerd Font here, so the override
 # looked correct in the one terminal it was checked in and broke in the rest.
 # The prompt is the wrong place to spend portability on: it is the one piece of
 # config that has to survive every terminal, every ssh session and every
@@ -89,3 +89,10 @@ disabled = true
 # segment back.
 [dart]
 disabled = true
+
+# direnv is disabled by default upstream; this repo's Brewfile installs it
+# and dot_config/zsh/tools.zsh hooks it into the shell (v12.0-audited), so
+# the prompt should say when a project's .envrc is loaded. Uses starship's
+# own default format/symbol -- no reason to diverge yet.
+[direnv]
+disabled = false

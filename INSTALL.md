@@ -96,7 +96,7 @@ If you want the Neovim Claude integration (`Cmd+L`, `Cmd+K`), install the
 `claude` CLI too — it ships its own installer rather than a brew formula, so this
 repo checks for it and does not install it. `claudecode.nvim` runs whatever
 `claude` is on PATH. Claude and cursor-agent are the explicit cloud paths:
-prompts and selected code leave the machine. Avante and aider are the local
+prompts and selected code leave the machine. codecompanion and aider are the local
 paths; they use loopback Ollama and need no API credential. Which-key labels
 the request-producing actions added by this repo as local or cloud so that
 egress choice stays visible.

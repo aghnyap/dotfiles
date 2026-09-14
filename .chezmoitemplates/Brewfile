@@ -11,16 +11,17 @@
 
 # ── Terminal / core workspace ────────────────────────────────────────────
 # ghostty and the Nerd Font both ship as macOS casks only -- neither has a
-# Homebrew formula, on either platform, so there is no Linux side to this
-# conditional yet. Gated rather than left bare so `brew bundle` on Ubuntu
-# fails loudly on a cask it cannot install, instead of skipping silently.
-# The Linux install path (apt/a direct download) is an open question -- see
-# the Checkpoint 3 report.
+# Homebrew formula, on either platform, so there is no Linux side to this via
+# `brew bundle`. Linux gets both through apt/a direct download instead, in
+# run_onchange_before_install-packages.sh.tmpl's linux block, not here.
 {{ if eq .chezmoi.os "darwin" -}}
 cask "ghostty"
 # Implied dependency of Ghostty (and of starship's prompt glyphs below) --
 # not itself named in the manifest, but nothing renders correctly without it.
-cask "font-jetbrains-mono-nerd-font"
+# Fira Code, per preference -- Nerd Fonts patches the same glyph set onto
+# every font it ships, so this is a drop-in swap for the JetBrains Mono
+# build the font gotchas in CLAUDE.md were originally written against.
+cask "font-fira-code-nerd-font"
 {{ end -}}
 brew "starship"
 brew "direnv"
@@ -122,11 +123,16 @@ brew "tree-sitter"
 brew "tree-sitter-cli"
 
 # fontconfig is listed on purpose even though it would otherwise arrive as a
-# transitive dependency. `fc-list` is what bootstrap.sh uses to prove a Nerd
-# Font glyph actually exists in the installed font. Wrapped in
-# `command -v fc-list` at the call site, so without an explicit entry that
-# check would silently disappear instead of fail.
+# transitive dependency. `fc-list` is the tool CLAUDE.md's Nerd Font gotcha
+# says to run before committing a new codepoint -- without an explicit entry
+# here it would just be whatever another formula happened to pull in.
 brew "fontconfig"
+
+# Implied dependency of image.nvim (dot_config/nvim/lua/plugins/diagram.lua)
+# -- its default `magick_cli` processor shells out to ImageMagick's own
+# `identify`/`convert` to scale and crop images before the Kitty graphics
+# protocol draws them.
+brew "imagemagick"
 
 # ── Containers & code hosts ───────────────────────────────────────────────
 brew "podman"
@@ -149,19 +155,23 @@ brew "zk"
 brew "mpv"
 brew "yt-dlp"
 
-# GUI browser. Not Arc: a work-managed Arc install may have MDM policy
-# blocking the custom launch flags and profile that sshbrowse's SOCKS5 tunnel
-# needs (see ~/.config/zsh/functions.zsh), and Firefox -- a fully separate
-# binary and profile -- is guaranteed untouched by any policy aimed at Arc.
-# $BROWSER stays Arc (~/.config/nvim/lua/util/browser.lua) -- Arc itself is
-# macOS-only and not part of this file; Linux has no equivalent default yet,
-# also an open question for the Checkpoint 3 report.
-#
-# Cask only -- there is no Homebrew Firefox formula on Linux (Ubuntu's own
-# `firefox` package is a snap shim, not a real binary, which is a separate
-# problem this conditional does not try to solve yet).
+# No GUI browser cask any more -- firefox was here solely as sshbrowse's
+# isolated-profile tunnel browser (see ~/.config/zsh/functions.zsh) and as a
+# policy-safe fallback next to Arc; dropped per instruction rather than
+# replaced. sshbrowse now degrades to its own "not installed" message if
+# nothing named `firefox` is on PATH; install one by hand if you use it.
+# $BROWSER stays Arc (~/.config/nvim/lua/util/browser.lua), macOS-only, not
+# part of this file; Linux has no equivalent default configured yet.
+
+# terminal-browser: real Chromium rendering inside the terminal (Kitty
+# graphics protocol), which is what makes it able to complete a JS-heavy
+# OAuth/SSO flow that chawan's CSS-only engine could not -- see the removal
+# note where chawan used to be, below. macOS gets the cask; Linux installs
+# via the upstream script in run_onchange_before_install-packages.sh.tmpl's
+# linux block, since there is no Homebrew formula for it at all (cask-only,
+# and casks do not exist on Linux Homebrew).
 {{ if eq .chezmoi.os "darwin" -}}
-cask "firefox"
+cask "terminal-browser"
 {{ end -}}
 
 # ── Not yet portable to this baseline ─────────────────────────────────────
@@ -174,12 +184,9 @@ cask "firefox"
 brew "tmux"
 brew "sesh"
 
-# chawan: kept here deliberately, past the v12.0-audited cut. The manifest's
-# tui_browser_sso was to be browsh, but `brew info browsh` resolves to
-# nothing -- the formula is gone from homebrew-core (upstream browsh has had
-# no release since 2021), and installing it any other way would mean
-# maintaining a dependency Homebrew itself dropped. Decision: no browsh.
-# chawan stays as the terminal browser; OAuth/SSO logins that need a real
-# browser go to desktop Firefox (above) or the machine's default browser
-# instead of a terminal one.
-brew "chawan"
+# chawan (the CSS-only terminal browser this used to have) is removed
+# entirely, not moved to optional: terminal-browser (above) replaces it and
+# covers the one thing chawan genuinely could not do -- render a JS-heavy
+# OAuth/SSO page. browsh, the manifest's original tui_browser_sso pick, is
+# not installable at all (`brew info browsh` resolves to nothing; upstream
+# has had no release since 2021) -- see the Checkpoint 4 report.

@@ -15,7 +15,7 @@ local PROFILES = {
   { model = 'qwen3-coder:30b', context = 32768 },
 }
 
--- Ollama's num_ctx is input + output. Avante and aider receive the smaller
+-- Ollama's num_ctx is input + output. codecompanion and aider receive the smaller
 -- prompt budget so a response cannot silently run beyond that total.
 --
 -- The reserve is large because both models run edit_format=whole, which
@@ -204,31 +204,13 @@ local function apply(model)
     config.options.args = M.aider_args(model)
   end
 
-  pcall(function()
-    local avante_config = require 'avante.config'
-    avante_config.override {
-      providers = {
-        ollama = {
-          model = model,
-          context_window = M.prompt_context(model),
-          extra_request_body = {
-            options = {
-              num_ctx = M.context(model),
-              num_predict = M.output_tokens(),
-            },
-          },
-        },
-      },
-    }
-
-    -- Providers are materialized and cached on first access. Drop only the
-    -- cached Ollama functor so the next request rebuilds it from the override;
-    -- changing Config alone leaves Avante talking to the previous model.
-    local providers = package.loaded['avante.providers']
-    if providers then
-      providers.ollama = nil
-    end
-  end)
+  -- No live-reconfigure push needed for codecompanion.nvim, unlike Avante
+  -- before it: its ollama adapter (plugins/codecompanion.lua) is defined as
+  -- a FUNCTION, which codecompanion re-invokes to build a fresh adapter
+  -- every time a chat/request starts, reading `M.current()`/`M.context()`
+  -- fresh each time. Setting `_G.ai_model` above is already the whole
+  -- update -- there is no cached provider object to drop the way Avante's
+  -- `avante.providers.ollama` had to be.
 
   notify(('Local AI model: %s (%dk context)'):format(model, M.context(model) / 1024))
   return true

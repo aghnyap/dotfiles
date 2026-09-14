@@ -1,0 +1,39 @@
+// Flutter/Android project layout -- port of dot_config/tmux/layouts/executable_layout.sh's
+// "mobile" case. Launched via the picker (Ctrl+o p) or `zellij --layout mobile --session <name>`.
+//
+// zellij has no equivalent of tmux's "type a command but don't press Enter"
+// trick, so panes below either run a complete, safe-to-run command
+// (start_suspended=true -- loaded but waits for you to press Enter) or,
+// where the original command was deliberately incomplete
+// (`fvm flutter run --flavor `, missing the flavor name), are left as a
+// plain shell with a name label instead of a broken pre-filled command.
+//
+// NOT live-tested against a real zellij session in the environment this was
+// written in (no PTY available there) -- verify once with
+// `zellij --layout ~/.config/zellij/layouts/mobile.kdl --session test-mobile`
+// before relying on it.
+layout {
+    tab name="editor" {
+        pane command="nvim"
+    }
+    tab name="run" {
+        pane split_direction="vertical" {
+            pane name="type: fvm flutter run --flavor <name>"
+            pane command="adb" start_suspended=true {
+                args "logcat" "-v" "color"
+            }
+        }
+    }
+    tab name="gradle" {
+        pane split_direction="horizontal" {
+            pane command="./gradlew" start_suspended=true {
+                args "assembleDebug"
+            }
+            // This one auto-ran in the tmux version (send-keys ... C-m) --
+            // it is read-only and safe, so it keeps running immediately here.
+            pane command="adb" {
+                args "devices" "-l"
+            }
+        }
+    }
+}
