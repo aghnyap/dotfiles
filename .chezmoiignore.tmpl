@@ -174,3 +174,22 @@ justfile
 # left in git history, because the history gets squashed and rewritten -- a
 # comment pointing at a commit is a promise this repo cannot keep.
 starship-powerline.toml
+
+{{ if eq .chezmoi.os "linux" -}}
+# macOS-only paths and scripts, ignored on Linux so `apply` does not create a
+# ~/Library that means nothing there or run a script full of `defaults write`
+# commands with no `defaults` binary to run them against. This is the one
+# templated file besides .chezmoi.toml.tmpl and the package installer -- see
+# CLAUDE.md's templating conventions for why that stays rare, and note it
+# here if that list ever grows again.
+
+# lazygit's config on macOS, at ~/Library/Application Support/lazygit -- not
+# XDG, so it cannot share a path with the Linux config. There is no Linux
+# equivalent yet (that config would live at ~/.config/lazygit/config.yml);
+# tracked as an open item rather than guessed at here.
+Library/**
+
+# Keyboard/Finder/screenshot `defaults write` calls -- macOS-only by
+# definition; there is no equivalent Linux script yet.
+run_onchange_after_macos-defaults.sh
+{{ end -}}

@@ -13,6 +13,15 @@
 #
 # `brew bundle` never uninstalls, so removing a line here has no effect on a
 # machine that already has the package. Uninstall by hand if that is the intent.
+#
+# No templating here, unlike the baseline Brewfile: `brewopt`
+# (dot_config/zsh/functions.zsh) reads this file as plain text, so a
+# "macOS only" marker below is documentation, not an enforced skip on
+# Ubuntu -- `brewopt <group>` there will still attempt those lines and fail
+# on Homebrew casks that have no Linux equivalent. Fixing that needs
+# `brewopt` itself to filter by `$(uname)`; out of scope for the
+# v12.0-audited migration's OS-branching checkpoint, which covers the
+# templated baseline Brewfile only.
 
 # ── sec ────────────────────────────────────────────────────────────────────
 # The reverse-engineering / offensive-security toolchain. Not in the
@@ -41,15 +50,19 @@ brew "syft"
 # Mobile/iOS build tooling. Not in the v12.0-audited manifest. FVM still pins
 # Flutter per-repository from each clone's `.fvm/` when installed -- see
 # CLAUDE.md's identity table and never add Flutter/Dart to PATH globally.
+# fvm, fastlane and scrcpy are cross-platform. android-platform-tools is
+# cross-platform in spirit (adb matters for Android work on Linux too) but
+# ships from Homebrew as a cask either way -- no Linux formula exists.
 brew "fvm"
 cask "android-platform-tools"
-brew "cocoapods"
 brew "fastlane"
+brew "scrcpy"
+# macOS only past this point -- Xcode's own toolchain:
+brew "cocoapods"
 brew "xcbeautify"
 brew "xcode-build-server"
 brew "swiftformat"
 brew "swiftlint"
-brew "scrcpy"
 
 # ── arch ───────────────────────────────────────────────────────────────────
 # C4 models as code. Not in the v12.0-audited manifest (d2 in the baseline

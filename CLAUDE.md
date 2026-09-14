@@ -130,13 +130,16 @@ the identity leak or the silent-drop trap the rest of this file warns about:
   valid JSON, so `jq` passed it; only diffing the render against the live
   file caught it. Diff the rendered output, not just lint it, after touching
   whitespace control.
-- **No managed file is a `.tmpl` except the two load-bearing ones:**
-  `.chezmoi.toml.tmpl` and `run_onchange_before_install-packages.sh.tmpl`.
-  Neither is a config file anyone hand-edits under `$HOME`, which is what
-  keeps `chezmoi re-add` safe everywhere else — it cannot reverse templating,
-  so an edit to a live file whose source is templated is silently dropped by
-  `re-add` and lost on the next `apply`. Adding a new `.tmpl` anywhere else
-  reopens that trap; if you do, document it here.
+- **No managed file is a `.tmpl` except three load-bearing ones:**
+  `.chezmoi.toml.tmpl`, `run_onchange_before_install-packages.sh.tmpl`, and
+  `.chezmoiignore.tmpl` (OS-conditional ignores, added for the v12.0-audited
+  Linux target). None of the three is a config file anyone hand-edits under
+  `$HOME` — `.chezmoiignore` in particular has no live copy in `$HOME` at
+  all, chezmoi reads it only from the source — which is what keeps `chezmoi
+  re-add` safe everywhere else — it cannot reverse templating, so an edit to
+  a live file whose source is templated is silently dropped by `re-add` and
+  lost on the next `apply`. Adding a new `.tmpl` anywhere else reopens that
+  trap; if you do, document it here.
 - **OS-conditional blocks inside `Brewfile` stay install-mechanics only.**
   `{{ if eq .chezmoi.os "darwin" }}cask "firefox"{{ else }}brew "firefox"{{ end }}`
   is the intended shape — same tool, different package type. A tool that
@@ -194,10 +197,11 @@ The rule that catches everyone:
   by `re-add` and lost on the next `apply`. **No managed file is a template
   any more** — `~/.gitconfig`, `~/.config/nvim/KEYBINDINGS.md` and VS Code's
   `settings.json` all were, and all three stopped being managed or stopped
-  being templated. The only templates left are `.chezmoi.toml.tmpl` and
-  `run_onchange_before_install-packages.sh.tmpl`, neither of which is a
-  config file anyone edits in `$HOME`. So `re-add` is currently safe on
-  everything — and the trap comes straight back the moment a `.tmpl` is
+  being templated. The templates left are `.chezmoi.toml.tmpl`,
+  `run_onchange_before_install-packages.sh.tmpl`, and `.chezmoiignore.tmpl` —
+  none of which is a config file anyone edits in `$HOME`. So `re-add` is
+  currently safe on everything — and the trap comes straight back the moment
+  another `.tmpl` is
   added. If you add one, say so here.
 - **`chezmoi re-add` is also how junk gets committed.** VS Code's
   `settings.json` was managed for a while, and every extension that wrote to

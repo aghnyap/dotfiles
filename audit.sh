@@ -25,10 +25,10 @@ printf '==> source audit\n'
 # Shell and template syntax.
 check "bootstrap bash syntax" bash -n bootstrap.sh
 check "macOS defaults bash syntax" bash -n run_onchange_after_macos-defaults.sh
-if rg -q 'Lazy! restore' bootstrap.sh && ! rg -q 'Lazy! sync' bootstrap.sh; then
-  ok "bootstrap preserves Neovim lockfile"
+if rg -q 'Lazy! restore' justfile && ! rg -q 'Lazy! sync' justfile; then
+  ok "just plugins preserves Neovim lockfile"
 else
-  bad "bootstrap preserves Neovim lockfile"
+  bad "just plugins preserves Neovim lockfile"
 fi
 for file in dot_zshrc dot_zprofile dot_zshenv dot_config/zsh/*.zsh; do
   check "zsh syntax: $file" zsh -n "$file"
@@ -51,7 +51,7 @@ else
 fi
 
 templates=$(rg --files --hidden -g '!.git/**' -g '*.tmpl' | sort)
-expected_templates=$(printf '%s\n' .chezmoi.toml.tmpl run_onchange_before_install-packages.sh.tmpl | sort)
+expected_templates=$(printf '%s\n' .chezmoi.toml.tmpl run_onchange_before_install-packages.sh.tmpl .chezmoiignore.tmpl | sort)
 if [[ $templates == "$expected_templates" ]]; then
   ok "only non-config templates exist"
 else

@@ -62,7 +62,19 @@ fi
 # Homebrew: sets HOMEBREW_PREFIX/MANPATH/INFOPATH as well as PATH. Guarded
 # because `brew shellenv` forks a subshell (~30ms) and .zshenv runs for every
 # nested zsh; HOMEBREW_PREFIX is exported, so children skip the re-run.
-[[ -z $HOMEBREW_PREFIX && -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+#
+# Three candidate prefixes, not one: /opt/homebrew is arm64 macOS only.
+# Intel Macs and Linux both need the other two -- there is no single
+# $HOMEBREW_PREFIX to check here, precisely because this line is what
+# establishes it. (Once set, everything past this point in the repo reads
+# $HOMEBREW_PREFIX itself, e.g. dev_paths_prepend below -- this is the one
+# place that has to probe instead.)
+if [[ -z $HOMEBREW_PREFIX ]]; then
+  for _hb_prefix in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
+    [[ -x $_hb_prefix/bin/brew ]] && eval "$("$_hb_prefix/bin/brew" shellenv)" && break
+  done
+  unset _hb_prefix
+fi
 
 # `typeset -U` keeps these deduplicated. .zshenv runs for every nested zsh, so
 # without it PATH would grow a duplicate set per subshell.

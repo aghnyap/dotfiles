@@ -10,10 +10,18 @@
 # `brew bundle` is built into Homebrew now; no tap needed.
 
 # ── Terminal / core workspace ────────────────────────────────────────────
+# ghostty and the Nerd Font both ship as macOS casks only -- neither has a
+# Homebrew formula, on either platform, so there is no Linux side to this
+# conditional yet. Gated rather than left bare so `brew bundle` on Ubuntu
+# fails loudly on a cask it cannot install, instead of skipping silently.
+# The Linux install path (apt/a direct download) is an open question -- see
+# the Checkpoint 3 report.
+{{ if eq .chezmoi.os "darwin" -}}
 cask "ghostty"
 # Implied dependency of Ghostty (and of starship's prompt glyphs below) --
 # not itself named in the manifest, but nothing renders correctly without it.
 cask "font-jetbrains-mono-nerd-font"
+{{ end -}}
 brew "starship"
 brew "direnv"
 brew "zellij"
@@ -145,8 +153,16 @@ brew "yt-dlp"
 # blocking the custom launch flags and profile that sshbrowse's SOCKS5 tunnel
 # needs (see ~/.config/zsh/functions.zsh), and Firefox -- a fully separate
 # binary and profile -- is guaranteed untouched by any policy aimed at Arc.
-# $BROWSER stays Arc (~/.config/nvim/lua/util/browser.lua).
+# $BROWSER stays Arc (~/.config/nvim/lua/util/browser.lua) -- Arc itself is
+# macOS-only and not part of this file; Linux has no equivalent default yet,
+# also an open question for the Checkpoint 3 report.
+#
+# Cask only -- there is no Homebrew Firefox formula on Linux (Ubuntu's own
+# `firefox` package is a snap shim, not a real binary, which is a separate
+# problem this conditional does not try to solve yet).
+{{ if eq .chezmoi.os "darwin" -}}
 cask "firefox"
+{{ end -}}
 
 # ── Not yet portable to this baseline ─────────────────────────────────────
 # tmux + sesh: kept here deliberately, past the v12.0-audited cut, because
@@ -159,9 +175,11 @@ brew "tmux"
 brew "sesh"
 
 # chawan: kept here deliberately, past the v12.0-audited cut. The manifest's
-# tui_browser_sso is browsh, which chawan was meant to be replaced BY -- but
-# `brew info browsh` resolves to nothing; the formula is gone from
-# homebrew-core (upstream browsh has had no release since 2021). Until a
-# working install path for browsh is confirmed, chawan stays so there is a
-# terminal browser at all. See the Checkpoint 2 report for the open question.
+# tui_browser_sso was to be browsh, but `brew info browsh` resolves to
+# nothing -- the formula is gone from homebrew-core (upstream browsh has had
+# no release since 2021), and installing it any other way would mean
+# maintaining a dependency Homebrew itself dropped. Decision: no browsh.
+# chawan stays as the terminal browser; OAuth/SSO logins that need a real
+# browser go to desktop Firefox (above) or the machine's default browser
+# instead of a terminal one.
 brew "chawan"
