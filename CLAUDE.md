@@ -44,8 +44,10 @@ just apply       # applies to $HOME -- confirms first, never run unannounced
 - **Document command snippets and keybindings in the same commit you add
   them, never as a follow-up.** New commands, aliases, or CLI usage go in a
   `dot_config/tealdeer/pages/*.page.md` custom page; new or changed Neovim
-  keymaps go in `dot_config/nvim/KEYBINDINGS.md`. Keep employer-specific
-  values out of both.
+  keymaps go in `dot_config/tealdeer/pages/dotfiles-nvim.page.md` (a summary,
+  not exhaustive — LazyVim's own `<leader>` + which-key is the exhaustive
+  reference; this page covers what this repo adds or overrides on top of
+  it). Keep employer-specific values out of both.
 - **Cross-platform: macOS + Ubuntu Linux, one configuration per platform.**
   Every Mac built from this repo is identical to every other Mac, and every
   Ubuntu box identical to every other Ubuntu box. Do not add a work/personal
@@ -130,16 +132,25 @@ the identity leak or the silent-drop trap the rest of this file warns about:
   valid JSON, so `jq` passed it; only diffing the render against the live
   file caught it. Diff the rendered output, not just lint it, after touching
   whitespace control.
-- **No managed file is a `.tmpl` except three load-bearing ones:**
-  `.chezmoi.toml.tmpl`, `run_onchange_before_install-packages.sh.tmpl`, and
+- **No managed file is a `.tmpl` except four load-bearing ones:**
+  `.chezmoi.toml.tmpl`, `run_onchange_before_install-packages.sh.tmpl`,
   `.chezmoiignore.tmpl` (OS-conditional ignores, added for the v12.0-audited
-  Linux target). None of the three is a config file anyone hand-edits under
-  `$HOME` — `.chezmoiignore` in particular has no live copy in `$HOME` at
-  all, chezmoi reads it only from the source — which is what keeps `chezmoi
-  re-add` safe everywhere else — it cannot reverse templating, so an edit to
-  a live file whose source is templated is silently dropped by `re-add` and
-  lost on the next `apply`. Adding a new `.tmpl` anywhere else reopens that
-  trap; if you do, document it here.
+  Linux target), and `dot_config/tealdeer/config.toml.tmpl` (needs
+  `.chezmoi.homeDir` because tealdeer's `custom_pages_dir` does not expand
+  `~`). None of the four is a config file anyone hand-edits under `$HOME` —
+  `.chezmoiignore` in particular has no live copy in `$HOME` at all, chezmoi
+  reads it only from the source — which is what keeps `chezmoi re-add` safe
+  everywhere else — it cannot reverse templating, so an edit to a live file
+  whose source is templated is silently dropped by `re-add` and lost on the
+  next `apply`. Adding a new `.tmpl` anywhere else reopens that trap; if you
+  do, document it here.
+- **A literal `{{`/`}}` pair is live template syntax anywhere in a rendered
+  file, comment or not** — `text/template` has no idea what a `#` is. An
+  example conditional spelled out in a comment inside
+  `.chezmoitemplates/Brewfile.optional` (rendered by `brewopt`, same as the
+  baseline Brewfile) broke rendering with a confusing `unexpected EOF`
+  pointing at a totally unrelated line. Describe a conditional in prose in
+  a comment; don't paste its literal syntax.
 - **OS-conditional blocks inside `Brewfile` stay install-mechanics only.**
   `{{ if eq .chezmoi.os "darwin" }}cask "firefox"{{ else }}brew "firefox"{{ end }}`
   is the intended shape — same tool, different package type. A tool that
@@ -198,8 +209,9 @@ The rule that catches everyone:
   any more** — `~/.gitconfig`, `~/.config/nvim/KEYBINDINGS.md` and VS Code's
   `settings.json` all were, and all three stopped being managed or stopped
   being templated. The templates left are `.chezmoi.toml.tmpl`,
-  `run_onchange_before_install-packages.sh.tmpl`, and `.chezmoiignore.tmpl` —
-  none of which is a config file anyone edits in `$HOME`. So `re-add` is
+  `run_onchange_before_install-packages.sh.tmpl`, `.chezmoiignore.tmpl`, and
+  `dot_config/tealdeer/config.toml.tmpl` — none of which is a config file
+  anyone edits in `$HOME`. So `re-add` is
   currently safe on everything — and the trap comes straight back the moment
   another `.tmpl` is
   added. If you add one, say so here.
@@ -281,7 +293,7 @@ not. These are not bugs — do not "fix" them:
 | `dot_zshenv` | Toolchain PATH/env for **all** shells; `dev_paths_prepend()` re-asserted from `.zprofile` because `/etc/zprofile`'s `path_helper` reorders PATH |
 | `dot_zshrc` | Interactive only. oh-my-zsh + the fork-elimination shims |
 | `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `zellij` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:216`** — a new file here does nothing until it is added there |
-| `dot_config/nvim/` | LazyVim + custom specs. See `KEYBINDINGS.md` |
+| `dot_config/nvim/` | LazyVim + custom specs. See `dotfiles-nvim.page.md` (`tldr dotfiles-nvim`) |
 | `dot_aider.conf.yml` | aider's non-model defaults. There is deliberately no model here: Neovim selects one per process with `:AiModel`, and shell use passes `--model` explicitly |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. **`num_ctx` must be set here, not via `OLLAMA_CONTEXT_LENGTH`** — `brew services` starts ollama through launchd, which does not inherit a shell's environment, so an export would look correct and change nothing. Ollama's 2k default silently truncates instead of erroring |
 | `dot_aider.model.metadata.json` | Per-model prompt/output budgets. Keep `max_tokens` equal to `num_ctx`, reserve 8192 in `max_output_tokens`, and set `max_input_tokens` to the difference. The reserve is that large because `edit_format: whole` returns an entire file, and 1024 truncated any rewrite past ~100 lines. Without this file aider trusts the model's advertised 262k window and can overrun the smaller local context silently |

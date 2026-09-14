@@ -199,14 +199,27 @@ _ide_layout() {
 # No argument lists the groups. `brew bundle` only ever installs, so this cannot
 # remove anything.
 brewopt() {
-  local file="$(chezmoi source-path 2>/dev/null)/.chezmoitemplates/Brewfile.optional"
+  local source_dir="$(chezmoi source-path 2>/dev/null)"
+  local file="$source_dir/.chezmoitemplates/Brewfile.optional"
   [[ -r $file ]] || { print -u2 "brewopt: no optional Brewfile at $file"; return 1 }
+
+  # Rendered through chezmoi, not read raw: Brewfile.optional can carry
+  # {{ if eq .chezmoi.os "darwin" }} conditionals the same way the baseline
+  # Brewfile does (see its `mobile` group's Xcode-only tail). Reading the
+  # file raw would pass literal Go-template text straight to `brew bundle`
+  # -- garbage on every platform, and specifically what breaks a group with
+  # an os-gated line on Linux.
+  local rendered
+  rendered=$(chezmoi execute-template --source="$source_dir" < "$file") || {
+    print -u2 "brewopt: failed to render Brewfile.optional"
+    return 1
+  }
 
   if (( $# == 0 )); then
     print -P "%F{blue}optional groups%f  --  brewopt <group>"
     # Each group is a `# ── name ──` banner; print its name plus the comment line
     # underneath, so the listing explains itself instead of needing a second doc.
-    awk '/^# ── /{ n=$3; getline c; sub(/^# ?/, "", c); printf "  %-10s %s\n", n, c }' "$file"
+    awk '/^# ── /{ n=$3; getline c; sub(/^# ?/, "", c); printf "  %-10s %s\n", n, c }' <<< "$rendered"
     return 0
   fi
 
@@ -215,7 +228,7 @@ brewopt() {
   body=$(awk -v want="$1" '
     /^# ── / { inside = ($3 == want); next }
     inside   { print }
-  ' "$file")
+  ' <<< "$rendered")
 
   if [[ -z ${body//[[:space:]]/} ]]; then
     print -u2 "brewopt: no group '$1' -- run 'brewopt' for the list"

@@ -20,12 +20,17 @@ Get the repo onto the machine (clone it, or the zip in
 
 ```sh
 ./bootstrap.sh
+just apply
 ```
 
-That is the whole thing: Homebrew, chezmoi, `chezmoi apply`, the Brewfile, and a
-verification pass that the fonts and Nerd Font glyphs actually landed. It
-takes no flags and asks no questions, so it is already unattended, and it is
-idempotent — re-run it any time.
+`bootstrap.sh` installs exactly three things: Homebrew (or `apt` prerequisites
+on Ubuntu), `chezmoi`, and `just` -- then registers this checkout as chezmoi's
+source and stops. It takes no flags and asks no questions, so it is already
+unattended, and it is idempotent -- re-run it any time. `just apply` is the
+separate, explicit step that actually writes anything: it runs `chezmoi
+apply` (the Brewfile, every config file, macOS defaults), then `just plugins`
+(nvim/tmux plugin restore, the bat theme cache). See CLAUDE.md's *Git
+workflow for large changes* for why applying is not folded into bootstrap.
 
 ```sh
 ./bootstrap.sh git@github.com:<you>/dotfiles.git    # clone, then do all of the above
@@ -35,8 +40,9 @@ Doing it by hand instead:
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install chezmoi
-chezmoi init --apply --source=~/dotfiles <this-repo-url>
+brew install chezmoi just
+chezmoi init --source=~/dotfiles <this-repo-url>
+just apply
 ```
 
 **`chezmoi init` asks nothing.** There is no work/personal split and no
@@ -68,28 +74,33 @@ the repo ships without editing the repo. A fresh machine has no git identity
 until you write one; `bootstrap.sh` says so at the end and does not do it for
 you.
 
-`run_onchange_before_install-packages.sh.tmpl` then runs `brew bundle` over
-`.chezmoitemplates/Brewfile`, sets up the mise runtimes (node, java, ruby) and the
-cocoapods/fastlane gems, installs frida/objection via `uv tool`, and
-clones tpm plus the zsh plugins Homebrew does not package. It re-runs by itself
+`chezmoi apply` (via `just apply`) runs
+`run_onchange_before_install-packages.sh.tmpl`, which does `brew bundle` over
+`.chezmoitemplates/Brewfile` (the v12.0-audited baseline only -- frida,
+objection, cocoapods and fastlane moved to `.chezmoitemplates/Brewfile.optional`,
+installed by hand with `brewopt`), sets up the mise runtimes (node, java, ruby,
+go, rust, python), installs litellm/harlequin/aider via `uv tool`, and clones
+tpm plus the zsh plugins Homebrew does not package. It re-runs by itself
 whenever the Brewfile changes.
 
-`bootstrap.sh` then installs the nvim and tmux plugins headlessly and builds the
-`bat` theme cache, so nothing is left to do by hand except write your git
-identity, which this repo deliberately does not own. Mason installs its language
-servers on the first real `nvim` start — that needs an event loop, so no script
-can force it.
+`just apply` then calls `just plugins`, which restores the nvim and tmux
+plugins headlessly and builds the `bat` theme cache -- nothing is left to do
+by hand except write your git identity, which this repo deliberately does not
+own. Mason installs its language servers on the first real `nvim` start — that
+needs an event loop, so no script can force it.
 
-`audit.sh` is the complementary maintainer check: it does not apply or install
-anything, and validates source syntax, model budgets, key ownership, templates,
+`audit.sh` (run via `just audit`, or `just check` alongside a secret scan) is
+the complementary maintainer check: it does not apply or install anything,
+and validates source syntax, model budgets, key ownership, templates,
 Brewfile scope and secrets before a commit or push.
 
 ## Cheatsheet
 
-[`CHEATSHEET.md`](CHEATSHEET.md) is the one-page reference across every tool —
-Ghostty, tmux, Neovim, vim itself, the shell, the security toolchain and the
-terminal browser (terminal-browser).
-`dot_config/nvim/KEYBINDINGS.md` stays the exhaustive Neovim reference.
+`dot_config/tealdeer/pages/` is the command reference across every tool —
+shell, git, mobile, security, AI, C4/Structurizr, chezmoi and Neovim — as
+tealdeer custom pages, replacing the old CHEATSHEET.md and
+`dot_config/nvim/KEYBINDINGS.md`. Start with `tldr dotfiles`; each topic
+page is `tldr dotfiles-<topic>`.
 
 ## Layout
 
@@ -97,8 +108,8 @@ terminal browser (terminal-browser).
 | --- | --- |
 | `dot_zshenv` | Toolchain PATH/env for **all** shells. `dev_paths_prepend()` is re-asserted from `.zprofile` because `/etc/zprofile`'s `path_helper` reorders PATH. |
 | `dot_zshrc` | Interactive shell only. Thin — content lives in the modules. |
-| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4`, plus `git-aliases` as a fallback when oh-my-zsh is absent. Each is named in `_mods` in `dot_zshrc` — a file added here loads only once it is listed there |
-| `dot_config/nvim/` | LazyVim + custom plugin specs. See `KEYBINDINGS.md`. |
+| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `zellij`, plus `git-aliases` as a fallback when oh-my-zsh is absent. Each is named in `_mods` in `dot_zshrc` — a file added here loads only once it is listed there |
+| `dot_config/nvim/` | LazyVim + custom plugin specs. See `tldr dotfiles-nvim`. |
 | `dot_config/tmux/` | tmux.conf + project layouts (mobile/web/backend/sec/arch) |
 | `dot_aider.conf.yml` | aider's non-model defaults — no credentials, so it is managed |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. Both are load-bearing: Ollama's 2k default silently truncates, and `whole` beats `diff` on a small model |
@@ -109,8 +120,9 @@ terminal browser (terminal-browser).
 | `.chezmoitemplates/Brewfile.optional` | Opt-in package groups (`brewopt backend`). Not installed by `apply` |
 | `dot_editorconfig` | Indentation every editor reads. Deliberately duplicates the per-language table in `nvim/lua/config/autocmds.lua` — that one is Neovim-only, this one reaches Android Studio, Xcode and Cursor. **Change one, change the other**; Go and Make are the ones that bite, both needing literal tabs |
 | `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout |
-| `bootstrap.sh` | One-command setup for a new machine, plus the look-and-feel verification. Not a target — `.chezmoiignore`d like the docs. |
-| `audit.sh` | Non-mutating source-contract verification for maintainers. Also `.chezmoiignore`d, so it never becomes `~/audit.sh` |
+| `bootstrap.sh` | Installs Homebrew/apt, `chezmoi` and `just` -- nothing else. Not a target — `.chezmoiignore`d like the docs |
+| `justfile` | Task runner for everything past bootstrap: `just apply` (chezmoi apply + plugin restore), `just check`, `just verify`, and the rest of `just --list`. Also `.chezmoiignore`d |
+| `audit.sh` | Non-mutating source-contract verification for maintainers, run via `just audit`. Also `.chezmoiignore`d, so it never becomes `~/audit.sh` |
 
 ## Opening a project
 
@@ -314,8 +326,7 @@ so a caller cannot smuggle in arguments. It holds no credentials.
 Two more AI tools, both driving a CLI in a split rather than acting as the
 editor. `<leader>A` is the group: `Aa` toggle aider, `Am` its command menu,
 `Ab`/`Ad` add/drop the buffer, `As` send a selection, `Aw` watch-files mode,
-`Ac`/`Ar` cursor-agent toggle/resume. Full table in
-`~/.config/nvim/KEYBINDINGS.md`.
+`Ac`/`Ar` cursor-agent toggle/resume. Summary table via `tldr dotfiles-nvim`.
 
 **aider needs no key at all — it runs a local model.** Ollama serves on
 `127.0.0.1:11434`; nothing leaves the machine and there is nothing to
@@ -328,8 +339,7 @@ ollama pull qwen2.5-coder:7b        # 4.7 GB; 5.5 GB resident at a 32k window
 ollama pull qwen3-coder:30b         # 19.0 GB; 20 GB resident at a 32k window
 ```
 
-`bootstrap.sh` asks the same Lua catalog and reports whether at least one of
-these weights exists; it never downloads or selects a multi-gigabyte model.
+Nothing here downloads or selects a multi-gigabyte model for you.
 The first local request opens the same picker as `:AiModel` / `<leader>aM`,
 verifies that Ollama serves the exact tag, then resumes. The selection is not
 persisted. At a shell, pass `--model ollama_chat/<tag>` explicitly.
@@ -339,8 +349,8 @@ The tested aider release can replace managed context metadata on its live
 `/model` path; a fresh launch always reads the safe local budget. Its exact
 version is pinned in the installer template.
 
-cursor-agent still needs `cursor-agent login` once per machine — a browser flow,
-which is why `bootstrap.sh` cannot do it. `CURSOR_API_KEY` is the scriptable
+cursor-agent still needs `cursor-agent login` once per machine — a browser flow
+nothing here can script. `CURSOR_API_KEY` is the scriptable
 alternative and belongs in `~/.config/zsh/local/`, which is machine-local,
 excluded in `.chezmoiignore` and sourced last.
 

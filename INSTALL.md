@@ -38,12 +38,15 @@ AirDrop / USB / iCloud `~/dotfiles.zip` to the other Mac.
 cd ~
 unzip -q ~/Downloads/dotfiles.zip        # -> ~/dotfiles
 
-cd dotfiles && ./bootstrap.sh
+cd dotfiles && ./bootstrap.sh && just apply
 ```
 
-`bootstrap.sh` does the rest — Homebrew, `chezmoi`, every config into place, the
-Brewfile, and a check that the fonts and Nerd Font glyphs really landed. It
-asks nothing and takes no flags. Re-running it is safe.
+`bootstrap.sh` installs exactly three things — Homebrew, `chezmoi`, and
+`just` — then registers this checkout as chezmoi's source and stops. It asks
+nothing and takes no flags, and re-running it is safe. `just apply` is the
+separate step that actually writes anything: `chezmoi apply` (every config
+file, the Brewfile, macOS defaults) followed by `just plugins` (nvim/tmux
+plugin restore, the `bat` theme cache, and the font/glyph check).
 
 <details>
 <summary>The same thing by hand</summary>
@@ -53,11 +56,12 @@ asks nothing and takes no flags. Re-running it is safe.
 command -v brew >/dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
-brew install chezmoi git
+brew install chezmoi git just
 
 # Point chezmoi at it, then write every config into place. No prompts.
 chezmoi init --source=~/dotfiles
 chezmoi apply
+just plugins
 ```
 </details>
 
@@ -81,9 +85,10 @@ The same goes for anything else that is genuinely per-machine or per-project:
 work VPN helpers go in `~/.config/zsh/local/`, and an SDK pin or a project's
 BDD directories go in that project's own `.vscode/settings.json`, never here.
 
-**4. `chezmoi apply` then runs the installer by itself** — Homebrew packages,
-mise runtimes, frida/objection, tmux's plugin manager and the zsh plugins.
-Takes a while on a fresh Mac.
+**4. `just apply` runs `chezmoi apply`, which runs the installer by itself** —
+Homebrew packages (the v12.0-audited baseline only; frida, objection,
+cocoapods and fastlane are opt-in now, via `brewopt`), mise runtimes, tpm and
+the zsh plugins. Takes a while on a fresh Mac.
 
 **5. One manual finish — your git identity:**
 
@@ -101,16 +106,17 @@ paths; they use loopback Ollama and need no API credential. Which-key labels
 the request-producing actions added by this repo as local or cloud so that
 egress choice stays visible.
 
-Nothing else is left to do by hand. `bootstrap.sh` restores the nvim plugins
-from the committed lockfile (`nvim --headless "+Lazy! restore"`), installs the
-tmux plugins (tpm's own `install_plugins`) and builds the `bat` theme cache,
-then verifies all three.
+Nothing else is left to do by hand. `just apply`'s last step, `just plugins`,
+restores the nvim plugins from the committed lockfile (`nvim --headless
+"+Lazy! restore"`), installs the tmux plugins (tpm's own `install_plugins`)
+and builds the `bat` theme cache.
 Mason still installs its language servers on your first real `nvim` start —
 that needs a running event loop, so no script can force it.
 
-For later source changes, run `./audit.sh` before committing. It performs the
-non-mutating contract, syntax, key-ownership and secret checks; `bootstrap.sh`
-remains the applied-machine verification.
+For later source changes, run `just check` (or `./audit.sh` directly) before
+committing — the non-mutating contract, syntax, key-ownership and secret
+checks. `just verify` is the applied-machine check now that `bootstrap.sh`
+only installs the three prerequisites.
 
 Optional, if this machine does backend work:
 
@@ -141,7 +147,7 @@ convenience for squeezing it through AirDrop. Copying the directory itself
 Mac and skip straight to:
 
 ```sh
-cd ~/dotfiles && ./bootstrap.sh
+cd ~/dotfiles && ./bootstrap.sh && just apply
 ```
 
 Nothing in the repo is machine-specific, and there is no per-machine variant to
@@ -176,7 +182,7 @@ git push -u origin main
 ```sh
 brew install git
 git clone git@github.com:<you>/dotfiles.git ~/dotfiles
-cd ~/dotfiles && ./bootstrap.sh
+cd ~/dotfiles && ./bootstrap.sh && just apply
 ```
 
 `bootstrap.sh` also accepts the URL itself (`./bootstrap.sh git@github.com:…`)
@@ -188,8 +194,9 @@ bad habit to bake into a bootstrap doc.
 Without the script at all:
 
 ```sh
-brew install chezmoi
-chezmoi init --apply --source=~/dotfiles git@github.com:<you>/dotfiles.git
+brew install chezmoi just
+chezmoi init --source=~/dotfiles git@github.com:<you>/dotfiles.git
+just apply
 ```
 
 **The remote is public, so treat anything committed here as published.** It

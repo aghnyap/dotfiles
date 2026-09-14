@@ -1,0 +1,27 @@
+# tealdeer -- fast tldr client, replacing tlrc in the v12.0-audited migration
+# (same `tldr` binary name; see .chezmoitemplates/Brewfile). Custom pages
+# under dot_config/tealdeer/pages/ are this repo's own command reference,
+# replacing CHEATSHEET.md and dot_config/nvim/KEYBINDINGS.md.
+#
+# Templated -- the fourth and last exception to CLAUDE.md's "no managed
+# file is a template" rule, safe from the re-add trap for the same reason
+# .chezmoiignore.tmpl is: nobody hand-edits a live ~/.config/tealdeer/config.toml,
+# so there is no edit for `chezmoi re-add` to silently lose. It exists
+# because `custom_pages_dir` below has to be an absolute path -- tealdeer's
+# own docs are explicit that it does NOT expand `~` or `$HOME` in a TOML
+# value, unlike TEALDEER_CONFIG_DIR (an environment variable, expanded by
+# the shell that exports it, not by tealdeer) in dot_zshenv. A plain `~`
+# here looked right and would have silently pointed tealdeer at a
+# directory named `~` instead of the real pages.
+
+[display]
+compact = false
+use_pager = false
+
+[updates]
+auto_update = true
+# Default cache staleness before a lookup silently re-fetches (days).
+auto_update_interval_hours = 720
+
+[directories]
+custom_pages_dir = "{{ .chezmoi.homeDir }}/.config/tealdeer/pages"

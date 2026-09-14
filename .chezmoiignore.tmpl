@@ -160,13 +160,14 @@ Library/Application Support/Cursor/**
 .config/flutter/settings
 
 # Repo documentation and tooling. Without these, chezmoi treats a source-root
-# file as a target and writes it into $HOME -- CHEATSHEET.md showed up as a
-# pending ~/CHEATSHEET.md until it was listed here, and bootstrap.sh as a
-# pending ~/bootstrap.sh.
+# file as a target and writes it into $HOME -- bootstrap.sh showed up as a
+# pending ~/bootstrap.sh until it was listed here (CHEATSHEET.md used to be
+# the example; it was deleted in the v12.0-audited migration, replaced by
+# dot_config/tealdeer/pages/, which needs no such guard since it lives
+# under dot_config/ already).
 README.md
 INSTALL.md
 CLAUDE.md
-CHEATSHEET.md
 bootstrap.sh
 audit.sh
 justfile

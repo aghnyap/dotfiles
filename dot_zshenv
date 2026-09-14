@@ -32,6 +32,13 @@ export ANDROID_SDK_ROOT=$ANDROID_HOME   # legacy name; some Gradle/CI tooling st
 # 127.0.0.1, not localhost: ollama binds loopback v4 by default.
 export OLLAMA_API_BASE=http://127.0.0.1:11434
 
+# tealdeer reads its config from an OS-specific default (macOS:
+# ~/Library/Application Support/tealdeer; Linux: ~/.config/tealdeer already,
+# so this is a no-op there). Pinning both platforms to the same path keeps
+# `dot_config/tealdeer/` the one place to look, and matches where
+# dot_config/tealdeer/config.toml.tmpl itself is managed from.
+export TEALDEER_CONFIG_DIR="$HOME/.config/tealdeer"
+
 # Default browser: Arc, explicit and not dependent on the OS-level
 # default browser (this repo doesn't manage System Settings). Neovim still
 # wraps vim.ui.open separately -- Darwin's implementation is hardcoded to

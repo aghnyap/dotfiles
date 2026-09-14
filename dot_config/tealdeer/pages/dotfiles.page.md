@@ -1,13 +1,41 @@
 # dotfiles
 
-> Placeholder custom tealdeer page -- scaffolding for the v12.0-audited
-> migration (Phase 1). Populated in Phase 5 by porting `CHEATSHEET.md`'s
-> `## Shell` section here as a set of `dotfiles-*` pages (`dotfiles-shell`,
-> `dotfiles-git`, `dotfiles-ai`, `dotfiles-c4`, `dotfiles-chezmoi`, …), plus
-> `chezmoi.patch.md` / `just.patch.md` appending repo aliases to their
-> upstream pages. See `CLAUDE.md` for the tealdeer conventions.
+> Index of this repo's custom tealdeer pages -- replaces CHEATSHEET.md and
+> dot_config/nvim/KEYBINDINGS.md in the v12.0-audited migration.
 > More information: <https://github.com/aghnyap/dotfiles>.
 
-- List custom pages installed by this repo:
+- Shell aliases, functions, chezmoi and brewopt:
+
+`tldr dotfiles-shell`
+
+- oh-my-zsh git aliases and this repo's own git helpers:
+
+`tldr dotfiles-git`
+
+- Neovim keybindings, leader groups and commands:
+
+`tldr dotfiles-nvim`
+
+- Mobile/Flutter/Android/iOS dev commands:
+
+`tldr dotfiles-mobile`
+
+- Security toolchain (`brewopt sec` first):
+
+`tldr dotfiles-sec`
+
+- Local and cloud AI (aider, codecompanion, cursor-agent, Codex):
+
+`tldr dotfiles-ai`
+
+- C4/Structurizr architecture-as-code:
+
+`tldr dotfiles-c4`
+
+- chezmoi and justfile workflow for this repo:
+
+`tldr dotfiles-chezmoi`
+
+- List every custom page installed by this repo:
 
 `ls {{path/to/tealdeer/pages}}`

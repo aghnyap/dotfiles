@@ -51,7 +51,7 @@ else
 fi
 
 templates=$(rg --files --hidden -g '!.git/**' -g '*.tmpl' | sort)
-expected_templates=$(printf '%s\n' .chezmoi.toml.tmpl run_onchange_before_install-packages.sh.tmpl .chezmoiignore.tmpl | sort)
+expected_templates=$(printf '%s\n' .chezmoi.toml.tmpl run_onchange_before_install-packages.sh.tmpl .chezmoiignore.tmpl dot_config/tealdeer/config.toml.tmpl | sort)
 if [[ $templates == "$expected_templates" ]]; then
   ok "only non-config templates exist"
 else
