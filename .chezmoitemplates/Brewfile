@@ -157,11 +157,13 @@ brew "yt-dlp"
 
 # No GUI browser cask any more -- firefox was here solely as sshbrowse's
 # isolated-profile tunnel browser (see ~/.config/zsh/functions.zsh) and as a
-# policy-safe fallback next to Arc; dropped per instruction rather than
-# replaced. sshbrowse now degrades to its own "not installed" message if
-# nothing named `firefox` is on PATH; install one by hand if you use it.
-# $BROWSER stays Arc (~/.config/nvim/lua/util/browser.lua), macOS-only, not
-# part of this file; Linux has no equivalent default configured yet.
+# policy-safe fallback next to the terminal default; dropped per instruction
+# rather than replaced. sshbrowse now degrades to its own "not installed"
+# message if nothing named `firefox` is on PATH; install one by hand if you
+# use it. $BROWSER stays terminal-browser, in a new Ghostty tab
+# (~/.config/nvim/lua/util/browser.lua, dot_local/bin/executable_terminal-browser-open),
+# macOS-only via term-tab's osascript, not part of this file; Linux has no
+# equivalent default configured yet.
 
 # terminal-browser: real Chromium rendering inside the terminal (Kitty
 # graphics protocol), which is what makes it able to complete a JS-heavy

@@ -108,13 +108,13 @@ page is `tldr dotfiles-<topic>`.
 | --- | --- |
 | `dot_zshenv` | Toolchain PATH/env for **all** shells. `dev_paths_prepend()` is re-asserted from `.zprofile` because `/etc/zprofile`'s `path_helper` reorders PATH. |
 | `dot_zshrc` | Interactive shell only. Thin — content lives in the modules. |
-| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `zellij`, plus `git-aliases` as a fallback when oh-my-zsh is absent. Each is named in `_mods` in `dot_zshrc` — a file added here loads only once it is listed there |
+| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `d2` `zellij`, plus `git-aliases` as a fallback when oh-my-zsh is absent. Each is named in `_mods` in `dot_zshrc` — a file added here loads only once it is listed there |
 | `dot_config/nvim/` | LazyVim + custom plugin specs. See `tldr dotfiles-nvim`. |
 | `dot_config/tmux/` | tmux.conf + project layouts (mobile/web/backend/sec/arch) |
 | `dot_aider.conf.yml` | aider's non-model defaults — no credentials, so it is managed |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. Both are load-bearing: Ollama's 2k default silently truncates, and `whole` beats `diff` on a small model |
 | `dot_aider.model.metadata.json` | Per-model prompt/output limits. Keeps aider's own token budget below the `num_ctx` Ollama actually allocates |
-| `dot_claude/skills/` | Claude Code skills (`c4-architect`). The only managed path under `~/.claude`; the rest of that tree is denied in `.chezmoiignore` |
+| `dot_claude/skills/` | Claude Code skills (`d2-architect`). The only managed path under `~/.claude`; the rest of that tree is denied in `.chezmoiignore` |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig`, which holds identity, is not managed |
 | `.chezmoitemplates/Brewfile.optional` | Opt-in package groups (`brewopt backend`). Not installed by `apply` |
@@ -137,87 +137,87 @@ Neovim, which opens the file tree itself, plus the side windows for that kind
 of project. `tm` is the lower-level one — it gives you a session with a bare
 shell in it. Inside tmux, `prefix + P` picks a layout and a directory instead.
 
-## Architecture as code — C4 / Structurizr
+## Architecture as code — C4 / d2
 
-The C4 model lives in a repo as `workspace.dsl` and is the single source of truth
-for the architecture. One binary drives all of it:
+The C4 model lives in a repo as `workspace.d2` and is the single source of truth
+for the architecture. One binary drives all of it -- d2 itself, no JVM, no
+plantuml/graphviz detour, and it is already in the baseline Brewfile:
 
 ```sh
-c4-init                  # scaffold docs/architecture/
-c4-local                 # serve it at http://localhost:8081
-c4-export                # every view to Mermaid, fenced for PR review
-c4-render svg            # every view as an image, locally
-c4-validate              # the only diagnostics that exist
+d2-init                  # scaffold docs/architecture/workspace.d2
+d2-local                 # serve it at http://localhost:8081
+d2-render svg            # every layer as an image, locally -- no export step
+d2-validate              # the only diagnostics that exist
 ```
 
-`c4-render` exports PlantUML and lets PlantUML rasterise it, with Graphviz doing
-the layout. That indirection is not a preference: the exporter dropped its
-Graphviz format (`-format dot` now answers *"Unknown export format: dot"*, though
-plenty of guides still say otherwise), and its own PNG/SVG support is not a
-format at all — it needs `-url` and a headless browser, which means the 1.98 GB
-`-playwright` container image. PlantUML gets the same images locally for about
-8 MB. `plantuml -testdot` verifies the pair.
+`workspace.d2` models each C-level as a `layers { c1: {...} c2: {...} }` block;
+`d2-render` fans a layered file out to one image per layer on its own
+(`images/workspace/c1.svg`, `c2.svg`, ...) -- there is no separate export
+format to pick, the way Structurizr needed Mermaid or PlantUML as an
+intermediate step. The trade: d2 has no equivalent of Structurizr's
+`!impliedRelationships`, so a relationship shown at C2 that also matters at C3
+has to be restated, not auto-derived from one shared model. Committing the
+rendered image is also the PR-review path now -- unlike the old Mermaid
+export, nothing here renders natively inside a GitHub/GitLab markdown fence.
 
-`ide -l arch` (or `ide` in a repo with a `workspace.dsl` and no app manifest)
+`ide -l arch` (or `ide` in a repo with a `workspace.d2` and no app manifest)
 builds a tmux session with the preview server already running.
 
-**No Docker.** Nearly every guide you will find says to run Structurizr Lite in
-a container, and Colima with it. Two things changed upstream: the
-`structurizr-cli` Homebrew formula is deprecated and Homebrew disables it on
-2027-02-17, and Structurizr Lite is filed under "End of life". The unified
-`structurizr` binary replaces both — `local` is documented as *"equivalent to the
-previous Structurizr Lite tooling"* — and it runs natively. `colima` and `docker`
-stayed in the optional `backend` group, where they were.
+**No Docker, no JVM.** This replaced an earlier Structurizr/PlantUML/Graphviz
+toolchain that needed exactly that combination to render an image locally
+without a 1.98 GB `-playwright` container. `colima` and `docker` stayed in the
+optional `backend` group, unrelated to architecture modelling either way.
 
-**Port 8081, not 8080.** 8080 is the upstream default and is exactly where
-`mitmweb` and the tmux `sec` layout listen. `C4_PORT=9000 c4-local` overrides it,
-and `c4-local` names the process holding the port rather than letting the JVM
-fail obscurely.
+**Port 8081, not 8080.** 8080 is where `mitmweb` and the tmux `sec` layout
+listen. `D2_PORT=9000 d2-local` overrides it, and `d2-local` names the process
+holding the port rather than letting d2's own error obscure it.
 
-**Commit `workspace.json`.** Layout you drag in the browser is saved there, next
-to the DSL. Lose it and you re-drag every box.
+**No `workspace.json` to commit.** Structurizr let you drag boxes in the
+browser and persisted that layout to a file next to the DSL; d2 has no
+interactive drag-to-arrange UI, only its own layout engines (`dagre` by
+default, `elk` as the alternative) computing the arrangement from the DSL
+every time. One less file to remember to commit, and one less way to lose a
+layout — but also no manual override if the auto-layout picks something odd,
+short of restructuring the DSL itself.
 
-`c4-init` writes a `structurizr.properties` turning on auto-refresh at 2000 ms,
-which upstream ships disabled — so editing the DSL updates the browser without a
-reload. That plus a split-screen browser is the working setup; it is also what
-upstream recommends in place of an editor preview panel.
+`d2 --watch` reloads the preview on save with no extra config -- unlike
+Structurizr, which needed a `structurizr.properties` file to turn that on at
+all (`c4-init` used to write one; there is nothing for `d2-init` to write for
+this).
 
 ### In Neovim
 
-Nothing is installed. Structurizr syntax and the `structurizr` filetype are built
-into Neovim, and `jfcherng/vim-structurizr` — the plugin most guides name — does
-not exist. `<leader>C` is the group: `Cs` serve, `Cb` browser, `Ce` export, `Cv`
-validate, `Ca` toggle export-on-save. There is no language server for the DSL
-(the nvim-lspconfig PR was rejected, mason has no package), so `<leader>Cv` into
-the quickfix list is the substitute.
+`d2lang/d2-vim` is now a real dependency (`plugins/d2.lua`), not a plugin
+that turned out not to exist: unlike Structurizr's `.dsl`, Neovim core has no
+built-in detection or syntax for `.d2` at all, checked directly
+(`nvim --headless -c 'e x.d2' -c 'set ft?'` reports an empty filetype on a
+clean install). `<leader>C` is still the group: `Cs` serve, `Cb` browser,
+`Cr`/`CR` render (svg/png), `Cv` validate. There is no known language server
+for d2 either, so `<leader>Cv` into the quickfix list is the substitute, same
+as it was for the DSL.
 
 ### In Android Studio / IntelliJ
 
 Nothing here is committed for either IDE, the same as for Cursor and VS Code.
-
-Install **Structurizr DSL Language Support** (Dirk Groot, plugin `20606`) — free,
-by far the largest install base, and no upper build bound so it installs on
-current Android Studio. It is syntax and indentation only, which is enough
-because the modelling happens in Neovim. The plugin usually recommended,
-*Structurizr DSL Support* (`21358`), is abandoned: last updated April 2023 and
-capped at build `231.*`, so it will not install at all. If you want in-IDE live
-preview and export, **Structurizr DSL** (Jakub Jirák, `29351`) is the only plugin
-that has them, and it is paid.
+Two JetBrains marketplace plugins exist for d2 syntax -- **D2 Diagram**
+(plugin `29542`, ~6.4k installs) and **D2** (plugin `20630`, ~3.5k installs)
+-- unlike the Structurizr section this replaced, their build-compatibility
+and feature depth have not been checked here; try the larger one first.
 
 The IDE terminal needs no setup — it starts a login shell, which sources
-`~/.zshrc`, which sources `c4.zsh`, so `c4-local` and `c4-export` are there.
-`/opt/homebrew/bin` is restored by the managed login-shell PATH, so
-`structurizr` is available regardless of how the IDE was installed.
+`~/.zshrc`, which sources `d2.zsh`, so `d2-local` and `d2-render` are there.
+`/opt/homebrew/bin` is restored by the managed login-shell PATH, so `d2` is
+available regardless of how the IDE was installed.
 
-There is no embedded-browser option. JetBrains has no general-purpose webview to
-point at `localhost:8081` — the choices are *Open in Browser* or plugin `29351`'s
-own panel.
+There is no embedded-browser option. JetBrains has no general-purpose webview
+to point at `localhost:8081` — *Open in Browser* is the only path unless one
+of the two plugins above adds its own panel (not checked).
 
 ### The Claude skill
 
-`~/.claude/skills/c4-architect/SKILL.md` is managed here, so `/c4-architect` is
-available in any repo on any machine. It co-designs C1 → C2 → C3 one level per
-exchange, refuses Level 4 and implementation code, enforces the Flutter
+`~/.claude/skills/d2-architect/SKILL.md` is managed here, so `/d2-architect`
+is available in any repo on any machine. It co-designs C1 → C2 → C3 one level
+per exchange, refuses Level 4 and implementation code, enforces the Flutter
 UI/BLoC/Repository split against the Java Controller/Service/Repository split, and
 emits the OpenAPI contract for every relationship that crosses between them.
 

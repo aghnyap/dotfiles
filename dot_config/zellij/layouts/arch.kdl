@@ -1,25 +1,25 @@
-// C4/Structurizr modelling layout -- port of dot_config/tmux/layouts/executable_layout.sh's
+// d2 architecture-modelling layout -- port of dot_config/tmux/layouts/executable_layout.sh's
 // "arch" case: the preview server runs immediately (matching the tmux
-// version's auto-run via send-keys ... C-m), the export command sits ready
-// to confirm. structurizr/plantuml live in Brewfile.optional's `arch` group
-// -- `brewopt arch` first. Not live-tested in this environment (no PTY) --
-// verify once with
+// version's auto-run via send-keys ... C-m), the render command sits ready
+// to confirm. d2 is baseline (no `brewopt` group needed any more -- see
+// .chezmoitemplates/Brewfile.optional's note where `arch` used to be).
+// Not live-tested in this environment (no PTY) -- verify once with
 // `zellij --layout ~/.config/zellij/layouts/arch.kdl --session test-arch`.
 layout {
     tab name="editor" {
         pane command="nvim"
     }
-    tab name="c4" {
-        // c4-local/c4-export are zsh FUNCTIONS (dot_config/zsh/c4.zsh), not
+    tab name="d2" {
+        // d2-local/d2-render are zsh FUNCTIONS (dot_config/zsh/d2.zsh), not
         // binaries -- zellij's `command` execs directly, bypassing an
         // interactive shell and its function definitions, so both go
         // through `zsh -lic` instead of naming the function as `command`.
         pane split_direction="horizontal" {
             pane command="zsh" {
-                args "-lic" "c4-local"
+                args "-lic" "d2-local"
             }
             pane size="30%" command="zsh" start_suspended=true {
-                args "-lic" "c4-export"
+                args "-lic" "d2-render"
             }
         }
     }

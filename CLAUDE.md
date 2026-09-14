@@ -292,12 +292,12 @@ not. These are not bugs — do not "fix" them:
 | --- | --- |
 | `dot_zshenv` | Toolchain PATH/env for **all** shells; `dev_paths_prepend()` re-asserted from `.zprofile` because `/etc/zprofile`'s `path_helper` reorders PATH |
 | `dot_zshrc` | Interactive only. oh-my-zsh + the fork-elimination shims |
-| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `c4` `zellij` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:216`** — a new file here does nothing until it is added there |
+| `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `d2` `zellij` `git-aliases` (a vendored copy of oh-my-zsh's git plugin, used only as a fallback when the framework is absent). **Every one of these is listed by name in `_mods` at `dot_zshrc:216`** — a new file here does nothing until it is added there |
 | `dot_config/nvim/` | LazyVim + custom specs. See `dotfiles-nvim.page.md` (`tldr dotfiles-nvim`) |
 | `dot_aider.conf.yml` | aider's non-model defaults. There is deliberately no model here: Neovim selects one per process with `:AiModel`, and shell use passes `--model` explicitly |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. **`num_ctx` must be set here, not via `OLLAMA_CONTEXT_LENGTH`** — `brew services` starts ollama through launchd, which does not inherit a shell's environment, so an export would look correct and change nothing. Ollama's 2k default silently truncates instead of erroring |
 | `dot_aider.model.metadata.json` | Per-model prompt/output budgets. Keep `max_tokens` equal to `num_ctx`, reserve 8192 in `max_output_tokens`, and set `max_input_tokens` to the difference. The reserve is that large because `edit_format: whole` returns an entire file, and 1024 truncated any rewrite past ~100 lines. Without this file aider trusts the model's advertised 262k window and can overrun the smaller local context silently |
-| `dot_claude/skills/` | Claude Code skills, currently `c4-architect`. The **only** managed path under `~/.claude` — `.chezmoiignore` denies the rest of that tree, which holds session transcripts and memory files |
+| `dot_claude/skills/` | Claude Code skills, currently `d2-architect`. The **only** managed path under `~/.claude` — `.chezmoiignore` denies the rest of that tree, which holds session transcripts and memory files |
 | `dot_config/ghostty/config` | Font, theme, and the 30 CSI-u Cmd-chord forwards Neovim depends on |
 | `dot_config/git/config` | git's tooling half — pager, editor, delta theme. `~/.gitconfig` holds identity and is **not** managed |
 | `.chezmoitemplates/Brewfile` | Baseline package list: the v12.0-audited manifest, cross-platform (macOS + Ubuntu). One list, no variants |

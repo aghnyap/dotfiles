@@ -84,7 +84,7 @@ vim.g.lazyvim_explorer = 'neo-tree'
 -- so formatting never fires mid-keystroke. `<leader>uf` toggles it by hand.
 vim.g.autoformat = true
 
--- gx, :Open, git-browse, markdown preview, C4 <leader>Cb. Darwin's vim.ui.open
--- is `open` and ignores $BROWSER; this wrap sends everything to Arc.
+-- gx, :Open, git-browse, markdown preview, d2 <leader>Cb. Darwin's vim.ui.open
+-- is `open` and ignores $BROWSER; this wrap sends everything to terminal-browser.
 require('util.browser').setup()
 

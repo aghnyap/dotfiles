@@ -73,29 +73,11 @@ brew "swiftformat"
 brew "swiftlint"
 {{ end -}}
 
-# ── arch ───────────────────────────────────────────────────────────────────
-# C4 models as code. Not in the v12.0-audited manifest (d2 in the baseline
-# covers architecture_and_diagrams instead). `structurizr` is the unified
-# binary -- `local` serves the browser UI, `export` writes Mermaid,
-# `validate`/`inspect` are the only diagnostics that exist for the DSL.
-# Driven by ~/.config/zsh/c4.zsh and the c4-architect Claude Code skill.
-#
-# It depends on Homebrew's openjdk (already pulled in as a dependency here).
-# That dependency is load-bearing, not incidental: the war is built for Java
-# 21+, and Homebrew's launcher script does
-# `export JAVA_HOME="${JAVA_HOME:-<brew openjdk>}"` as a FALLBACK, not a pin.
-# ~/.zshenv exports mise's temurin-17 for Gradle and jdtls, so out of the box
-# every structurizr call inherits Java 17 and dies with
-# UnsupportedClassVersionError -- `_c4_structurizr` in c4.zsh overrides
-# JAVA_HOME for this command only. Do not "simplify" that away.
-brew "structurizr"
-# The local image pipeline for C4 views: `c4-render` exports PlantUML and lets
-# PlantUML rasterise it, with Graphviz doing the layout. `plantuml -testdot`
-# checks the pair is wired up. graphviz is listed even though plantuml
-# depends on it, so brew records it as installed-on-request and
-# `brew autoremove` cannot take it.
-brew "plantuml"
-brew "graphviz"
+# No `arch` group any more. It held structurizr + plantuml + graphviz for
+# the old Structurizr/C4 toolchain, replaced everywhere by d2 -- which is
+# already in the baseline Brewfile, needs no JVM and no PlantUML/Graphviz
+# rasterising detour, so there is nothing left here to make opt-in. See
+# dot_config/zsh/d2.zsh and the d2-architect Claude Code skill.
 
 # ── backend ────────────────────────────────────────────────────────────────
 # Containers and Kubernetes, ~1 GB, for the Docker-compatible workflow the

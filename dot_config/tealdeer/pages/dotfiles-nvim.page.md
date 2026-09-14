@@ -135,7 +135,7 @@
 
 `:OsvScan`
 
-- Validate the C4/Structurizr model, straight into the quickfix list:
+- Validate the C4/d2 model, straight into the quickfix list:
 
 `<leader>Cv`
 

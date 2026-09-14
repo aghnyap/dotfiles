@@ -39,12 +39,13 @@ export OLLAMA_API_BASE=http://127.0.0.1:11434
 # dot_config/tealdeer/config.toml.tmpl itself is managed from.
 export TEALDEER_CONFIG_DIR="$HOME/.config/tealdeer"
 
-# Default browser: Arc, explicit and not dependent on the OS-level
-# default browser (this repo doesn't manage System Settings). Neovim still
-# wraps vim.ui.open separately -- Darwin's implementation is hardcoded to
-# plain `open` and ignores $BROWSER, so this export alone doesn't cover gx,
-# :Open, git-browse, markdown preview, or C4's <leader>Cb.
-export BROWSER=arc-open
+# Default browser: terminal-browser, opened in a new Ghostty tab, explicit
+# and not dependent on the OS-level default browser (this repo doesn't
+# manage System Settings). Neovim still wraps vim.ui.open separately --
+# Darwin's implementation is hardcoded to plain `open` and ignores
+# $BROWSER, so this export alone doesn't cover gx, :Open, git-browse,
+# markdown preview, or d2's <leader>Cb.
+export BROWSER=terminal-browser-open
 
 # JAVA_HOME follows the mise pin first, because mise is what this repo installs
 # and its shims already come before $JAVA_HOME/bin below -- if the two disagreed,

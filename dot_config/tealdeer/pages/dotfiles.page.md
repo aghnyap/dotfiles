@@ -28,9 +28,9 @@
 
 `tldr dotfiles-ai`
 
-- C4/Structurizr architecture-as-code:
+- C4/d2 architecture-as-code:
 
-`tldr dotfiles-c4`
+`tldr dotfiles-d2`
 
 - chezmoi and justfile workflow for this repo:
 

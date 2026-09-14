@@ -56,7 +56,10 @@ alias vi='nvim'
 alias vim='nvim'
 export EDITOR='nvim'
 export VISUAL='nvim'
-export BROWSER='arc-open'
+# Already exported in dot_zshenv (which runs for every shell, not just
+# interactive ones); redundant here on purpose so this file stays a
+# complete picture of the interactive editor/browser setup on its own.
+export BROWSER='terminal-browser-open'
 
 
 # ── Config shortcuts ────────────────────────────────────────────────────────

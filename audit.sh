@@ -171,7 +171,7 @@ else
 fi
 
 # Lock in the two lazy.nvim ownership traps that otherwise fail silently.
-if ! rg -q 'config =|init =' dot_config/nvim/lua/plugins/structurizr.lua \
+if ! rg -q 'config =|init =' dot_config/nvim/lua/plugins/d2.lua \
   && ! rg -q "cmd = 'Aider'" dot_config/nvim/lua/plugins/agents.lua; then
   ok "single-owner lazy plugin configuration"
 else

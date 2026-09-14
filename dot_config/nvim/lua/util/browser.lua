@@ -1,19 +1,25 @@
--- Open URLs and paths in Arc, never macOS's OS-level default
+-- Open URLs and paths in terminal-browser, never macOS's OS-level default
 -- browser (this repo doesn't manage that setting).
 --
 -- vim.ui.open on Darwin is hardcoded to `open`, which ignores $BROWSER. gx,
 -- :Open, Snacks.gitbrowse, markdown-preview, and <leader>Cb all go through
 -- that, so the wrap has to live here.
+--
+-- terminal-browser needs a real terminal to draw into (Kitty graphics
+-- protocol), unlike Arc before it, which `open -a` could hand a URL to from
+-- anywhere. So this shells out to term-tab, the same new-Ghostty-tab
+-- launcher the shell's own $BROWSER uses (dot_local/bin/executable_term-tab,
+-- executable_terminal-browser-open) instead of `open`.
 
 local M = {}
 
 function M.open(path)
-  return vim.system({ 'open', '-a', 'Arc', path }, { detach = true }), nil
+  return vim.system({ 'term-tab', 'terminal-browser', 'open', path }, { detach = true }), nil
 end
 
 function M.setup()
-  vim.env.BROWSER = 'arc-open'
-  vim.g.netrw_browsex_viewer = 'arc-open'
+  vim.env.BROWSER = 'terminal-browser-open'
+  vim.g.netrw_browsex_viewer = 'terminal-browser-open'
   vim.cmd [[
     function! OpenMarkdownPreview(url)
       call luaeval('require("util.browser").open(_A)', a:url)

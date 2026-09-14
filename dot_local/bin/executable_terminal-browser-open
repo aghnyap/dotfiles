@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+# $BROWSER entry point: terminal-browser, opened in a new Ghostty tab (via
+# term-tab) rather than in the current pane, so it does not take over
+# whatever the calling tab was already doing. Never a new window.
+#
+# term-tab is macOS-only (osascript driving Ghostty). No Linux path yet --
+# same open gap as term-tab itself.
+set -euo pipefail
+exec term-tab terminal-browser open "$@"

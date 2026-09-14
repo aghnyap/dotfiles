@@ -57,13 +57,13 @@ case "$layout" in
     type "${name}:scan" 'semgrep --config p/security-audit .'
     ;;
   arch)
-    # C4 modelling: the preview server runs, the export sits ready.
-    # c4-local is typed and run rather than left on the prompt -- it is a server,
-    # and the point of this layout is having it up while you edit the DSL.
-    tmux new-window -t "$name" -n c4 -c "$dir"
-    tmux split-window -t "${name}:c4" -v -p 30 -c "$dir"
-    tmux send-keys -t "${name}:c4.1" 'c4-local' C-m
-    type "${name}:c4.2" 'c4-export'
+    # d2 architecture modelling: the preview server runs, render sits ready.
+    # d2-local is typed and run rather than left on the prompt -- it is a
+    # server, and the point of this layout is having it up while you edit.
+    tmux new-window -t "$name" -n d2 -c "$dir"
+    tmux split-window -t "${name}:d2" -v -p 30 -c "$dir"
+    tmux send-keys -t "${name}:d2.1" 'd2-local' C-m
+    type "${name}:d2.2" 'd2-render'
     ;;
   *)
     tmux kill-session -t "=${name}"

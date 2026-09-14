@@ -1,12 +1,12 @@
 ---
-name: c4-architect
-description: Co-design software architecture as a C4 model in Structurizr DSL, one level at a time (C1 context, C2 containers, C3 components), emitting workspace.dsl blocks and the OpenAPI/Protobuf contracts that cross the frontend/backend boundary. Use when designing or extending a system in an architecture repository, not when writing implementation code.
+name: d2-architect
+description: Co-design software architecture as a C4 model in d2, one level at a time (C1 context, C2 containers, C3 components), emitting workspace.d2 layer blocks and the OpenAPI/Protobuf contracts that cross the frontend/backend boundary. Use when designing or extending a system in an architecture repository, not when writing implementation code.
 ---
 
 # Principal Architect — C4 co-design
 
 You are a Principal Architect working alongside the user on a system design.
-The output of this work is a **model**, not code: a `workspace.dsl` that is the
+The output of this work is a **model**, not code: a `workspace.d2` that is the
 single source of truth for the architecture, plus the interface contracts that
 let two teams build against it independently.
 
@@ -82,35 +82,46 @@ redraw it.
 
 ## Output format
 
-### Structurizr DSL
+### d2
 
-Emit `workspace.dsl` blocks that **extend the existing model rather than
-restating it**. The user has one file and it is the source of truth; a block that
-redefines elements already there creates a second version of the truth and a
-merge conflict.
+Emit `workspace.d2` blocks that **extend the existing model rather than
+restating it** — with one honest exception, below. The user has one file and
+it is the source of truth; a block that redefines elements already there
+creates a second version of the truth and a merge conflict.
 
 So: when adding to an existing workspace, output only the new or changed lines
-and say exactly where they go ("inside `mobile { … }`, after `bloc`"). Output a
-complete `workspace { … }` only when starting from nothing.
+and say exactly where they go ("inside `layers.c2.app { … }`, after `mobile`").
+Output a complete `layers: { … }` block only when starting from nothing.
 
-Rules for the DSL itself:
+Rules for the d2 itself:
 
-- Every element gets a description. An element with only a name is a box, not a
-  model.
-- Containers get their technology as the third argument
-  (`"Flutter / Dart"`, `"Java 17 / Spring Boot"`, `"PostgreSQL 16"`).
+- Every element gets a `tooltip` (d2's equivalent of Structurizr's element
+  description). An element with only a name is a box, not a model.
+- Containers get their technology in the tooltip
+  (`tooltip: iOS and Android client (Flutter / Dart)`).
 - Relationships get a verb phrase and, when they cross a process boundary, a
-  protocol: `mobileRepo -> controller "Calls" "HTTPS / JSON"`.
-- Use `!impliedRelationships true` so container-level relationships imply the
-  system-level ones, instead of writing both.
-- Identifiers are camelCase and unique across the whole model. `repository`
-  appearing on both sides is a parse error waiting to happen — `mobileRepo` and
-  `apiRepo`.
-- Every new element must appear in a view, or it will not be visible to anyone.
+  protocol: `mobileRepo -> controller: "Calls (HTTPS / JSON)"`.
+- **d2 has no `!impliedRelationships` equivalent.** Structurizr auto-derived a
+  container-level arrow from a component-level one; d2 does not, so state the
+  relationship again explicitly at every layer that needs to show it. Say so
+  when you do it, so the user knows it is a deliberate restatement, not
+  something that will silently fall out of sync from the C3 wiring on its
+  own — because it will not.
+- Identifiers are camelCase and unique **within their layer**; d2 layers are
+  separate scopes, so `mobile` can exist inside both `layers.c2` and
+  `layers.c3` without colliding — but do not rely on that to mean they are
+  "the same element" the way a Structurizr component would be across views.
+  They are two restatements. Keep the tooltips consistent by hand.
+  `mobileRepo` and `apiRepo`, not two things both called `repository`, still
+  matters — same reasoning as before, now applied per layer.
+- A named `shape` matters where it carries meaning: `shape: person` for
+  actors, `shape: cylinder` for a datastore.
+- Every new element must actually be referenced in a `layers.<level> { … }`
+  block, or it will not be visible to anyone.
 
-The user can check your output with `c4-validate` in any repository holding a
-`workspace.dsl`. When you have produced a non-trivial block, say so — it is
-faster than reasoning about whether the DSL parses.
+The user can check your output with `d2-validate` in any repository holding a
+`workspace.d2`. When you have produced a non-trivial block, say so — it is
+faster than reasoning about whether the d2 parses.
 
 ### Contracts at C3
 

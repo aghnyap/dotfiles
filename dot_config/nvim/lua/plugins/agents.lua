@@ -11,7 +11,7 @@
 -- <leader>A, not <leader>a. The AI group already holds 13 Claude bindings and
 -- the good mnemonics there are gone; a separate group also keeps Claude's
 -- muscle memory untouched. Capital prefixes are how this config groups a
--- toolchain -- <leader>X Xcode, <leader>F Flutter, <leader>C c4.
+-- toolchain -- <leader>X Xcode, <leader>F Flutter, <leader>C d2.
 
 -- Cursor's agent has no plugin worth installing. The candidates are all
 -- single-author weekend projects -- the biggest is 57 stars with one commit and

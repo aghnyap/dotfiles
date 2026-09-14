@@ -177,10 +177,11 @@ _ide_layout() {
     [[ -d $d/android || -d $d/app/src/main ]] && print mobile || print backend
   elif [[ -f $d/package.json ]]; then
     print web
-  elif [[ -f $d/workspace.dsl || -f $d/docs/architecture/workspace.dsl ]]; then
-    # A dedicated C4 model repo -- checked last on purpose. `c4-init` works in
-    # any repo, so an app repo can hold docs/architecture/workspace.dsl too;
-    # only a repo with no app manifest at all is really an architecture repo.
+  elif [[ -f $d/workspace.d2 || -f $d/docs/architecture/workspace.d2 ]]; then
+    # A dedicated architecture-model repo -- checked last on purpose.
+    # `d2-init` works in any repo, so an app repo can hold
+    # docs/architecture/workspace.d2 too; only a repo with no app manifest
+    # at all is really an architecture repo.
     print arch
   else
     print backend
