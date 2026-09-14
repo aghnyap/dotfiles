@@ -1,9 +1,20 @@
 #!/usr/bin/env zsh
-# $BROWSER entry point: terminal-browser, opened in a new Ghostty tab (via
-# term-tab) rather than in the current pane, so it does not take over
-# whatever the calling tab was already doing. Never a new window.
+# $BROWSER entry point: terminal-browser.
 #
-# term-tab is macOS-only (osascript driving Ghostty). No Linux path yet --
-# same open gap as term-tab itself.
+# Prefers a new Ghostty tab (via term-tab) so it does not take over whatever
+# the calling pane was already doing -- but that path needs osascript
+# driving a local Ghostty.app, which only exists when all three hold:
+#   - actually on macOS
+#   - term-tab is on PATH (this repo's own script; absent = not applied, or
+#     genuinely not installed)
+#   - not an SSH session -- osascript has no window to drive on the far end
+#     of one, and would either hang or talk to the wrong machine's Ghostty
+# Anywhere that is not true, run terminal-browser directly in the current
+# terminal instead of failing silently.
 set -euo pipefail
-exec term-tab terminal-browser open "$@"
+
+if [[ $(uname -s) == Darwin && -z ${SSH_CONNECTION:-} ]] && command -v term-tab >/dev/null 2>&1; then
+  exec term-tab terminal-browser open "$@"
+fi
+
+exec terminal-browser open "$@"

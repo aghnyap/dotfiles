@@ -1,5 +1,8 @@
--- Tokyo Night (night) -- the same palette as Ghostty, tmux, fzf, bat, delta,
--- lazygit and btop. See ~/.config/ghostty/config.
+-- Tokyo Night (night) -- the same palette as Ghostty, fzf, bat, delta,
+-- lazygit and btop. See ~/.config/ghostty/config. (zellij, which replaced
+-- tmux here, has no theme configured yet -- dot_config/zellij/config.kdl
+-- has no `theme` line at all, so it draws in its own default colours;
+-- flagged, not fixed, while reviewing this list.)
 --
 -- tokyonight is LazyVim's default colorscheme, so this only pins the style and
 -- re-applies the handful of highlight overrides that the previous config had.

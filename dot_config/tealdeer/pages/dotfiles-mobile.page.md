@@ -148,15 +148,15 @@
 
 `xcclean`
 
-- React Native: install dependencies:
+- npm install (short alias, not React Native-specific):
 
 `ni`
 
-- React Native: run:
+- npm run \<script\> (short alias):
 
-`nr`
+`nr {{script}}`
 
-- React Native: doctor:
+- npm run dev (short alias):
 
 `nrd`
 

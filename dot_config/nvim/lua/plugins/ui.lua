@@ -121,7 +121,8 @@ return {
           ['l'] = 'open',
           ['h'] = 'close_node',
           -- Cmd+B arrives as <C-S-B> now, not <D-b> -- Ghostty stopped
-          -- encoding the Super bit so the chords survive tmux. This is a
+          -- encoding the Super bit so the chords survive the multiplexer
+          -- (measured against tmux; see config/keymaps.lua). This is a
           -- BUFFER-LOCAL map, so the global alias in config/keymaps.lua
           -- never gets a chance to translate it; it has to be the real key.
           ['<C-S-B>'] = 'close_window',

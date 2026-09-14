@@ -69,7 +69,7 @@ alias zcd='nvim ~/.config/zsh/dev.zsh'
 alias zr='exec zsh'                        # reload by replacing the shell
 alias vc='nvim ~/.config/nvim'
 alias gc-conf='nvim ~/.config/ghostty/config'
-alias tc='nvim ~/.config/tmux/tmux.conf'
+alias zjc='nvim ~/.config/zellij/config.kdl'
 
 # ── chezmoi ─────────────────────────────────────────────────────────────────
 alias cm='chezmoi'

@@ -64,8 +64,10 @@ fi
 
 # GEM_HOME is deliberately NOT set: mise's ruby owns gem resolution. Setting it
 # made gems install to ~/.gem, shared across ruby versions, which breaks native
-# extensions on a version switch. fastlane + plugins and CocoaPods live under
-# mise's ruby 3.3.5; ~/.gem has since been removed entirely.
+# extensions on a version switch. There is no global ruby pin any more --
+# fastlane + plugins and CocoaPods are opt-in (Brewfile.optional's `mobile`
+# group) and live under whatever ruby a project pins with `mise use`;
+# ~/.gem has since been removed entirely and stays that way.
 
 # Homebrew: sets HOMEBREW_PREFIX/MANPATH/INFOPATH as well as PATH. Guarded
 # because `brew shellenv` forks a subshell (~30ms) and .zshenv runs for every

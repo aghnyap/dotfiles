@@ -3,6 +3,14 @@
 # `just` is a hard prerequisite for working in this repo; bootstrap.sh installs
 # it alongside Homebrew/apt and chezmoi and nothing else.
 
+# `just` defaults to POSIX `sh` for any recipe line without its own `#!`
+# shebang (the `apply`/`pre-push` one-liners below) -- `sh` on Ubuntu is
+# dash, which has no `read -p` and no `$(...)` quirks this was written
+# against. Recipes that already carry their own `#!/usr/bin/env bash`
+# shebang (plugins, verify, tldr-test, linux-render) run as their own
+# script regardless of this setting; this only covers the plain ones.
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
 # Bare `just` lists every recipe.
 default:
     @just --list
@@ -64,13 +72,6 @@ plugins:
       # on the first real nvim start; nothing headless can force that.
       nvim --headless "+Lazy! restore" +qa >/dev/null 2>&1 || echo "warn: nvim plugin restore failed; open nvim and run :Lazy restore" >&2
     fi
-    tpm_install="$HOME/.config/tmux/plugins/tpm/bin/install_plugins"
-    if [[ -x $tpm_install ]]; then
-      echo "==> tmux plugins (tpm)"
-      tmux -L bootstrap new-session -d 2>/dev/null || true
-      tmux -L bootstrap run-shell "$tpm_install" >/dev/null 2>&1 || echo "warn: tpm install failed; open tmux and press prefix + I" >&2
-      tmux -L bootstrap kill-server 2>/dev/null || true
-    fi
 
 # Everything to run before committing.
 check: audit leaks
@@ -80,9 +81,9 @@ check: audit leaks
 # grep from CLAUDE.md's verification section.
 pre-push: check
     @test -z "$(chezmoi diff --source=. )" || { echo "chezmoi diff is not empty -- re-add or revert before pushing" >&2; exit 1; }
-    @domain=$$(git config user.email | cut -d@ -f2); \
-    match=$$(grep -rIl -iF "$${domain%%.*}" ~/.config ~/Library/Application\ Support/Code 2>/dev/null); \
-    if [ -n "$$match" ]; then echo "employer-domain match found in managed config:" >&2; echo "$$match" >&2; exit 1; fi
+    @domain=$(git config user.email | cut -d@ -f2); \
+    match=$(grep -rIl -iF "${domain%%.*}" ~/.config ~/Library/Application\ Support/Code 2>/dev/null); \
+    if [ -n "$match" ]; then echo "employer-domain match found in managed config:" >&2; echo "$match" >&2; exit 1; fi
     @echo "pre-push checks passed"
 
 # Applied-machine "does it actually look and feel right" verification --

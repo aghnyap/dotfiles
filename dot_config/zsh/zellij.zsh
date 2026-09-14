@@ -1,13 +1,14 @@
-# zellij -- persistent per-project sessions, alongside tmux (see
-# dot_config/zellij/config.kdl's header for why both still exist).
+# zellij -- persistent per-project sessions. Replaced tmux outright (see
+# .chezmoitemplates/Brewfile).
 #
 # No `zellij init zsh` hook exists -- unlike direnv/starship/etc., zellij has
 # no shell-integration script to source, so this module is functions only.
 
 # zj [name] -- attach to a session, or create one named after the current dir.
-# Unlike tmux's `tm`, this cannot switch out of an already-attached session
-# in the same terminal: zellij has no `switch-client` equivalent, so it
-# refuses instead of doing something confusing. Detach first (Ctrl+o d).
+# This cannot switch out of an already-attached session in the same
+# terminal: zellij has no `switch-client` equivalent (tmux's `tm` had one),
+# so it refuses instead of doing something confusing. Detach first
+# (Ctrl+o d).
 zj() {
   if [[ -n $ZELLIJ ]]; then
     print -u2 "zj: already inside a zellij session -- detach first (Ctrl+o d)"
@@ -18,6 +19,8 @@ zj() {
   zellij attach --create "$name"
 }
 
-# zjp -- project layout picker (mobile/web/backend/sec/arch), same fzf flow
-# as tmux's `prefix + P`. Also bound inside zellij itself at Ctrl+o p.
+# zjp -- interactive project layout picker (fzf a layout, then a
+# directory). `ide` (functions.zsh) and zellij's own Ctrl+o p binding call
+# the same script directly, with the layout and directory already known,
+# skipping the prompts this gives you.
 zjp() { "$HOME/.config/zellij/layouts/pick.sh"; }

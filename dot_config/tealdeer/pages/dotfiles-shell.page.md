@@ -12,7 +12,7 @@
 
 `ls {{path/to/dir}}`
 
-- Open a project as a tmux/zellij session with the right layout guessed from the tree:
+- Open a project as a zellij session with the right layout guessed from the tree:
 
 `ide {{path/to/project}}`
 
@@ -20,13 +20,13 @@
 
 `ide -l {{layout}} {{path/to/project}}`
 
-- Bare tmux session named after the current directory:
-
-`tm {{name}}`
-
-- Zellij equivalent of `tm` (see dotfiles-nvim for zellij's own keys):
+- Bare zellij session, attach-or-create, named after the current directory:
 
 `zj {{name}}`
+
+- Interactive layout + directory picker (same as zellij's own Ctrl+o p):
+
+`zjp`
 
 - Fuzzy-find a file and open it in $EDITOR:
 
@@ -72,9 +72,13 @@
 
 `cmr`
 
-- chezmoi: apply the repo state to $HOME:
+- chezmoi: add a new file from $HOME into the repo:
 
 `cma`
+
+- chezmoi: open a managed file's source in $EDITOR, then apply on save:
+
+`cme`
 
 - chezmoi: jump to the source repo:
 

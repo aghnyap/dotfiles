@@ -6,9 +6,13 @@
 
 `cmr`
 
-- This repo's own alias for `chezmoi apply`:
+- This repo's own alias for `chezmoi add`:
 
 `cma`
+
+- This repo's own alias for `chezmoi edit --apply` (open a managed file's source, then apply it):
+
+`cme`
 
 - This repo's own alias for `chezmoi cd`:
 

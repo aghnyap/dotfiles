@@ -18,14 +18,17 @@
 local map = vim.keymap.set
 
 -- ╭──────────────────────────────────────────────────────────────╮
--- │  tmux-safe aliases for the Cmd chords                        │
+-- │  Multiplexer-safe aliases for the Cmd chords                 │
 -- │                                                              │
 -- │  Ghostty no longer encodes these with the Super bit, because  │
--- │  Super does not survive tmux -- tmux has no Super modifier    │
--- │  and collapses it onto Meta, so a pane received a bare <M-p>  │
--- │  for Cmd+P and every <D-...> mapping below was dead in a      │
--- │  pane. Ctrl-bearing CSI-u does survive, so Ghostty now sends  │
--- │  Ctrl+Shift for Cmd and Ctrl+Alt+Shift for Cmd+Shift.         │
+-- │  Super does not survive tmux -- measured there: tmux has no   │
+-- │  Super modifier and collapses it onto Meta, so a pane got a   │
+-- │  bare <M-p> for Cmd+P and every <D-...> mapping below was     │
+-- │  dead in a pane. (zellij, tmux's replacement here, was not    │
+-- │  re-measured the same way -- the CSI-u encoding stayed as-is  │
+-- │  since it costs nothing where it is not needed.) Ctrl-bearing │
+-- │  CSI-u does survive, so Ghostty now sends Ctrl+Shift for Cmd   │
+-- │  and Ctrl+Alt+Shift for Cmd+Shift.                             │
 -- │  See ~/.config/ghostty/config for the full derivation.        │
 -- │                                                              │
 -- │  Rather than rewrite 30 mappings, this table points the key   │
@@ -209,8 +212,10 @@ end, { desc = 'Find all references' })
 map('n', '<F2>', vim.lsp.buf.rename, { desc = 'Rename symbol' })
 
 -- ── Window splits ──────────────────────────────────────────────
--- C-hjkl is deliberately NOT mapped here: vim-tmux-navigator owns it so the
--- same chord crosses the Neovim/tmux boundary. See plugins/editor.lua.
+-- C-hjkl is deliberately NOT mapped here: LazyVim's own core keymaps
+-- already bind it to window navigation, and that is now the whole story --
+-- see plugins/editor.lua for the tmux-crossing plugin this used to defer
+-- to instead, dropped along with tmux.
 map('n', '<D-\\>', '<cmd>vsplit<cr>', { desc = 'Split editor right' })
 -- LazyVim's <leader>| reuses the current buffer. Start with an empty buffer
 -- instead, preserving the current buffer kind so terminal panes stay useful.

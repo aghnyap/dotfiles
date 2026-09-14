@@ -109,30 +109,20 @@ gfc() {
   [[ -n $commit ]] && git show "${commit%% *}"
 }
 
-# ── tmux ────────────────────────────────────────────────────────────────────
-
-# tm [name] -- attach to a session, or create one named after the current dir.
-tm() {
-  local name="${1:-${PWD:t}}"
-  name=${name//[.:]/_}                       # tmux forbids . and : in names
-  if [[ -n $TMUX ]]; then
-    tmux switch-client -t "$name" 2>/dev/null || \
-      { tmux new-session -d -s "$name" -c "$PWD" && tmux switch-client -t "$name"; }
-  else
-    tmux new-session -A -s "$name" -c "$PWD"
-  fi
-}
+# ── zellij ──────────────────────────────────────────────────────────────────
+# `tm` used to be here (attach-or-create a bare tmux session). `zj` in
+# dot_config/zsh/zellij.zsh replaces it now that tmux is gone -- same idea,
+# zellij underneath.
 
 # ide [-l <layout>] [dir] -- open a project the way an IDE opens a folder.
 #
-# `tm` gets you a session with a shell in it, which is a blank screen. This
-# builds the whole layout instead: an `editor` window running Neovim -- which
+# `zj` gets you a session with a shell in it, which is a blank screen. This
+# builds the whole layout instead: an `editor` tab running Neovim -- which
 # opens the file tree on the left by itself, via the startup hook in
-# ~/.config/nvim/lua/config/autocmds.lua -- plus the side windows for the kind
-# of project it is. Existing sessions are reused, not rebuilt.
-#
-# layout.sh already did all of this, but only tmux's `prefix + P` ever called
-# it, so it was unreachable from a fresh terminal. This is the way in.
+# ~/.config/nvim/lua/config/autocmds.lua -- plus the side tabs for the kind
+# of project it is. Existing sessions are reused, not rebuilt; run from
+# inside a zellij session, it opens as a new tab there instead (pick.sh's
+# job, not this function's -- see its own comment for why).
 #
 #   ide                      -- this project, layout guessed from the tree
 #   ide ~/Repositories/foo
@@ -163,7 +153,7 @@ ide() {
   dir=$(cd "$dir" && { git rev-parse --show-toplevel 2>/dev/null || pwd; })
 
   [[ -n $layout ]] || layout=$(_ide_layout "$dir")
-  "$HOME/.config/tmux/layouts/layout.sh" "$layout" "$dir"
+  "$HOME/.config/zellij/layouts/pick.sh" "$layout" "$dir"
 }
 
 # _ide_layout <dir> -- guess the project type from what is lying in the tree.

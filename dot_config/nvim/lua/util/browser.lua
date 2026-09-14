@@ -7,14 +7,17 @@
 --
 -- terminal-browser needs a real terminal to draw into (Kitty graphics
 -- protocol), unlike Arc before it, which `open -a` could hand a URL to from
--- anywhere. So this shells out to term-tab, the same new-Ghostty-tab
--- launcher the shell's own $BROWSER uses (dot_local/bin/executable_term-tab,
--- executable_terminal-browser-open) instead of `open`.
+-- anywhere. So this shells out to terminal-browser-open
+-- (dot_local/bin/executable_terminal-browser-open) instead of `open` --
+-- the SAME script the shell's own $BROWSER uses, not term-tab directly, so
+-- the macOS/SSH/Linux fallback logic (new Ghostty tab vs. the current
+-- terminal) lives in exactly one place rather than being duplicated here
+-- and drifting from it.
 
 local M = {}
 
 function M.open(path)
-  return vim.system({ 'term-tab', 'terminal-browser', 'open', path }, { detach = true }), nil
+  return vim.system({ 'terminal-browser-open', path }, { detach = true }), nil
 end
 
 function M.setup()

@@ -11,19 +11,20 @@
 
 `scan {{path/to/dir}}`
 
-- semgrep directly:
+- semgrep, with the security-audit ruleset already set (`--config p/security-audit`):
 
-`sg {{args}}`
+`sg {{extra-args}}`
 
 - semgrep's CI ruleset:
 
 `sgci`
 
-- gitleaks, working tree only:
+- gitleaks, redacted -- current branch's history (gitleaks scans commits by
+  default; this is not a working-tree-only scan):
 
 `leaks`
 
-- gitleaks across the full history, redacted:
+- gitleaks, redacted -- every branch's history (`--log-opts="--all"`):
 
 `leakslog`
 
@@ -62,6 +63,10 @@
 - frida-ps on the attached device:
 
 `fps`
+
+- frida-ps, installed apps only:
+
+`fpsa`
 
 - frida-ps against one package with a script:
 

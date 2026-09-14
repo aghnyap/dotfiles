@@ -28,38 +28,54 @@ return {
     },
     opts = function()
       return {
+        -- Adapters live under `adapters.http`, not top-level -- checked
+        -- against the installed plugin's own config.lua (adapters.http.*
+        -- is where `ollama`/`openai_compatible` etc. are registered) after
+        -- a top-level `adapters = { ollama = ... }` table was silently
+        -- ignored: `require('codecompanion.config').config.adapters.http`
+        -- never had these keys, so every chat used the plugin's own
+        -- unmodified built-in ollama adapter (no model, no num_ctx) and
+        -- `litellm` did not exist at all as far as codecompanion was
+        -- concerned.
         adapters = {
-          ollama = function()
-            local model = ai_model.current()
-            return require('codecompanion.adapters').extend('ollama', {
-              env = { url = 'http://127.0.0.1:11434' },
-              schema = {
-                model = { default = model },
-                num_ctx = { default = model and ai_model.context(model) or nil },
-              },
-            })
-          end,
-          -- 'openai_compatible' is codecompanion's built-in template for any
-          -- OpenAI-shaped endpoint that isn't OpenAI itself -- exactly what
-          -- LiteLLM's proxy exposes. No API key is required by a local
-          -- LiteLLM instance with no auth configured; the field still has
-          -- to be present or the adapter refuses to build the request.
-          litellm = function()
-            return require('codecompanion.adapters').extend('openai_compatible', {
-              env = {
-                url = LITELLM_URL,
-                api_key = os.getenv 'LITELLM_API_KEY' or 'sk-local',
-              },
-            })
-          end,
+          http = {
+            ollama = function()
+              local model = ai_model.current()
+              return require('codecompanion.adapters').extend('ollama', {
+                env = { url = 'http://127.0.0.1:11434' },
+                schema = {
+                  model = { default = model },
+                  num_ctx = { default = model and ai_model.context(model) or nil },
+                },
+              })
+            end,
+            -- 'openai_compatible' is codecompanion's built-in template for
+            -- any OpenAI-shaped endpoint that isn't OpenAI itself --
+            -- exactly what LiteLLM's proxy exposes. No API key is required
+            -- by a local LiteLLM instance with no auth configured; the
+            -- field still has to be present or the adapter refuses to
+            -- build the request.
+            litellm = function()
+              return require('codecompanion.adapters').extend('openai_compatible', {
+                env = {
+                  url = LITELLM_URL,
+                  api_key = os.getenv 'LITELLM_API_KEY' or 'sk-local',
+                },
+              })
+            end,
+          },
         },
-        strategies = {
+        -- `strategies` was renamed to `interactions` upstream (config.lua
+        -- still migrates the old key with a TODO to remove it, which is
+        -- how this went unnoticed); `agent` is not a real interaction name
+        -- either (the valid ones are chat/inline/cmd/cli/code_review/...),
+        -- so it was silently dropped along with the whole table. litellm
+        -- stays reachable as a named adapter -- switch to it from
+        -- codecompanion's own adapter picker -- rather than wired as a
+        -- default strategy that does not exist.
+        interactions = {
           chat = { adapter = 'ollama' },
           inline = { adapter = 'ollama' },
-          -- codecompanion's agentic tool-calling mode: point it at LiteLLM
-          -- by default so it can reach a stronger model when one is
-          -- configured there, without editing this file per session.
-          agent = { adapter = 'litellm' },
         },
         display = {
           chat = {

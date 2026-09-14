@@ -61,6 +61,11 @@ brew "fvm"
 cask "android-platform-tools"
 brew "fastlane"
 brew "scrcpy"
+# ruby-build: mise's ruby backend needs it to compile the interpreter
+# cocoapods/fastlane run under (`mise use ruby@3.3.5`, no global pin any
+# more -- see dot_config/mise/config.toml). Cross-platform, same as
+# fastlane above, even though cocoapods itself is darwin-only below.
+brew "ruby-build"
 # Xcode's own toolchain -- macOS only. Now enforced, not just noted:
 # `brewopt` (dot_config/zsh/functions.zsh) renders this file through
 # `chezmoi execute-template` before handing it to `brew bundle`, so this

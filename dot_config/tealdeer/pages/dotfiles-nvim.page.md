@@ -55,7 +55,9 @@
 
 `K`
 
-- Move across splits, and across the tmux pane boundary, with no prefix:
+- Move across Neovim splits (LazyVim's own default binding; the plugin that
+  used to carry this across the tmux pane boundary too was dropped along
+  with tmux -- zellij's own pane-crossing key is Alt+arrow instead):
 
 `Ctrl+h/j/k/l`
 

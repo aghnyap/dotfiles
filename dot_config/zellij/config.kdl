@@ -1,7 +1,6 @@
-// zellij -- persistent per-project sessions, alongside tmux during the
-// v12.0-audited migration (see .chezmoitemplates/Brewfile's "Not yet
-// portable to this baseline" note: tmux stays until this absorbs its
-// project layouts and the prefix+e sync toggle, which it now does below).
+// zellij -- persistent per-project sessions. Replaced tmux outright in the
+// v12.0-audited migration once this absorbed tmux's project layouts
+// (dot_config/zellij/layouts/) and its prefix+e sync toggle (below).
 //
 // Starting point: `zellij setup --dump-config` (the shipped defaults), with
 // two collisions fixed and one convenience added. NOT live-tested against a
@@ -37,14 +36,19 @@ keybinds {
     // ── Convenience: direct sync-panes toggle ──────────────────────────────
     // zellij's built-in equivalent of tmux's synchronize-panes is
     // ToggleActiveSyncTab, bound by default only inside tab mode (Ctrl+t
-    // then s). tmux.conf added a direct `prefix + e` toggle for the same
-    // feature (see its git history) because a silently-on broadcast looks
-    // exactly like "everything I type is duplicated" -- mirror that here as
-    // a direct binding instead of a two-step one. The tab bar also shows a
-    // synced tab visually, so there is no separate "display message" step
-    // like tmux needed.
+    // then s). tmux.conf used to add a direct `prefix + e` toggle for the
+    // same feature (before tmux was dropped) because a silently-on
+    // broadcast looks exactly like "everything I type is duplicated" --
+    // mirror that here as a direct binding instead of a two-step one. The
+    // tab bar also shows a synced tab visually, so there is no separate
+    // "display message" step like tmux needed.
+    //
+    // Alt+s, not Ctrl+y: Ctrl+y collides with fzf's own copy-to-clipboard
+    // binding (dot_config/zsh/fzf.zsh) and with readline's yank -- checked
+    // against zellij's own shipped defaults (`zellij setup --dump-config`)
+    // and confirmed Alt+s is not one of them.
     shared_except "locked" {
-        bind "Ctrl y" { ToggleActiveSyncTab; }
+        bind "Alt s" { ToggleActiveSyncTab; }
     }
 
     // ── Project layout picker: Ctrl+o then p ───────────────────────────────

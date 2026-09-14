@@ -61,8 +61,10 @@ command -v terminal-browser >/dev/null 2>&1 || \
 #
 # The versions are NOT repeated here. They come from the managed
 # ~/.config/mise/config.toml, which this script cannot read yet -- it is a
-# run_onchange_BEFORE, so apply has not written it. Same problem and same
-# solution as the ruby pin below: inline the file from source and install from it.
+# run_onchange_BEFORE, so apply has not written it. Solution: inline the
+# file from source and install from it, same as the mise config write
+# below always has been (there is no global ruby pin any more to compare
+# it to -- see that file for why).
 # Writing it first also means `mise install` pins as well as installs; the old
 # `mise install java@temurin-21` installed a runtime it never activated.
 echo "==> mise runtimes"
@@ -72,13 +74,16 @@ cat > "$HOME/.config/mise/config.toml" <<'MISECONFIG'
 MISECONFIG
 mise install
 
-# Ruby comes from mise, pinned in the config written above, so `mise install`
-# already built it. cocoapods and fastlane are NOT gem-installed here any
-# more -- both moved to Brewfile.optional's `mobile` group in the
-# v12.0-audited migration, so installing their gems unconditionally would
-# defeat the point of moving them. `brewopt mobile` installs the formulae;
-# `mise exec ruby -- gem install --no-document cocoapods fastlane` is the
-# manual follow-up if a machine wants the gem versions specifically instead.
+# No global ruby install here any more, and no gem install for cocoapods/
+# fastlane either -- both moved to Brewfile.optional's `mobile` group in
+# the v12.0-audited migration (see dot_config/mise/config.toml for why the
+# ruby pin specifically went with them: it served only these two gems, and
+# building one on every machine is exactly what stalled Linux without dev
+# headers). `brewopt mobile` installs the formulae; a project that needs
+# the gem versions instead runs `mise use ruby@3.3.5` then
+# `mise exec ruby -- gem install --no-document cocoapods fastlane` by hand.
+# The reshim is still needed for node/java's shims to pick up anything
+# `mise install` above just built.
 mise reshim
 
 # litellm and harlequin via uv, never system pip -- same reasoning as aider
@@ -121,12 +126,6 @@ for repo in "zsh-users/zsh-autosuggestions" "zsh-users/zsh-syntax-highlighting";
   dest="$HOME/.oh-my-zsh/custom/plugins/${repo##*/}"
   [[ -d $dest ]] || git clone --depth 1 "https://github.com/$repo" "$dest"
 done
-
-# tmux plugin manager
-if [[ ! -d "$HOME/.config/tmux/plugins/tpm" ]]; then
-  echo "==> tpm"
-  git clone --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.config/tmux/plugins/tpm"
-fi
 
 # zsh plugins that Homebrew does not package. zsh-defer used to be cloned here
 # too; nothing ever sourced it (see the note at the bottom of ~/.zshrc, which

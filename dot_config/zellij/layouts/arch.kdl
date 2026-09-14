@@ -6,6 +6,20 @@
 // Not live-tested in this environment (no PTY) -- verify once with
 // `zellij --layout ~/.config/zellij/layouts/arch.kdl --session test-arch`.
 layout {
+    // Without this, a custom layout gets none of the default UI -- no tab
+    // bar (so the mode/keybind hints and the other tabs are invisible) and
+    // no status bar. Matches the shape `zellij setup --dump-layout
+    // default` prints for its own built-in layout.
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="tab-bar"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="status-bar"
+        }
+    }
+
     tab name="editor" {
         pane command="nvim"
     }

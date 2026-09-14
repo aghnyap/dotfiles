@@ -87,11 +87,11 @@ brew "d2"
 brew "adr-tools"
 
 # ── Developer utilities ───────────────────────────────────────────────────
-# mise owns node, java and ruby -- see ~/.config/mise/config.toml, the single
-# place those versions are pinned.
+# mise owns node and java -- see ~/.config/mise/config.toml, the single
+# place those versions are pinned. No global ruby any more (see that file);
+# ruby-build, which mise's ruby backend needs to compile one, moved with it
+# to Brewfile.optional's `mobile` group.
 brew "mise"
-# ruby-build without rbenv: mise's ruby backend uses it to build interpreters.
-brew "ruby-build"
 brew "fzf"
 brew "yazi"
 brew "bat"
@@ -176,15 +176,14 @@ brew "yt-dlp"
 cask "terminal-browser"
 {{ end -}}
 
-# ── Not yet portable to this baseline ─────────────────────────────────────
-# tmux + sesh: kept here deliberately, past the v12.0-audited cut, because
-# zellij (added above) has not yet absorbed tmux's project layouts
-# (mobile/web/backend/sec/arch) or the prefix+e sync toggle -- that port is
-# tracked as a later checkpoint of the v12 migration. Do not remove these
-# two lines until that port lands and dot_config/tmux/ is retired; removing
-# them first breaks the only working multiplexer config on the machine.
-brew "tmux"
-brew "sesh"
+# tmux dropped: zellij (added above) now carries everything it did --
+# dot_config/zellij/layouts/{mobile,web,backend,sec,arch}.kdl are the
+# project layouts tmux's own layout.sh used to build, and config.kdl's
+# `Ctrl y` binding is the synchronize-panes toggle tmux.conf's `prefix + e`
+# used to be. dot_config/tmux/ is removed (.chezmoiremove); tpm's plugin
+# clones under ~/.config/tmux/plugins/ are left for a human to
+# `rm -rf ~/.config/tmux` by hand after applying, since .chezmoiremove
+# targets are listed files, not a directory glob.
 
 # chawan (the CSS-only terminal browser this used to have) is removed
 # entirely, not moved to optional: terminal-browser (above) replaces it and

@@ -18,3 +18,19 @@
 .config/zsh/c4.zsh
 .config/chawan/config.toml
 .local/bin/arc-open
+# The c4-architect skill directory was renamed to d2-architect (git mv), but
+# chezmoi has no rename tracking -- caught the same way as the six above:
+# ~/.claude/skills/c4-architect/SKILL.md was still on disk with its old
+# Structurizr-DSL instructions, still answering to /c4-architect.
+.claude/skills/c4-architect/SKILL.md
+.claude/skills/c4-architect
+
+# tmux dropped from the baseline once the zellij project layouts covered
+# everything it did (see .chezmoitemplates/Brewfile and dot_config/zellij/).
+# tpm's own plugin clones under .config/tmux/plugins/ are left alone --
+# still guarded in .chezmoiignore.tmpl, and `rm -rf ~/.config/tmux` after
+# apply is the one manual step this file cannot do for you (chezmoiremove
+# targets have to be listed explicitly, not globbed).
+.config/tmux/tmux.conf
+.config/tmux/layouts/layout.sh
+.config/tmux/layouts/pick.sh

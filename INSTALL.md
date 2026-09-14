@@ -45,8 +45,8 @@ cd dotfiles && ./bootstrap.sh && just apply
 `just` — then registers this checkout as chezmoi's source and stops. It asks
 nothing and takes no flags, and re-running it is safe. `just apply` is the
 separate step that actually writes anything: `chezmoi apply` (every config
-file, the Brewfile, macOS defaults) followed by `just plugins` (nvim/tmux
-plugin restore, the `bat` theme cache, and the font/glyph check).
+file, the Brewfile, macOS defaults) followed by `just plugins` (nvim
+plugin restore, the `bat` theme cache).
 
 <details>
 <summary>The same thing by hand</summary>
@@ -108,8 +108,7 @@ egress choice stays visible.
 
 Nothing else is left to do by hand. `just apply`'s last step, `just plugins`,
 restores the nvim plugins from the committed lockfile (`nvim --headless
-"+Lazy! restore"`), installs the tmux plugins (tpm's own `install_plugins`)
-and builds the `bat` theme cache.
+"+Lazy! restore"`) and builds the `bat` theme cache.
 Mason still installs its language servers on your first real `nvim` start —
 that needs a running event loop, so no script can force it.
 
@@ -252,8 +251,10 @@ Deliberately — these are secrets or machine state, and are excluded in
   by this repository. Install only the ones needed on that Mac, using their own
   supported distribution channels.
   Flutter is intentionally per-repo via FVM, so there is nothing global to move.
-- `~/.config/zsh/plugins/` and `~/.config/tmux/plugins/` — upstream git clones
-  the installer re-fetches.
+- `~/.config/zsh/plugins/` — upstream git clones the installer re-fetches.
+  `~/.config/tmux/plugins/` is guarded the same way but for a tool this repo
+  no longer installs at all (tmux, dropped for zellij); nothing fetches
+  into it any more.
 - `~/.config/zsh/local/` — machine-local shell modules. Employer-specific and
   credential-adjacent config lives here (VPN helpers, work-only tooling) and is
   sourced last so it can override any module. Deliberately never captured.

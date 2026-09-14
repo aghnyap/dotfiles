@@ -1,6 +1,6 @@
 # dotfiles
 
-Terminal-native development environment: Ghostty + zsh + tmux + LazyVim,
+Terminal-native development environment: Ghostty + zsh + zellij + LazyVim,
 themed Tokyo Night throughout — except the prompt, where starship is left at
 its built-in default. Managed with [chezmoi](https://chezmoi.io).
 
@@ -29,7 +29,7 @@ source and stops. It takes no flags and asks no questions, so it is already
 unattended, and it is idempotent -- re-run it any time. `just apply` is the
 separate, explicit step that actually writes anything: it runs `chezmoi
 apply` (the Brewfile, every config file, macOS defaults), then `just plugins`
-(nvim/tmux plugin restore, the bat theme cache). See CLAUDE.md's *Git
+(nvim plugin restore, the bat theme cache). See CLAUDE.md's *Git
 workflow for large changes* for why applying is not folded into bootstrap.
 
 ```sh
@@ -77,14 +77,15 @@ you.
 `chezmoi apply` (via `just apply`) runs
 `run_onchange_before_install-packages.sh.tmpl`, which does `brew bundle` over
 `.chezmoitemplates/Brewfile` (the v12.0-audited baseline only -- frida,
-objection, cocoapods and fastlane moved to `.chezmoitemplates/Brewfile.optional`,
-installed by hand with `brewopt`), sets up the mise runtimes (node, java, ruby,
-go, rust, python), installs litellm/harlequin/aider via `uv tool`, and clones
-tpm plus the zsh plugins Homebrew does not package. It re-runs by itself
-whenever the Brewfile changes.
+objection, cocoapods, fastlane and ruby itself moved to
+`.chezmoitemplates/Brewfile.optional`, installed by hand with `brewopt`),
+sets up the mise runtimes (node, java, go, rust, python -- no ruby pin any
+more), installs litellm/harlequin/aider via `uv tool`, and clones the zsh
+plugins Homebrew does not package. It re-runs by itself whenever the
+Brewfile changes.
 
-`just apply` then calls `just plugins`, which restores the nvim and tmux
-plugins headlessly and builds the `bat` theme cache -- nothing is left to do
+`just apply` then calls `just plugins`, which restores the nvim plugins
+headlessly and builds the `bat` theme cache -- nothing is left to do
 by hand except write your git identity, which this repo deliberately does not
 own. Mason installs its language servers on the first real `nvim` start — that
 needs an event loop, so no script can force it.
@@ -110,7 +111,7 @@ page is `tldr dotfiles-<topic>`.
 | `dot_zshrc` | Interactive shell only. Thin — content lives in the modules. |
 | `dot_config/zsh/` | `aliases` `functions` `dev` `sec` `fzf` `tools` `csiu` `d2` `zellij`, plus `git-aliases` as a fallback when oh-my-zsh is absent. Each is named in `_mods` in `dot_zshrc` — a file added here loads only once it is listed there |
 | `dot_config/nvim/` | LazyVim + custom plugin specs. See `tldr dotfiles-nvim`. |
-| `dot_config/tmux/` | tmux.conf + project layouts (mobile/web/backend/sec/arch) |
+| `dot_config/zellij/` | config.kdl + project layouts (mobile/web/backend/sec/arch), replacing tmux |
 | `dot_aider.conf.yml` | aider's non-model defaults — no credentials, so it is managed |
 | `dot_aider.model.settings.yml` | Per-model `num_ctx` and `edit_format`. Both are load-bearing: Ollama's 2k default silently truncates, and `whole` beats `diff` on a small model |
 | `dot_aider.model.metadata.json` | Per-model prompt/output limits. Keeps aider's own token budget below the `num_ctx` Ollama actually allocates |
@@ -132,10 +133,11 @@ ide ~/Repositories/foo
 ide -l sec .             # force one (mobile|web|backend|sec|arch)
 ```
 
-`ide` builds the tmux session the layouts describe: an `editor` window running
-Neovim, which opens the file tree itself, plus the side windows for that kind
-of project. `tm` is the lower-level one — it gives you a session with a bare
-shell in it. Inside tmux, `prefix + P` picks a layout and a directory instead.
+`ide` builds the zellij session the layouts describe: an `editor` tab running
+Neovim, which opens the file tree itself, plus the side tabs for that kind
+of project. `zj` is the lower-level one — it gives you a session with a bare
+shell in it. Inside zellij, `Ctrl+o p` picks a layout and a directory instead
+(both call the same script, `dot_config/zellij/layouts/pick.sh`).
 
 ## Architecture as code — C4 / d2
 
@@ -161,14 +163,14 @@ rendered image is also the PR-review path now -- unlike the old Mermaid
 export, nothing here renders natively inside a GitHub/GitLab markdown fence.
 
 `ide -l arch` (or `ide` in a repo with a `workspace.d2` and no app manifest)
-builds a tmux session with the preview server already running.
+builds a zellij session with the preview server already running.
 
 **No Docker, no JVM.** This replaced an earlier Structurizr/PlantUML/Graphviz
 toolchain that needed exactly that combination to render an image locally
 without a 1.98 GB `-playwright` container. `colima` and `docker` stayed in the
 optional `backend` group, unrelated to architecture modelling either way.
 
-**Port 8081, not 8080.** 8080 is where `mitmweb` and the tmux `sec` layout
+**Port 8081, not 8080.** 8080 is where `mitmweb` and the zellij `sec` layout
 listen. `D2_PORT=9000 d2-local` overrides it, and `d2-local` names the process
 holding the port rather than letting d2's own error obscure it.
 
@@ -230,14 +232,15 @@ permanent.
 ## Things that will bite you
 
 - **The Cmd chords are not Cmd keys, and they only work because two files
-  agree.** They used to die inside tmux: Ghostty encoded them with the Super bit
-  (`\E[112;9u` = Cmd+P), tmux's key model has no Super modifier so it collapsed
-  Super onto Meta, and a pane received a bare `<M-p>`. Ctrl+Shift and
-  Ctrl+Alt+Shift *do* survive, so the chords were re-encoded onto those —
-  Ghostty sends `\E[112;6u`, Neovim aliases `<C-S-P>` back to `<D-p>`, and
-  `tmux.conf` sets `extended-keys-format csi-u` so the sequence arrives intact.
-  Changing any Cmd binding means editing **both** `dot_config/ghostty/config`
-  and `lua/config/keymaps.lua`; touching one alone silently breaks it.
+  agree.** They used to die inside tmux (the multiplexer this was measured
+  against; zellij replaced it and was not re-measured the same way): Ghostty
+  encoded them with the Super bit (`\E[112;9u` = Cmd+P), tmux's key model has
+  no Super modifier so it collapsed Super onto Meta, and a pane received a
+  bare `<M-p>`. Ctrl+Shift and Ctrl+Alt+Shift *do* survive, so the chords
+  were re-encoded onto those — Ghostty sends `\E[112;6u`, Neovim aliases
+  `<C-S-P>` back to `<D-p>`. Changing any Cmd binding means editing **both**
+  `dot_config/ghostty/config` and `lua/config/keymaps.lua`; touching one
+  alone silently breaks it.
 - **LazyVim picks the file explorer for you.** On `install_version` 8 its
   default list is `{ snacks, neo-tree }`, so it auto-enables the
   `editor.snacks_explorer` extra and binds `<leader>e` to it — giving you a
@@ -246,8 +249,13 @@ permanent.
 - **Flutter is not on PATH, on purpose.** FVM pins it per repository from the
   clone's `.fvm/`. Use `fvm flutter ...` (aliased to `fl`). A global SDK would
   shadow the per-repo pin and silently build the wrong version.
-- **`~/.config/zsh/plugins/` and `~/.config/tmux/plugins/` are not managed
-  here.** They are upstream git clones; the bootstrap script fetches them.
+- **`~/.config/zsh/plugins/` is not managed here.** It is upstream git
+  clones; `run_onchange_before_install-packages.sh.tmpl` fetches them (not
+  `bootstrap.sh`, which only installs Homebrew/apt, chezmoi and just --
+  see CLAUDE.md). `~/.config/tmux/plugins/` is the same kind of guard for a
+  tool this repo no longer installs at all (tmux, dropped for zellij); it
+  stays guarded in `.chezmoiignore.tmpl` in case the directory is still
+  there from before, but nothing fetches into it any more.
 - **A wrong Nerd Font codepoint renders as nothing, not as tofu.** The
   `nf-fa-*` and `nf-dev-*` ranges were relocated in Nerd Fonts v3, so a stale
   codepoint leaves a blank that is indistinguishable from a config which never

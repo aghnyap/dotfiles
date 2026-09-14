@@ -14,6 +14,13 @@
 # running WindowServer session has already read them.
 set -euo pipefail
 
+# Belt-and-braces: .chezmoiignore.tmpl already keeps this script off Linux
+# entirely (ignored by target name, macos-defaults.sh, under
+# `.chezmoi.os "linux"`). This guard is what actually matters if that ever
+# drifts again -- `defaults write` does not exist on Linux, and every line
+# below would fail loudly under `set -e` rather than just doing nothing.
+[[ $(uname -s) == Darwin ]] || exit 0
+
 echo "==> macOS defaults"
 
 # ── Keyboard ────────────────────────────────────────────────────────────────

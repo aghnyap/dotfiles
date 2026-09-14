@@ -192,5 +192,11 @@ Library/**
 
 # Keyboard/Finder/screenshot `defaults write` calls -- macOS-only by
 # definition; there is no equivalent Linux script yet.
-run_onchange_after_macos-defaults.sh
+# The ignore pattern is the TARGET name, not the source filename -- chezmoi
+# strips the run_onchange_after_ prefix and .tmpl suffix before matching, so
+# the source-shaped name here matched nothing at all (checked:
+# `chezmoi managed` lists it as `macos-defaults.sh`). With the wrong
+# pattern this script was never actually ignored on Linux and `chezmoi
+# apply` would have tried to run macOS `defaults write` calls there.
+macos-defaults.sh
 {{ end -}}

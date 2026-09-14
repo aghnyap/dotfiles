@@ -1,28 +1,12 @@
--- Editing behaviour: terminal panel, multi-cursor, auto-save, formatting,
--- and the tmux bridge.
+-- Editing behaviour: terminal panel, multi-cursor, auto-save, formatting.
+--
+-- vim-tmux-navigator used to live here, overriding <C-h/j/k/l> to cross the
+-- Neovim/tmux pane boundary with one chord. Dropped with tmux (see
+-- .chezmoitemplates/Brewfile): zellij's own Alt+hjkl handles crossing
+-- zellij PANE boundaries (config.kdl), and with the plugin's override gone,
+-- <C-h/j/k/l> falls back to LazyVim's own default window-navigation maps
+-- (lazyvim/config/keymaps.lua) automatically -- nothing to replace it with.
 return {
-  -- ── Seamless Neovim <-> tmux navigation ─────────────────────────
-  --    C-hjkl moves between Neovim splits and tmux panes with no prefix and
-  --    no mode change. The plugin checks whether the neighbouring tmux pane
-  --    is running Neovim and forwards the key instead of switching panes.
-  --    Requires the matching plugin in ~/.config/tmux/tmux.conf.
-  {
-    'christoomey/vim-tmux-navigator',
-    cmd = {
-      'TmuxNavigateLeft',
-      'TmuxNavigateDown',
-      'TmuxNavigateUp',
-      'TmuxNavigateRight',
-      'TmuxNavigatePrevious',
-    },
-    keys = {
-      { '<C-h>', '<cmd>TmuxNavigateLeft<cr>', desc = 'Focus left pane' },
-      { '<C-j>', '<cmd>TmuxNavigateDown<cr>', desc = 'Focus pane below' },
-      { '<C-k>', '<cmd>TmuxNavigateUp<cr>', desc = 'Focus pane above' },
-      { '<C-l>', '<cmd>TmuxNavigateRight<cr>', desc = 'Focus right pane' },
-    },
-  },
-
   -- ── Integrated terminal panel at the bottom ─────────────────────
   --    tasks.lua extends this spec with the named app/logcat/gradle/melos
   --    terminals, so the options live here and the config there.

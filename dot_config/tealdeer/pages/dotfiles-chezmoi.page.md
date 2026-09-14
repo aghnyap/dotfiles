@@ -19,7 +19,7 @@
 
 `just dry-run`
 
-- Apply the source state to $HOME, then restore nvim/tmux plugins -- confirms
+- Apply the source state to $HOME, then restore nvim plugins -- confirms
   first, the one recipe here that writes outside the repo:
 
 `just apply`
