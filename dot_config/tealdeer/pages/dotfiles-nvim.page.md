@@ -93,6 +93,15 @@
 
 `<leader>aM`
 
+- Murmur: dictate into buffer (needs a local whisper-server running, see
+  `plugins/murmur.lua`):
+
+`<leader>vd`
+
+- Murmur: health check:
+
+`<leader>vh`
+
 - Terminal agent: toggle local aider:
 
 `<leader>Aa`

@@ -23,37 +23,53 @@ BREWFILE
 # Linux has no cask support at all, so ghostty, the Nerd Font and
 # terminal-browser (all cask-only upstream) are gated out of it entirely.
 # See Brewfile's comments on each for why.
-echo "==> linux GUI installs (ghostty, Fira Code Nerd Font, terminal-browser)"
+echo "==> linux GUI installs (ghostty, Fira Code Nerd Font, terminal-browser -- run in parallel, none touches a path the others do)"
 
 # Ghostty: available directly via apt on newer Ubuntu (24.10+) and via pacman
 # on Arch -- https://ghostty.org/docs/install/binary. Best-effort: an older
 # Ubuntu without it in the repos gets a warning, not a failed run, since
 # there is no one apt source that covers every release.
-if command -v apt-get >/dev/null 2>&1; then
-  sudo apt-get update -qq
-  sudo apt-get install -y ghostty || \
-    echo "    warn: apt has no ghostty package on this release -- see https://ghostty.org/docs/install/binary" >&2
-fi
+_install_ghostty() {
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update -qq
+    sudo apt-get install -y ghostty || \
+      echo "    warn: apt has no ghostty package on this release -- see https://ghostty.org/docs/install/binary" >&2
+  fi
+}
 
 # Fira Code Nerd Font, pinned to the same release the macOS cask installs
 # (v3.5.1) so both platforms draw identical glyphs. ~/.local/share/fonts is
 # the per-user XDG font directory -- fontconfig reads it with no extra
 # config. fc-cache rebuilds the cache so the font is visible immediately
 # instead of after the next login.
-font_dir="$HOME/.local/share/fonts/FiraCodeNerdFont"
-if [[ ! -d $font_dir ]]; then
-  mkdir -p "$font_dir"
-  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/FiraCode.tar.xz \
-    | tar -xJ -C "$font_dir"
-  command -v fc-cache >/dev/null 2>&1 && fc-cache -f "$font_dir" >/dev/null
-fi
+_install_font() {
+  local font_dir="$HOME/.local/share/fonts/FiraCodeNerdFont"
+  if [[ ! -d $font_dir ]]; then
+    mkdir -p "$font_dir"
+    curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/FiraCode.tar.xz \
+      | tar -xJ -C "$font_dir"
+    command -v fc-cache >/dev/null 2>&1 && fc-cache -f "$font_dir" >/dev/null
+  fi
+}
 
 # terminal-browser: cask-only upstream, so no Homebrew formula exists on
 # Linux either. This is upstream's own installer, checked against
 # https://terminal-browser.com/ and https://github.com/zenbu-labs/terminal-browser
 # before it went in this script.
-command -v terminal-browser >/dev/null 2>&1 || \
-  curl -fsSL https://terminal-browser.sh/install | bash
+_install_terminal_browser() {
+  command -v terminal-browser >/dev/null 2>&1 || \
+    curl -fsSL https://terminal-browser.sh/install | bash
+}
+
+# Three independent network installs -- run concurrently instead of paying
+# three sequential round trips. `wait` blocks until all three finish; each
+# is already best-effort (a failure inside a backgrounded function cannot
+# trip the script's own `set -e`, so failures here were already only ever
+# caught by the warnings above, not by aborting the run).
+_install_ghostty &
+_install_font &
+_install_terminal_browser &
+wait
 {{ end -}}
 
 # Runtimes. Flutter is deliberately absent -- FVM pins it per repository, and a

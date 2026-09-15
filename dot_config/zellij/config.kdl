@@ -8,6 +8,30 @@
 // there) -- run `zellij setup --check` (parses this file) and then actually
 // use it once before trusting the keybind changes below.
 
+// Theme: Tokyo Night (Night variant), matching Ghostty's `theme = TokyoNight
+// Night` (dot_config/ghostty/config) and bat's tokyonight_night.tmTheme --
+// same palette across terminal, pager and multiplexer. Values are the exact
+// RGB decimals from Ghostty's own bundled theme file
+// (/Applications/Ghostty.app/Contents/Resources/ghostty/themes/TokyoNight Night),
+// cross-checked against the tmTheme's bg/fg/accent. zellij had no theme
+// configured before this -- flagged by /code-review, fixed here.
+themes {
+    tokyonight-night {
+        fg 192 202 245
+        bg 26 27 38
+        black 21 22 30
+        red 247 118 142
+        green 158 206 106
+        yellow 224 175 104
+        blue 122 162 247
+        magenta 187 154 247
+        cyan 125 207 255
+        white 169 177 214
+        orange 255 158 100
+    }
+}
+theme "tokyonight-night"
+
 keybinds {
     // ── Fix: LazyVim's <A-j>/<A-k> (move line) vs zellij's Alt+hjkl ────────
     // zellij's shipped defaults bind bare Alt+h/j/k/l (and Alt+Left/Right) to

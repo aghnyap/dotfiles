@@ -8,6 +8,11 @@ layout {
     // bar (so the mode/keybind hints and the other tabs are invisible) and
     // no status bar. Matches the shape `zellij setup --dump-layout
     // default` prints for its own built-in layout.
+    // Duplicated identically across all 5 layouts/*.kdl files -- zellij's
+    // KDL layout format has no include/import mechanism (checked: no
+    // `--dump-layout` flag, no `template=path` node, no shipped example
+    // demonstrating one, as of 0.45.1). Left duplicated rather than faking
+    // a fix; change one, change all five.
     default_tab_template {
         pane size=1 borderless=true {
             plugin location="tab-bar"
