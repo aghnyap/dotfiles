@@ -82,6 +82,13 @@ return {
         diagnostics = 'nvim_lsp',
         show_buffer_close_icons = true,
         separator_style = 'thin',
+        -- Without this, every :terminal buffer (toggleterm, the vnew|terminal
+        -- fallback in keymaps.lua, snacks terminals) gets its own bufferline
+        -- tab same as a file buffer -- so each new terminal pane adds a tab
+        -- that never goes away until manually closed.
+        custom_filter = function(buf)
+          return vim.bo[buf].buftype ~= 'terminal'
+        end,
       },
     },
   },
