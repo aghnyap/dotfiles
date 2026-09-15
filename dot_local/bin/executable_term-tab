@@ -5,7 +5,12 @@ set -euo pipefail
 
 cmd=
 if (( $# )); then
-  cmd=${(j: :)${(q+)@}}
+  # Ghostty runs a surface command as `bash --noprofile --norc -c exec -l ...`
+  # in Ghostty.app's own launchd environment, whose PATH is only
+  # /usr/bin:/bin:/usr/sbin:/sbin -- no Homebrew, no ~/.local/bin, and no
+  # .zshenv to add them. Carry the caller's PATH across explicitly, or
+  # anything installed outside the system dirs fails with "not found".
+  cmd="env PATH=${(q+)PATH} ${(j: :)${(q+)@}}"
 fi
 
 osascript - "$cmd" <<'APPLESCRIPT'
