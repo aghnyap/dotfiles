@@ -18,10 +18,9 @@
 cask "ghostty"
 # Implied dependency of Ghostty (and of starship's prompt glyphs below) --
 # not itself named in the manifest, but nothing renders correctly without it.
-# Fira Code, per preference -- Nerd Fonts patches the same glyph set onto
-# every font it ships, so this is a drop-in swap for the JetBrains Mono
-# build the font gotchas in CLAUDE.md were originally written against.
-cask "font-fira-code-nerd-font"
+# JetBrains Mono, per preference -- the font gotchas in CLAUDE.md are
+# written against this family.
+cask "font-jetbrains-mono-nerd-font"
 {{ end -}}
 brew "starship"
 brew "direnv"

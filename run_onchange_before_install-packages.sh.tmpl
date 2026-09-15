@@ -23,7 +23,7 @@ BREWFILE
 # Linux has no cask support at all, so ghostty, the Nerd Font and
 # terminal-browser (all cask-only upstream) are gated out of it entirely.
 # See Brewfile's comments on each for why.
-echo "==> linux GUI installs (ghostty, Fira Code Nerd Font, terminal-browser -- run in parallel, none touches a path the others do)"
+echo "==> linux GUI installs (ghostty, JetBrainsMono Nerd Font, terminal-browser -- run in parallel, none touches a path the others do)"
 
 # Ghostty: available directly via apt on newer Ubuntu (24.10+) and via pacman
 # on Arch -- https://ghostty.org/docs/install/binary. Best-effort: an older
@@ -37,17 +37,23 @@ _install_ghostty() {
   fi
 }
 
-# Fira Code Nerd Font, pinned to the same release the macOS cask installs
+# JetBrainsMono Nerd Font, pinned to the same release the macOS cask installs
 # (v3.5.1) so both platforms draw identical glyphs. ~/.local/share/fonts is
 # the per-user XDG font directory -- fontconfig reads it with no extra
 # config. fc-cache rebuilds the cache so the font is visible immediately
 # instead of after the next login.
 _install_font() {
-  local font_dir="$HOME/.local/share/fonts/FiraCodeNerdFont"
+  local font_dir="$HOME/.local/share/fonts/JetBrainsMonoNerdFont"
   if [[ ! -d $font_dir ]]; then
+    if ! command -v unzip >/dev/null 2>&1; then
+      echo "    warn: unzip not found -- install it and re-run to get JetBrainsMono Nerd Font" >&2
+      return
+    fi
     mkdir -p "$font_dir"
-    curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/FiraCode.tar.xz \
-      | tar -xJ -C "$font_dir"
+    curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.zip \
+      -o "$font_dir/JetBrainsMono.zip"
+    unzip -q -o "$font_dir/JetBrainsMono.zip" -d "$font_dir"
+    rm -f "$font_dir/JetBrainsMono.zip"
     command -v fc-cache >/dev/null 2>&1 && fc-cache -f "$font_dir" >/dev/null
   fi
 }

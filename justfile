@@ -111,8 +111,8 @@ verify:
     # line is expected noise from running interactive mode with no ZLE.
     check "clean login shell"        'test -z "$(zsh -lic true 2>&1 | grep -v "can.t change option: zle")"'
     if command -v fc-list >/dev/null 2>&1; then
-      check "Fira Code Nerd Font glyph U+F0035" \
-        "fc-list ':charset=F0035' family | grep -qi 'firacode nerd font'"
+      check "JetBrainsMono Nerd Font glyph U+F0035" \
+        "fc-list ':charset=F0035' family | grep -qi 'jetbrainsmono nerd font'"
     fi
     if (( fail )); then
       echo "warn: something above is missing -- re-run 'just apply' or install it by hand" >&2

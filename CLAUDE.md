@@ -245,12 +245,12 @@ The rule that catches everyone:
   indistinguishable from an icon that was never configured — seven
   keys in the old `fastfetch` greeting sat empty this way. Use `nf-md-*` (`U+F0xxx`) and prove the
   codepoint exists with
-  `fc-list ':charset=F0035' family | grep -i 'firacode nerd font'`
+  `fc-list ':charset=F0035' family | grep -i 'jetbrainsmono nerd font'`
   before committing it.
 - **`nf-md-*` being reliable is not the same as being portable.** That range is
   plane 15 (`U+F0xxx` — five digits, above the BMP), so it renders only where
   the patched font is genuinely active; astral-plane private use has no system
-  fallback, and a terminal that is not set to FiraCode Nerd Font shows
+  fallback, and a terminal that is not set to JetBrainsMono Nerd Font shows
   tofu or nothing. Only Ghostty is configured for that font here, so a glyph
   can look perfect in the terminal it was tested in and be broken in every
   other one. **For anything that leaves Ghostty — the starship prompt above all,

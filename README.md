@@ -271,13 +271,13 @@ permanent.
   cheatsheet:
 
   ```sh
-  fc-list ':charset=F0035' family | grep -i 'firacode nerd font'
+  fc-list ':charset=F0035' family | grep -i 'jetbrainsmono nerd font'
   ```
 
   Output means the font can draw `U+F0035`; silence means it cannot, and the
   icon would vanish. That answers *whether* a codepoint exists but not *what it
   draws* — for that, read the `cmap` and `post` tables of the file
-  `fc-match 'FiraCode Nerd Font Mono' file` resolves to, where the patched
+  `fc-match 'JetBrainsMono Nerd Font Mono' file` resolves to, where the patched
   glyph names (`md-apple`, `md-cpu_64_bit`, …) are recorded.
 - **If you re-customise starship, `palette = "…"` must sit ABOVE
   `[palettes.…]`.** TOML assigns every key after a table header to that table,
