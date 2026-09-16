@@ -120,13 +120,24 @@ vim.schedule(function()
   end
 end)
 
--- Terminal buffers: no gutter.
+-- Terminal buffers: no gutter. Agent terminals opt in to single Escape so it
+-- returns to Neovim Normal mode without sending an interrupt/cancel to the
+-- agent. Other terminal buffers deliberately receive Escape unchanged.
 vim.api.nvim_create_autocmd('TermOpen', {
   group = augroup 'terminal',
-  callback = function()
+  callback = function(ev)
     vim.opt_local.number = false
     vim.opt_local.relativenumber = false
     vim.opt_local.signcolumn = 'no'
     vim.opt_local.cursorline = false
+
+    if vim.b[ev.buf].agent_terminal then
+      vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', {
+        buffer = ev.buf,
+        silent = true,
+        nowait = true,
+        desc = 'Exit agent terminal mode',
+      })
+    end
   end,
 })

@@ -21,6 +21,16 @@
 --
 -- Deliberately not toggleterm: lua/plugins/tasks.lua owns toggleterm's single
 -- `config`, and lazy.nvim keeps exactly one per plugin across all spec files.
+-- Agent buffers opt into a single-Escape terminal map in config/autocmds.lua.
+-- Keeping that marker on the buffer leaves ordinary shells and TUIs alone.
+local function agent_win(opts)
+  opts = opts or {}
+  opts.on_buf = function(term)
+    vim.b[term.buf].agent_terminal = true
+  end
+  return opts
+end
+
 local function cursor_agent(extra)
   if vim.fn.executable('cursor-agent') == 0 then
     vim.notify('cursor-agent is not installed -- brew install --cask cursor-cli', vim.log.levels.ERROR, { title = 'agents' })
@@ -29,7 +39,7 @@ local function cursor_agent(extra)
   local cmd = 'cursor-agent' .. (extra and (' ' .. extra) or '')
   Snacks.terminal.toggle(cmd, {
     cwd = vim.fs.root(0, '.git') or vim.uv.cwd(),
-    win = { position = 'right', width = 0.35 },
+    win = agent_win { position = 'right', width = 0.35 },
   })
 end
 
@@ -40,7 +50,7 @@ local function codex_agent()
   end
   Snacks.terminal.toggle('codex', {
     cwd = vim.fs.root(0, '.git') or vim.uv.cwd(),
-    win = { position = 'right', width = 0.35 },
+    win = agent_win { position = 'right', width = 0.35 },
   })
 end
 
@@ -63,7 +73,7 @@ local function aider_watch()
     local cmd = ('aider --watch-files --model %s'):format(vim.fn.shellescape(ai_model.aider_model()))
     Snacks.terminal.toggle(cmd, {
       cwd = cwd,
-      win = { position = 'right', width = 0.35 },
+      win = agent_win { position = 'right', width = 0.35 },
     })
   end)
 end
@@ -156,7 +166,7 @@ return {
         -- old contents until something forces a re-read. Needs 'autoread', which
         -- LazyVim sets.
         auto_reload = true,
-        win = { position = 'right', wo = { winbar = 'Aider' } },
+        win = agent_win { position = 'right', wo = { winbar = 'Aider' } },
       }
     end,
     keys = {

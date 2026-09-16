@@ -23,6 +23,14 @@ return {
         split_side = 'right',
         split_width_percentage = 0.35,
         auto_close = false,
+        -- Mark this buffer so the shared TermOpen autocmd can reserve a single
+        -- Escape for returning to Neovim Normal mode. Ordinary terminals keep
+        -- sending Escape to their child process.
+        snacks_win_opts = {
+          on_buf = function(term)
+            vim.b[term.buf].agent_terminal = true
+          end,
+        },
       },
       -- Cursor shows an edit inline, over the selection, rather than in a side
       -- pane. 'unified' is claudecode's equivalent -- diff.lua:842 dispatches

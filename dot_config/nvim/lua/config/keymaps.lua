@@ -228,7 +228,6 @@ map('n', '<leader>|', function()
 end, { desc = 'Open independent empty split' })
 
 -- ── Quality-of-life ────────────────────────────────────────────
-map('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- ── Overview / outline (<leader>m) ─────────────────────────────
 -- satellite ships Enable/Disable/Refresh but no toggle, so track the state
