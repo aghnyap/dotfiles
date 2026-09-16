@@ -68,29 +68,74 @@ return {
   -- ── bufferline: label the neo-tree offset like VS Code's sidebar ─
   {
     'akinsho/bufferline.nvim',
-    opts = {
-      options = {
-        offsets = {
-          {
-            filetype = 'neo-tree',
-            text = 'EXPLORER',
-            highlight = 'Directory',
-            text_align = 'left',
-            separator = true,
+    -- opts is a function, not a table, only so the offset fix below has a place
+    -- to run. It must NOT become `config`: LazyVim already defines one for this
+    -- plugin (setup + the BufAdd/BufDelete session-restore fix), and lazy.nvim
+    -- keeps a single config per plugin rather than chaining them.
+    opts = function(_, opts)
+      opts = vim.tbl_deep_extend('force', opts, {
+        options = {
+          offsets = {
+            {
+              filetype = 'neo-tree',
+              text = 'EXPLORER',
+              highlight = 'Directory',
+              text_align = 'left',
+              separator = true,
+            },
           },
+          diagnostics = 'nvim_lsp',
+          show_buffer_close_icons = true,
+          separator_style = 'thin',
+          -- Without this, every :terminal buffer (toggleterm, the vnew|terminal
+          -- fallback in keymaps.lua, snacks terminals) gets its own bufferline
+          -- tab same as a file buffer -- so each new terminal pane adds a tab
+          -- that never goes away until manually closed.
+          custom_filter = function(buf)
+            return vim.bo[buf].buftype ~= 'terminal'
+          end,
         },
-        diagnostics = 'nvim_lsp',
-        show_buffer_close_icons = true,
-        separator_style = 'thin',
-        -- Without this, every :terminal buffer (toggleterm, the vnew|terminal
-        -- fallback in keymaps.lua, snacks terminals) gets its own bufferline
-        -- tab same as a file buffer -- so each new terminal pane adds a tab
-        -- that never goes away until manually closed.
-        custom_filter = function(buf)
-          return vim.bo[buf].buftype ~= 'terminal'
-        end,
-      },
-    },
+      })
+
+      -- Claude's panel (<D-l>) is a full-height `botright vsplit`, so opening it
+      -- while a full-width bottom window is up -- the toggleterm panel, quickfix,
+      -- Trouble -- nests the tree two levels deep:
+      --     row[ col[ row[neo-tree, editor], panel ], claude ]
+      -- bufferline/offset.lua's is_valid_layout only unwraps a column whose first
+      -- child is a leaf, so it no longer recognises neo-tree and drops the offset
+      -- altogether: EXPLORER disappears and the buffer tabs snap to column 0.
+      -- Rebuild the offset in exactly that case, keyed off the window that is
+      -- actually drawn at the top-left, so a real full-width window ABOVE the tree
+      -- still suppresses the label the way upstream intends.
+      -- Tied to bufferline's OffsetData shape; revisit here if that changes.
+      local offset = require('bufferline.offset')
+      local upstream_get = offset.get
+      offset.get = function(...)
+        local data = upstream_get(...)
+        if data.left_size > 0 then
+          return data
+        end
+        local leftmost, topmost = nil, math.huge
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          local row, col = unpack(vim.api.nvim_win_get_position(win))
+          -- floats are not part of the layout the offset describes
+          if vim.api.nvim_win_get_config(win).relative == '' and col == 0 and row < topmost then
+            leftmost, topmost = win, row
+          end
+        end
+        if not leftmost or vim.bo[vim.api.nvim_win_get_buf(leftmost)].filetype ~= 'neo-tree' then
+          return data
+        end
+        local width = vim.api.nvim_win_get_width(leftmost)
+        local text = (' EXPLORER'):sub(1, width)
+        data.left = '%#Directory#' .. text .. string.rep(' ', width - #text) .. '%#BufferLineOffsetSeparator#\u{2502}'
+        data.left_size = width
+        data.total_size = data.total_size + width
+        return data
+      end
+
+      return opts
+    end,
   },
 
   -- ── lualine: show which LSP clients are attached ────────────────
