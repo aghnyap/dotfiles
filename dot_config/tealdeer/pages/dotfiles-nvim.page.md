@@ -89,7 +89,8 @@
 
 `<leader>ax`
 
-- Select this session's local AI model, shared with aider (`:AiModel`):
+- Select this session's AI model, local or OpenRouter, shared with aider
+  (`:AiModel`):
 
 `<leader>aM`
 

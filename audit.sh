@@ -98,10 +98,17 @@ else
 fi
 
 # Normalize the model contract from its three required client formats.
+# Every PROFILES row is provider-tagged; only `ollama` rows carry local
+# num_ctx/metadata (litellm already knows cost/context for known
+# OpenRouter model IDs, so those rows deliberately have no
+# dot_aider.model.metadata.json entry -- see that file's header and
+# dot_aider.model.settings.yml's openrouter block comment).
 output_tokens=$(sed -n 's/^local OUTPUT_TOKENS = \([0-9][0-9]*\)$/\1/p' dot_config/nvim/lua/util/ai_model.lua)
+sed -n "s/.*{ model = '\\([^']*\\)', context = \\([0-9][0-9]*\\), provider = '\\([^']*\\)' }.*/\\1|\\2|\\3/p" \
+  dot_config/nvim/lua/util/ai_model.lua | sort > "$TMP/catalog-all"
+
 if [[ -n $output_tokens ]]; then
-  sed -n "s/.*{ model = '\\([^']*\\)', context = \\([0-9][0-9]*\\) }.*/\\1|\\2/p" \
-    dot_config/nvim/lua/util/ai_model.lua |
+  grep '|ollama$' "$TMP/catalog-all" | cut -d'|' -f1,2 |
     while IFS='|' read -r model context; do
       printf '%s|%s|%s|%s\n' "$model" "$context" "$((context - output_tokens))" "$output_tokens"
     done | sort > "$TMP/catalog"
@@ -129,15 +136,15 @@ jq -r '
 ' dot_aider.model.metadata.json | sort > "$TMP/metadata"
 
 cut -d'|' -f1,2 "$TMP/catalog" > "$TMP/catalog-settings"
-model_count=$(wc -l < "$TMP/catalog" | tr -d ' ')
+model_count=$(wc -l < "$TMP/catalog-all" | tr -d ' ')
 whole_count=$(rg -c '^  edit_format: whole$' dot_aider.model.settings.yml || true)
-if [[ -s $TMP/catalog ]] \
+if [[ -s $TMP/catalog-all ]] \
   && diff -u "$TMP/catalog" "$TMP/metadata" >/dev/null \
   && diff -u "$TMP/catalog-settings" "$TMP/settings" >/dev/null \
   && [[ $whole_count == "$model_count" ]]; then
-  ok "local AI model/context contract"
+  ok "AI model/context contract"
 else
-  bad "local AI model/context contract"
+  bad "AI model/context contract"
 fi
 
 # Baseline and opt-in groups must remain disjoint. Flutter/Dart stay

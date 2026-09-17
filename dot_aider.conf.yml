@@ -15,6 +15,18 @@
 # recommended over ollama/". The two are different litellm providers and the
 # chat one matches how aider frames requests.
 #
+# OpenRouter works the same way, needing one exported variable this repo does
+# not manage -- see the machine-local table in CLAUDE.md. litellm's own
+# `openrouter/` prefix reads OPENROUTER_API_KEY from the environment
+# automatically; no base_url or extra flag needed here:
+#
+#   aider --model openrouter/cohere/north-mini-code:free
+#
+# OPENROUTER_API_KEY is machine-local state, expected to live in
+# ~/.config/zsh/local/*.zsh (unmanaged, gitignored by convention) and
+# populated there via Infisical, same as every other credential this repo's
+# tools read but never store.
+#
 # Be realistic about what this is. On aider's own polyglot leaderboard Claude
 # Sonnet 4 scores 56.4% and the best locally-runnable coder manages 8-16%.
 # Single-file, conventional edits are usually fine; multi-file or cross-language

@@ -1,15 +1,23 @@
 -- ╭──────────────────────────────────────────────────────────────╮
 -- │  codecompanion.nvim -- local + aggregated AI, replacing Avante │
 -- │                                                                │
--- │  Two adapters, both non-cloud from Neovim's point of view:     │
--- │   - ollama:   the same local model :AiModel already selects    │
--- │               for aider (util/ai_model.lua is the shared       │
--- │               source of truth for which model and context).    │
--- │   - litellm:  LiteLLM's own OpenAI-compatible proxy, so any     │
--- │               model IT aggregates (local GGUFs, Claude, OpenAI) │
--- │               is reachable without a second plugin. litellm     │
--- │               itself is a `uv tool` (see the installer script), │
--- │               started by hand: `litellm --config <file>`.       │
+-- │  Three adapters:                                               │
+-- │   - ollama:      the same local model :AiModel already selects │
+-- │                  for aider (util/ai_model.lua is the shared    │
+-- │                  source of truth for which model and context). │
+-- │   - litellm:     LiteLLM's own OpenAI-compatible proxy, so any  │
+-- │                  model IT aggregates (local GGUFs, Claude,      │
+-- │                  OpenAI) is reachable without a second plugin.  │
+-- │                  litellm itself is a `uv tool` (see the         │
+-- │                  installer script), started by hand:            │
+-- │                  `litellm --config <file>`.                     │
+-- │   - openrouter:  OpenRouter's own OpenAI-compatible endpoint,   │
+-- │                  cloud and API-key-gated (unlike the two        │
+-- │                  above). Needs OPENROUTER_API_KEY in the shell  │
+-- │                  environment -- this repo does not manage or    │
+-- │                  store it (see dot_aider.conf.yml). Reached the │
+-- │                  same way as litellm: switch adapters from      │
+-- │                  codecompanion's own picker, not :AiModel.      │
 -- ╰──────────────────────────────────────────────────────────────╯
 local ai_model = require 'util.ai_model'
 
@@ -17,6 +25,10 @@ local ai_model = require 'util.ai_model'
 -- unlike ollama there is no managed brew-services unit for it, so this is
 -- just where it is expected if you have started one.
 local LITELLM_URL = 'http://127.0.0.1:4000'
+
+-- OpenRouter's own endpoint -- unlike LITELLM_URL this is a fixed, non-local
+-- base URL: OpenRouter is the cloud service itself, not a local proxy.
+local OPENROUTER_URL = 'https://openrouter.ai/api/v1'
 
 return {
   {
@@ -63,6 +75,20 @@ return {
                 },
               })
             end,
+            -- Same 'openai_compatible' template as litellm, pointed at
+            -- OpenRouter instead. Unlike litellm's local proxy, a missing
+            -- key here should fail loudly rather than quietly succeed
+            -- against nothing -- 'sk-missing' is deliberately not a value
+            -- OpenRouter will ever accept, unlike litellm's 'sk-local'
+            -- fallback which is correct for a no-auth local server.
+            openrouter = function()
+              return require('codecompanion.adapters').extend('openai_compatible', {
+                env = {
+                  url = OPENROUTER_URL,
+                  api_key = os.getenv 'OPENROUTER_API_KEY' or 'sk-missing',
+                },
+              })
+            end,
           },
         },
         -- `strategies` was renamed to `interactions` upstream (config.lua
@@ -70,9 +96,9 @@ return {
         -- how this went unnoticed); `agent` is not a real interaction name
         -- either (the valid ones are chat/inline/cmd/cli/code_review/...),
         -- so it was silently dropped along with the whole table. litellm
-        -- stays reachable as a named adapter -- switch to it from
-        -- codecompanion's own adapter picker -- rather than wired as a
-        -- default strategy that does not exist.
+        -- and openrouter both stay reachable as named adapters -- switch to
+        -- either from codecompanion's own adapter picker -- rather than
+        -- wired as a default strategy that does not exist.
         interactions = {
           chat = { adapter = 'ollama' },
           inline = { adapter = 'ollama' },
@@ -85,7 +111,7 @@ return {
       }
     end,
     keys = {
-      -- A Neovim session starts without a local model selected; require one
+      -- A Neovim session starts without a model selected; require one
       -- before opening the chat, same guard avante.lua used.
       {
         '<leader>aa',
@@ -110,11 +136,12 @@ return {
       { '<leader>ax', '<cmd>CodeCompanionActions<cr>', mode = { 'n', 'v' }, desc = 'CodeCompanion: actions menu' },
       -- The shared :AiModel picker (util/ai_model.lua), not codecompanion's
       -- own `/model` slash command: that only switches which configured
-      -- ADAPTER answers (ollama vs. litellm), not which model inside
-      -- ollama, and would leave aider's args and the readiness check
-      -- out of sync with whatever codecompanion picked. Avante used to
-      -- leave this lhs to the shared selector for the same reason.
-      { '<leader>aM', '<cmd>AiModel<cr>', desc = 'Select local AI model (shared with aider)' },
+      -- ADAPTER answers (ollama vs. litellm vs. openrouter), not which
+      -- model inside ollama, and would leave aider's args and the
+      -- readiness check out of sync with whatever codecompanion picked.
+      -- Avante used to leave this lhs to the shared selector for the same
+      -- reason.
+      { '<leader>aM', '<cmd>AiModel<cr>', desc = 'Select AI model, local or OpenRouter (shared with aider)' },
     },
   },
 }

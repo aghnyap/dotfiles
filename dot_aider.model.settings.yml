@@ -28,6 +28,10 @@
 # either aider rejects usable context or Ollama silently truncates an oversized
 # prompt. Change all three together.
 #
+# This num_ctx/metadata contract applies only to the ollama_chat/ rows below
+# -- an openrouter/ row (see further down) intentionally carries neither,
+# since litellm already knows that model's real budget.
+#
 # edit_format: whole. Aider defaults unfamiliar models to `whole` because it is
 # the easiest format for a model to produce correctly -- it returns the entire
 # file rather than a search/replace block that has to match byte-for-byte. Its
@@ -61,6 +65,22 @@
     # Not capped to match the 7b, and the reverse is also true. The two windows
     # are equal by coincidence, one native and one thermal.
     num_ctx: 32768
+
+- name: openrouter/cohere/north-mini-code:free
+  # Same reasoning as the local models above: `whole` is the safer default
+  # for a model whose diff-following reliability on aider's exact
+  # search/replace format hasn't been benchmarked here, and this repo
+  # already treats coder models in this weight class conservatively (see
+  # "Considered and rejected" below). Revisit if this specific free-tier
+  # slug proves reliable enough at `diff` to justify the smaller payload.
+  edit_format: whole
+  use_repo_map: true
+  # No extra_params/num_ctx here on purpose: num_ctx is an Ollama-only
+  # request field (see this file's header) -- OpenRouter is a hosted API,
+  # not a local server with a truncation quirk to work around. litellm
+  # already carries this model's real context window from its own built-in
+  # OpenRouter metadata, which is also why there is no matching entry in
+  # ~/.aider.model.metadata.json.
 
 # ── Adding another model ─────────────────────────────────────────────────────
 #
@@ -103,3 +123,23 @@
 # Do not use `codestral`. The tag Ollama serves is under the Mistral AI
 # Non-Production License, which forbids commercial use -- including internal use
 # at work -- without a paid agreement.
+
+# ── Adding an OpenRouter model ───────────────────────────────────────────────
+#
+# OpenRouter models are cloud, not local: there is no `ollama pull` step, and
+# litellm already carries cost/context metadata for known OpenRouter model
+# IDs, so (unlike the Ollama rows above) no entry is needed in
+# ~/.aider.model.metadata.json.
+#
+#   1. Pick a slug from https://openrouter.ai/models?max_price=0 -- that list
+#      rotates, so re-check it even if you're just swapping the one above.
+#   2. Add a block above named `openrouter/<slug>` (litellm's own documented
+#      prefix for OpenRouter). No extra_params/num_ctx: that's an Ollama-only
+#      request field.
+#   3. Add a matching profile to PROFILES in
+#      dot_config/nvim/lua/util/ai_model.lua with `provider = 'openrouter'`,
+#      then select it with :AiModel.
+#   4. OPENROUTER_API_KEY must already be in the shell environment -- this
+#      repo does not manage or store it (see dot_aider.conf.yml).
+#
+#   aider --model openrouter/cohere/north-mini-code:free   # try it for a session

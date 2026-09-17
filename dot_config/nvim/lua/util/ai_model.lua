@@ -1,18 +1,29 @@
 local M = {}
 
--- Model choice is deliberately human, not a RAM-derived policy. This catalog
--- only records request budgets that have been checked against Ollama's q8_0 KV
--- cache. Keep it aligned with ~/.aider.model.settings.yml and
--- ~/.aider.model.metadata.json.
+-- Model choice is deliberately human, not a RAM-derived policy. `provider =
+-- 'ollama'` rows in this catalog record request budgets that have been
+-- checked against Ollama's q8_0 KV cache; keep them aligned with
+-- ~/.aider.model.settings.yml and ~/.aider.model.metadata.json.
+-- `provider = 'openrouter'` rows are deliberately absent from
+-- ~/.aider.model.metadata.json -- litellm already carries cost/context
+-- metadata for known OpenRouter model IDs, so there is nothing local to
+-- declare.
 --
--- Both sit at 32k for unrelated reasons: it is the 7b's native ceiling, while
--- the 30b is stopped by memory long before its trained 262k. Neither is capped
--- to match the other, and nothing here decides which one belongs on a given
--- machine. Verified with `ollama ps` reporting 100% GPU at this window --
--- 5.5 GB for the 7b, 20 GB for the 30b.
+-- The two ollama models sit at 32k for unrelated reasons: it is the 7b's
+-- native ceiling, while the 30b is stopped by memory long before its
+-- trained 262k. Neither is capped to match the other, and nothing here
+-- decides which one belongs on a given machine. Verified with `ollama ps`
+-- reporting 100% GPU at this window -- 5.5 GB for the 7b, 20 GB for the 30b.
+--
+-- The openrouter row's context figure is informational only (nothing here
+-- sends it as a request parameter the way num_ctx is for Ollama) and must
+-- be re-checked against https://openrouter.ai/models?max_price=0 before
+-- relying on it -- OpenRouter's free lineup rotates and can re-price or
+-- retire an entry without notice.
 local PROFILES = {
-  { model = 'qwen2.5-coder:7b', context = 32768 },
-  { model = 'qwen3-coder:30b', context = 32768 },
+  { model = 'qwen2.5-coder:7b', context = 32768, provider = 'ollama' },
+  { model = 'qwen3-coder:30b', context = 32768, provider = 'ollama' },
+  { model = 'cohere/north-mini-code:free', context = 256000, provider = 'openrouter' },
 }
 
 -- Ollama's num_ctx is input + output. codecompanion and aider receive the smaller
@@ -67,6 +78,11 @@ function M.context(model)
   return profile and profile.context or nil
 end
 
+function M.provider(model)
+  local profile = profiles_by_model[model or M.current()]
+  return profile and profile.provider or 'ollama'
+end
+
 function M.output_tokens()
   return OUTPUT_TOKENS
 end
@@ -78,7 +94,13 @@ end
 
 function M.aider_model(model)
   model = model or M.current()
-  return model and ('ollama_chat/' .. model) or nil
+  if not model then
+    return nil
+  end
+  if M.provider(model) == 'openrouter' then
+    return 'openrouter/' .. model
+  end
+  return 'ollama_chat/' .. model
 end
 
 function M.aider_args(model)
@@ -119,8 +141,21 @@ end
 local function check_ready(model, callback)
   model = model or M.current()
   if not model then
-    notify('Select a local model first with :AiModel.', vim.log.levels.WARN)
+    notify('Select an AI model first with :AiModel.', vim.log.levels.WARN)
     return false
+  end
+
+  if M.provider(model) == 'openrouter' then
+    if not os.getenv 'OPENROUTER_API_KEY' then
+      notify(
+        'OPENROUTER_API_KEY is not set; requests to '
+          .. model
+          .. ' will fail. Populate it in your own ~/.config/zsh/local/*.zsh (see `tldr dotfiles-ai`).',
+        vim.log.levels.WARN
+      )
+    end
+    callback(model)
+    return true
   end
 
   if vim.fn.executable('ollama') == 0 then
@@ -168,13 +203,13 @@ function M.require_selected()
     return true
   end
 
-  notify('Select a local model first with :AiModel.', vim.log.levels.WARN)
+  notify('Select an AI model first with :AiModel.', vim.log.levels.WARN)
   return false
 end
 
 local function apply(model)
   if not is_known(model) then
-    notify('Unsupported local AI model: ' .. tostring(model), vim.log.levels.ERROR)
+    notify('Unsupported AI model: ' .. tostring(model), vim.log.levels.ERROR)
     return false
   end
 
@@ -212,7 +247,7 @@ local function apply(model)
   -- update -- there is no cached provider object to drop the way Avante's
   -- `avante.providers.ollama` had to be.
 
-  notify(('Local AI model: %s (%dk context)'):format(model, M.context(model) / 1024))
+  notify(('AI model: %s [%s] (%dk context)'):format(model, M.provider(model), M.context(model) / 1024))
   return true
 end
 
@@ -232,9 +267,9 @@ function M.select(model, callback)
   end
 
   vim.ui.select(models, {
-    prompt = 'Local AI model',
+    prompt = 'AI model',
     format_item = function(item)
-      return ('%s (%dk context)'):format(item, M.context(item) / 1024)
+      return ('%s [%s] (%dk context)'):format(item, M.provider(item), M.context(item) / 1024)
     end,
   }, function(choice)
     if choice then
@@ -243,9 +278,11 @@ function M.select(model, callback)
   end)
 end
 
--- Run a local-AI action only after a human has selected a model and Ollama has
--- proved that exact tag is available. Selection remains per-process; the first
--- action simply opens the same picker as :AiModel and resumes after the choice.
+-- Run an AI action only after a human has selected a model and, for a local
+-- model, Ollama has proved that exact tag is available (an OpenRouter model
+-- only gets an OPENROUTER_API_KEY presence check -- see check_ready).
+-- Selection remains per-process; the first action simply opens the same
+-- picker as :AiModel and resumes after the choice.
 function M.with_ready_model(callback)
   local model = M.current()
   if model then
@@ -276,7 +313,7 @@ function M.setup()
       M.select(opts.args)
     end, {
       nargs = '?',
-      desc = 'Select the local AI model for this Neovim session',
+      desc = 'Select the AI model for this Neovim session (local or OpenRouter)',
       complete = function(arglead)
         return vim.tbl_filter(function(model)
           return vim.startswith(model, arglead)

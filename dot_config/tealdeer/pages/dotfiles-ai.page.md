@@ -24,6 +24,12 @@
 
 `ollama rm {{tag}}`
 
+- aider on OpenRouter's free tier (needs `OPENROUTER_API_KEY` in the
+  environment -- populate it locally, e.g. via Infisical in
+  `~/.config/zsh/local/*.zsh`; this repo does not manage or store it):
+
+`aider --model {{openrouter/cohere/north-mini-code:free}}`
+
 - cursor-agent as a cloud CLI agent, or scripted one-shot:
 
 `cursor-agent`
