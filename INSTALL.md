@@ -267,7 +267,8 @@ Deliberately — these are secrets or machine state, and are excluded in
   `--model ollama_chat/<tag>` explicitly.
 - **`cursor-agent login`.** A browser flow, and therefore the one step here that
   `bootstrap.sh` genuinely cannot automate. `CURSOR_API_KEY` in
-  `~/.config/zsh/local/` is the scriptable alternative. Verify with
+  `~/.config/zsh/local/`, populated via Infisical, is the scriptable
+  alternative. Verify with
   `cursor-agent --list-models` rather than `cursor-agent status`, which has been
   seen reporting a successful login for an account with no models available.
 - aider's own state — `.aider.chat.history.md`, `.aider.input.history` and the

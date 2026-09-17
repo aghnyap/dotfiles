@@ -40,6 +40,11 @@ brew "just"
 # Password manager and secrets-manager CLIs. Installed as clients only -- no
 # vault URL, no project token, no key material ships from this repo. See
 # CLAUDE.md's secrets hard rule.
+#
+# infisical is this repo's designated source for any API key its tools read
+# from the environment (OPENROUTER_API_KEY, LITELLM_API_KEY, CURSOR_API_KEY,
+# ...). bitwarden-cli is installed for personal password-manager use -- a
+# separate purpose, not an alternate way to source those.
 brew "bitwarden-cli"
 brew "infisical"
 brew "tailscale"

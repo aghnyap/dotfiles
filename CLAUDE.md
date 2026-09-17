@@ -105,8 +105,17 @@ just apply       # applies to $HOME -- confirms first, never run unannounced
   as *clients* — this repo has no vault, no vault URL, and no project token
   in it; those are machine-local login state, same as `cursor-agent login`.
   `age`/`sops` are installed as binaries only — no key material, no
-  `.sops.yaml` recipient list naming a person, ships from here. Run `just
-  leaks` (`gitleaks detect --no-git -s .`) before any push; `just pre-push`
+  `.sops.yaml` recipient list naming a person, ships from here. **Infisical is
+  the designated source for any API key a tool here reads from the
+  environment** (`OPENROUTER_API_KEY`, `LITELLM_API_KEY`, `CURSOR_API_KEY`,
+  and anything added later) — populate it in `~/.config/zsh/local/*.zsh`.
+  Bitwarden CLI is installed for personal password-manager use, a separate
+  purpose, not an alternate way to source those. Neither is macOS Keychain a
+  gap: it is the right tool for a local, offline OS automation secret that
+  never needs to leave the device (the VPN TOTP seed in
+  `~/.config/zsh/local/` is the example), as opposed to an API key a tool
+  reads from env. Run `just leaks` (`gitleaks detect --no-git -s .`) before
+  any push; `just pre-push`
   runs it for you.
 
 ---
