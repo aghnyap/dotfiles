@@ -34,6 +34,12 @@
 
 `Ctrl+j` from the explorer, or click into the panel
 
+- Close the last editor pane: closes that file (kept listed if unsaved) and
+  reopens the next one from OPEN EDITORS, or an empty pane after the last
+  file; closing that empty pane quits. `:qa` still quits outright:
+
+`<C-w>q`, `:q` or `:wq`
+
 - OPEN SHELLS: the panel under OPEN EDITORS listing every open terminal --
   toggleterm task runners, ad hoc terminals, and the Claude/cursor-agent/
   Codex/aider panels. Inside it, `<CR>`/`l` focuses or reopens the shell, `d`

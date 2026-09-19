@@ -355,7 +355,7 @@ local function run()
   assert(not api.nvim_buf_is_valid(term_buf), 'ToggleTerm deletion must remove its buffer')
   eq(vim.o.showtabline, 0, 'Terminals/tabpages must not expose the horizontal tabline')
 
-  for _, case in ipairs { 'quit', 'layout', 'sizes', 'tree-open' } do
+  for _, case in ipairs { 'quit', 'close-editor', 'layout', 'sizes', 'tree-open' } do
     local child = vim
       .system(
         { vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' },
@@ -755,13 +755,54 @@ if case ~= 'embed' then
   local ok, err = xpcall(function()
     if case == 'quit' then
       api.nvim_set_current_buf(file 'last-editor')
+      -- The argument buffer counts as an open file; it must not keep Neovim up.
+      vim.cmd('bwipeout ' .. vim.fn.bufnr(temp .. '/A'))
       local editor = api.nvim_get_current_win()
       vim.cmd 'Neotree show'
       flush()
       check_layout()
+      -- Closing the last file leaves an empty pane, as Cursor does.
+      local last = api.nvim_get_current_buf()
+      local width = api.nvim_win_get_width(sidebar.explorer_win())
       api.nvim_win_close(editor, false)
       flush()
-      error 'Closing the last editor did not quit Neovim'
+      eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Explorer must not keep the closed pane\'s columns')
+      assert(not vim.bo[last].buflisted, 'Closed file must leave OPEN EDITORS')
+      local wins = sidebar.editor_wins { buffers.win(), shells.win() }
+      eq(#wins, 1, 'Closing the last file must leave an empty editor pane')
+      eq(api.nvim_buf_get_name(api.nvim_win_get_buf(wins[1])), '', 'The pane left behind must be empty')
+      -- Closing that empty pane is what quits.
+      api.nvim_win_close(wins[1], false)
+      flush()
+      error 'Closing the empty editor pane did not quit Neovim'
+    elseif case == 'close-editor' then
+      -- Closing the last editor pane closes that file, not Neovim, while
+      -- OPEN EDITORS still lists others; the next file gets a fresh pane.
+      local kept, dirty = file 'kept', file 'dirty'
+      vim.bo[dirty].modified = true
+      local first = file 'first'
+      api.nvim_set_current_buf(first)
+      vim.cmd('bwipeout ' .. vim.fn.bufnr(temp .. '/A'))
+      local editor = api.nvim_get_current_win()
+      vim.cmd 'Neotree show'
+      flush()
+      check_layout()
+      local width = api.nvim_win_get_width(sidebar.explorer_win())
+      api.nvim_win_close(editor, false)
+      flush()
+      eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Explorer must not keep the closed pane\'s columns')
+      assert(not vim.bo[first].buflisted, 'Closed file must leave OPEN EDITORS')
+      local wins = sidebar.editor_wins { buffers.win(), shells.win() }
+      eq(#wins, 1, 'A fresh editor pane must replace the closed one')
+      local shown = api.nvim_win_get_buf(wins[1])
+      assert(shown == kept or shown == dirty, 'Fresh pane must show a remaining file')
+      check_layout()
+      api.nvim_win_close(wins[1], false)
+      flush()
+      wins = sidebar.editor_wins { buffers.win(), shells.win() }
+      eq(#wins, 1, 'Closing again must reopen the other file')
+      -- The modified file is never dropped, so closing it just reshows it.
+      eq(vim.bo[dirty].buflisted, true, 'Modified file must stay listed')
     elseif case == 'layout' then
       layout_case()
     elseif case == 'sizes' then

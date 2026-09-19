@@ -43,11 +43,69 @@ vim.api.nvim_create_autocmd({ 'FileType', 'BufWinEnter' }, {
 -- (`:q`) leaves those two plus the explorer open, so neo-tree never sees
 -- itself as "the last window" and Neovim never exits. Replace it with a
 -- general check: once nothing but the three sidebar panels remains, quit.
+--
+-- But only once OPEN EDITORS is empty too. Closing the last editor window
+-- (`<C-w>q`, `:q`, `:wq`) closes that one file, as in Cursor: its buffer is
+-- dropped from the list (unless it has unsaved changes) and the most recently
+-- used remaining file reopens in a fresh editor pane. Quitting outright here
+-- took every other open file with it, or -- when one of them was modified --
+-- `qa` failed and left the sidebar with no editor pane to open anything into.
+--
+-- Closing the last file leaves an empty editor pane, not an exit -- Cursor
+-- keeps its window up with no editors open. Closing that empty pane (nothing
+-- left to close but the workbench) is what quits.
+--
+-- The buffer-drop above used to only happen in that last-window branch: with
+-- a second editor split still open, `<C-w>q` closed the window but left the
+-- buffer loaded and listed, so it reopened unchanged from OPEN EDITORS. Drop
+-- it unconditionally instead, any time its window closes and no other window
+-- still shows it, whether or not sidebar-only quit follows.
+local function file_buffers()
+  local bufs = {}
+  for _, info in ipairs(vim.fn.getbufinfo { buflisted = 1 }) do
+    if vim.bo[info.bufnr].buftype == '' and info.name ~= '' then
+      bufs[#bufs + 1] = info
+    end
+  end
+  table.sort(bufs, function(x, y)
+    return x.lastused > y.lastused
+  end)
+  return bufs
+end
+
+-- `buf` nil opens an empty, unnamed buffer instead. `width` is the explorer's
+-- width from before the editor closed: by the time this runs, Neovim has
+-- handed the closed pane's columns to the explorer, so reading it here would
+-- restore the expanded width and leave the new pane a sliver at the edge.
+local function reopen_editor(buf, width)
+  local explorer = sidebar.explorer_win()
+  vim.cmd(buf and ('botright vertical sbuffer ' .. buf) or 'botright vnew')
+  if explorer and width then
+    vim.api.nvim_win_set_width(explorer, width)
+  end
+  sidebar.layout()
+end
+
 vim.api.nvim_create_autocmd('WinClosed', {
   group = augroup 'quit_on_sidebar_only',
   callback = function(a)
     local tab = vim.api.nvim_win_get_tabpage(tonumber(a.match))
+    local closed = a.buf
+    local was_file = vim.bo[closed].buftype == '' and vim.api.nvim_buf_get_name(closed) ~= ''
+    -- The closing window still holds its columns here; after it closes they
+    -- belong to the explorer.
+    local explorer = sidebar.explorer_win(tab)
+    local width = explorer and vim.api.nvim_win_get_width(explorer)
     sidebar.schedule(function()
+      if
+        was_file
+        and vim.api.nvim_buf_is_valid(closed)
+        and vim.bo[closed].buflisted
+        and not vim.bo[closed].modified
+        and vim.fn.bufwinid(closed) == -1
+      then
+        pcall(vim.cmd, 'bdelete ' .. closed)
+      end
       if #vim.api.nvim_list_tabpages() > 1 then
         return
       end
@@ -65,7 +123,18 @@ vim.api.nvim_create_autocmd('WinClosed', {
           end
         end
       end
-      if real > 0 and saw_sidebar then
+      if not (real > 0 and saw_sidebar) then
+        return
+      end
+      local remaining = file_buffers()
+      if #remaining > 0 then
+        reopen_editor(remaining[1].bufnr, width)
+      elseif was_file then
+        reopen_editor(nil, width)
+      elseif vim.api.nvim_buf_is_valid(closed) and vim.bo[closed].modified then
+        -- Unsaved scratch text: `qa` would fail on it, so show it again.
+        reopen_editor(closed, width)
+      else
         vim.cmd 'qa'
       end
     end, tab)
