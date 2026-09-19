@@ -103,8 +103,8 @@ domains:
 # user.email, which may be a personal address, and never from this repo,
 # which must not name an employer. That scan also catches the bare name in
 # paths and prose, where the domain gate only sees hostnames.
-# Run before every push: check + domains + drift + employer-name scan.
-pre-push: check domains
+# Run before every push: check + domains + sidebar tests + drift + employer-name scan.
+pre-push: check domains nvim-sidebar-test
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -n "$(chezmoi diff --source=.)" ]; then

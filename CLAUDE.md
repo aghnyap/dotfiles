@@ -32,7 +32,7 @@ is a `justfile` recipe, not a command typed by hand:
 just --list      # every recipe
 just check       # audit + gitleaks -- run before every commit
 just domains     # every hostname must be on .domain-allowlist
-just pre-push    # check + domains + drift + employer-name scan -- run before every push
+just pre-push    # check + domains + nvim sidebar tests + drift + employer-name scan -- run before every push
 just diff        # what `chezmoi apply` would change, read-only
 just dry-run     # diff + which run_onchange scripts would fire, read-only
 just apply       # applies to $HOME -- confirms first, never run unannounced

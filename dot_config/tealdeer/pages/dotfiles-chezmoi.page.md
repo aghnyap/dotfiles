@@ -31,8 +31,8 @@
 `just readd`
 
 - Everything to run before pushing to the public remote (checks, domain
-  gate, drift, and an employer-name scan when `EMPLOYER_DOMAIN` is exported
-  from `~/.config/zsh/local/`):
+  gate, Neovim sidebar tests, drift, and an employer-name scan when
+  `EMPLOYER_DOMAIN` is exported from `~/.config/zsh/local/`):
 
 `just pre-push`
 
