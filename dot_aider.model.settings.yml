@@ -81,7 +81,6 @@
   # already carries this model's real context window from its own built-in
   # OpenRouter metadata, which is also why there is no matching entry in
   # ~/.aider.model.metadata.json.
-
 # ── Adding another model ─────────────────────────────────────────────────────
 #
 #   1. ollama pull gpt-oss:20b
