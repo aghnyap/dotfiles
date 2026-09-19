@@ -14,13 +14,13 @@
 .gradle/gradle.properties
 .m2/settings.xml
 
-# Machine-local zsh modules. Employer-specific and credential-adjacent config
+# Machine-local zsh modules. Network-specific and credential-adjacent config
 # lives here (VPN helpers, work-only tooling) and must not follow the dotfiles
 # to another machine. ~/.zshrc sources this directory if it exists.
 .config/zsh/local/**
 
 # ~/.gitconfig is the identity half of git's user-level config: `[user]`,
-# employer host rewrites, corporate hook templateDirs, per-machine overrides.
+# private host rewrites, corporate hook templateDirs, per-machine overrides.
 # This repo configures tooling, not people, so it does not manage the file at
 # all -- not even as a template with the identity templated out. What it does
 # manage is ~/.config/git/config, git's second user-level file, which holds the
@@ -50,8 +50,8 @@
 
 # Karabiner is machine-local, for two independent reasons: its remaps are keyed
 # to one external keyboard's vendor_id/product_id, and the profile carries a
-# work VPN hotkey -- employer-specific, so it must not follow this repo to a
-# personal laptop. Karabiner also rewrites and reindents the file on every
+# work VPN hotkey -- network-specific, so it must not follow this repo to
+# another machine. Karabiner also rewrites and reindents the file on every
 # settings change, which showed up as permanent `chezmoi diff` noise; worse, an
 # `apply` from the stored copy silently deleted the VPN rule, because the app
 # had added it after the file was last captured. Templating is not an option
@@ -88,7 +88,7 @@ Library/Application Support/Code/**
 # same string that cost two history rewrites to remove. The VS Code entry above
 # already refused the equivalent add; these did not exist yet.
 #
-# What lives there today: an MCP server pointing at an employer GitLab instance,
+# What lives there today: an MCP server pointing at a private GitLab instance,
 # a dart server whose command is an absolute path containing a username and a
 # pinned FVM version, and a settings.json carrying a corporate scanner's CLI
 # path, an AI provider and a set of terminal auto-approve decisions. Correct for
@@ -118,7 +118,7 @@ Library/Application Support/Cursor/**
 # there was no reason to `add` anything from it.
 #
 # What the rest of the tree holds: projects/*/memory/*.md, which is a written
-# record of who the machine's owner is -- role, employer, the tooling they were
+# record of who the machine's owner is -- role, organisation, the tooling they were
 # told about -- plus full session transcripts, pasted file contents and
 # credentials-adjacent debugging output. None of that is configuration and all of
 # it is machine-local.

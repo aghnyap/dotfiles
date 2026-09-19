@@ -230,8 +230,8 @@ unset _mod _f _mods
 
 # Machine-local modules, sourced last so they can override anything above.
 # ~/.config/zsh/local/ is excluded in .chezmoiignore and never leaves this
-# machine -- it is where employer-specific or credential-adjacent config goes,
-# the kind that should not follow the dotfiles to a personal laptop. The (N)
+# machine -- it is where network-specific or credential-adjacent config goes,
+# the kind that should not follow the dotfiles to another machine. The (N)
 # glob qualifier makes an empty or missing directory a no-op.
 for _f in "$ZDOTDIR_MODULES"/local/*.zsh(N); do
   source "$_f"

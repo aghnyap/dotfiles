@@ -6,7 +6,7 @@
 # what they are rather than by what they configure. Everything here is tooling
 # and appearance -- which pager, which diff colours, which editor -- and is true
 # of any machine this repo lands on. Identity is not: ~/.gitconfig holds
-# `[user]`, employer host rewrites and hook templateDirs, is written by hand per
+# `[user]`, private host rewrites and hook templateDirs, is written by hand per
 # machine, and is `.chezmoiignore`d so this repo neither reads nor writes it.
 #
 # ~/.gitconfig wins on any key set in both, so a machine can override anything

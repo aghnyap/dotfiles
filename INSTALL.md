@@ -23,7 +23,7 @@ ride along inside the directory:
   absolute paths from whichever Mac approved them.
 - `.git/hooks/*` is seeded from `~/.git-templates` by the corporate git config,
   and `security.sh` alone is 44 KB naming an internal host and a commercial
-  scanner 60-odd times. It is employer tooling, it is not tracked, and a work
+  scanner 60-odd times. It is work tooling, it is not tracked, and a work
   machine re-seeds it automatically at `git init` -- so a personal machine should
   neither receive it nor need it.
 
@@ -130,7 +130,7 @@ Brewfile is identical everywhere.
 
 Those two `git config --global` lines write `~/.gitconfig`, the file this repo
 does not manage. The pager, the editor and delta's theme are already in place
-from `~/.config/git/config`. If this Mac talks to an employer's git host, add
+from `~/.config/git/config`. If this Mac talks to a private git host, add
 the URL rewrite and hook `templateDir` to `~/.gitconfig` by hand as well —
 that is machine-and-network config, not dotfiles.
 
@@ -199,7 +199,7 @@ just apply
 ```
 
 **The remote is public, so treat anything committed here as published.** It
-carries no email address, internal hostname or employer project path — identity
+carries no email address, internal hostname or private project path — identity
 is not a machine setting, so it lives in `~/.gitconfig` and the work repo path in
 `~/.config/chezmoi/chezmoi.toml`, neither of which is in the source tree — and
 keeping it that way is the whole job, because a mistake here is fetched and
@@ -255,7 +255,7 @@ Deliberately — these are secrets or machine state, and are excluded in
   `~/.config/tmux/plugins/` is guarded the same way but for a tool this repo
   no longer installs at all (tmux, dropped for zellij); nothing fetches
   into it any more.
-- `~/.config/zsh/local/` — machine-local shell modules. Employer-specific and
+- `~/.config/zsh/local/` — machine-local shell modules. Network-specific and
   credential-adjacent config lives here (VPN helpers, work-only tooling) and is
   sourced last so it can override any module. Deliberately never captured.
 - **The Ollama model weights.** aider runs locally, so it needs no API key, but
@@ -287,7 +287,7 @@ Deliberately — these are secrets or machine state, and are excluded in
   not manage but the machine has anyway. Regenerates per machine.
 - `~/.config/flutter/settings` — records the Apple Developer signing identity,
   which is an email address. Regenerates per machine.
-- `~/.gitconfig` — git identity and anything network- or employer-shaped:
+- `~/.gitconfig` — git identity and anything network- or organisation-shaped:
   `[user]`, internal host rewrites, the corporate hook `templateDir`. Written by
   hand per machine. The managed half of git config is `~/.config/git/config`
   (pager, editor, delta theme); git reads both files, and `~/.gitconfig` wins on

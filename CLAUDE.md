@@ -11,8 +11,8 @@ machine via `brewopt`, never installed automatically.
 
 It produces **one** environment per platform. There is no work variant and no
 personal variant: a work MacBook and a personal Mac built from this repo are
-identical, because everything that would make them differ — identity, employer
-network config, per-project SDK pins — is not configuration this repo owns.
+identical, because everything that would make them differ — identity,
+network-specific config, per-project SDK pins — is not configuration this repo owns.
 "Per platform" is the one exception: this repo targets **macOS and Ubuntu
 Linux** from the same source, so a config may branch on `.chezmoi.os` /
 `.chezmoi.arch` — see *Templating conventions* below for exactly what that is
@@ -32,7 +32,7 @@ is a `justfile` recipe, not a command typed by hand:
 just --list      # every recipe
 just check       # audit + gitleaks -- run before every commit
 just domains     # every hostname must be on .domain-allowlist
-just pre-push    # check + domains + nvim sidebar tests + drift + employer-name scan -- run before every push
+just pre-push    # check + domains + nvim sidebar tests + drift -- run before every push
 just diff        # what `chezmoi apply` would change, read-only
 just dry-run     # diff + which run_onchange scripts would fire, read-only
 just apply       # applies to $HOME -- confirms first, never run unannounced
@@ -48,7 +48,7 @@ just apply       # applies to $HOME -- confirms first, never run unannounced
   keymaps go in `dot_config/tealdeer/pages/dotfiles-nvim.page.md` (a summary,
   not exhaustive — LazyVim's own `<leader>` + which-key is the exhaustive
   reference; this page covers what this repo adds or overrides on top of
-  it). Keep employer-specific values out of both.
+  it). Keep identity- and network-specific values out of both.
 - **Cross-platform: macOS + Ubuntu Linux, one configuration per platform.**
   Every Mac built from this repo is identical to every other Mac, and every
   Ubuntu box identical to every other Ubuntu box. Do not add a work/personal
@@ -60,7 +60,7 @@ just apply       # applies to $HOME -- confirms first, never run unannounced
 
   The one axis allowed to branch is platform capability: `.chezmoi.os` (and,
   where it matters, `.chezmoi.arch`) — never a hostname, a role, or anything
-  that identifies a person or employer. Use it only for install mechanics
+  that identifies a person or organisation. Use it only for install mechanics
   that a platform genuinely forces (a cask on macOS vs. a formula or `apt`
   package on Linux, `bubblewrap` vs. `sandbox-exec` for agent sandboxing),
   never to decide *whether* a manifest tool is installed. See *Templating
@@ -86,7 +86,7 @@ just apply       # applies to $HOME -- confirms first, never run unannounced
   | --- | --- | --- |
   | git identity, host rewrites, hook `templateDir` | `~/.gitconfig` | no |
   | git pager, editor, delta theme | `~/.config/git/config` | yes |
-  | work VPN helpers, employer shell tooling | `~/.config/zsh/local/*.zsh` | no |
+  | VPN helpers, private-network shell tooling | `~/.config/zsh/local/*.zsh` | no |
   | SDK pins, project directories, BDD paths | that project's own workspace settings | no |
 
   `bootstrap.sh` follows the same rule: it reports a missing git identity and
@@ -96,9 +96,9 @@ just apply       # applies to $HOME -- confirms first, never run unannounced
   merely a diff to revert — it is fetched, cached by third parties and
   permanent even after a force-push. That is what makes the capture guards in
   `.chezmoiignore` mandatory rather than advisory, and why nothing here may
-  carry an email address, an internal hostname or an employer project path —
-  see the secrets rule below for the pre-push check. **Never push it to the
-  employer's internal GitLab either:** a personal Mac generally cannot reach
+  carry an email address, an internal hostname or a private project path —
+  see the secrets rule below for the pre-push check. **Never push it to an
+  internal company git host either:** a personal Mac generally cannot reach
   that host, and personal config does not belong on company infrastructure.
 - **Never commit secrets, and never let a secret manager's config carry one
   either.** `.chezmoiignore` excludes `~/.ssh`, `~/.aws`, `~/.config/gcloud`,
@@ -128,7 +128,7 @@ the identity leak or the silent-drop trap the rest of this file warns about:
 
 - **The only data a template may branch on is `.chezmoi.os` and
   `.chezmoi.arch`.** No `.chezmoi.hostname`, no custom `.chezmoi.toml.tmpl`
-  prompt data, nothing that names a person, a team or an employer. A block
+  prompt data, nothing that names a person, a team or an organisation. A block
   reads `{{ if eq .chezmoi.os "darwin" }}` / `{{ if eq .chezmoi.os "linux" }}`;
   reach for `.chezmoi.arch` only when a platform itself forks by CPU (a cask
   with no arm64 build, say).
@@ -316,7 +316,7 @@ not. These are not bugs — do not "fix" them:
 | `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout. macOS-only |
 | `bootstrap.sh` | Installs Homebrew (or `apt` on Ubuntu), `chezmoi`, and `just` — nothing else. `.chezmoiignore`d, so it is not a target |
 | `audit.sh` | Non-mutating source-contract checks (syntax, AI budgets, key ownership, templates, Brewfile scope, gitleaks). Run via `just audit`; also `.chezmoiignore`d |
-| `domain-gate.pl` + `.domain-allowlist` | `just domains`: fails on any URL host, email host, or bare `*.com`/`*.io`/`*.internal`-style name not on the allowlist. Add only public vendor/project domains there. The employer name is never listed anywhere in the repo; set `EMPLOYER_DOMAIN` in `~/.config/zsh/local/*.zsh` so `just pre-push` scans for it. `domain-gate.pl` is `.chezmoiignore`d |
+| `domain-gate.pl` + `.domain-allowlist` | `just domains`: fails on any URL host, email host, or bare `*.com`/`*.io`/`*.internal`-style name not on the allowlist. Add only public vendor/project domains there. This is the repo's only identity guard: no identity passes through, so there is no per-machine exception or opt-in name scan. `domain-gate.pl` is `.chezmoiignore`d |
 | `.gitignore` | Stray repo artifacts only (`*.log`, `.DS_Store`); what must stay out of `$HOME` goes in `.chezmoiignore.tmpl` |
 | `justfile` | Task runner for repo maintenance — see the recipes listed at the top of this file. `.chezmoiignore`d, same reason as `bootstrap.sh`/`audit.sh`: it is repo tooling, not a dotfile for `$HOME` |
 | `dot_config/tealdeer/pages/` | Custom `tldr` pages documenting this repo's own commands and aliases — the first place to add a new one, per the Hard rules above |

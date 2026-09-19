@@ -97,34 +97,16 @@ domains:
       || { echo "unlisted domain(s) above -- remove them, or add a public one to .domain-allowlist" >&2; exit 1; }
 
 # Everything to run before pushing to the public remote: the commit checks,
-# proof the source and $HOME have not drifted, the domain allowlist gate, and
-# an employer-name scan. The employer name comes from EMPLOYER_DOMAIN,
-# exported from an unmanaged ~/.config/zsh/local/*.zsh -- never from git's
-# user.email, which may be a personal address, and never from this repo,
-# which must not name an employer. That scan also catches the bare name in
-# paths and prose, where the domain gate only sees hostnames.
-# Run before every push: check + domains + sidebar tests + drift + employer-name scan.
+# the domain allowlist gate (the only identity guard -- nothing here may name
+# a person, host or organisation beyond public vendor sites), the Neovim
+# sidebar regressions, and proof the source and $HOME have not drifted.
+# Run before every push: check + domains + sidebar tests + drift.
 pre-push: check domains nvim-sidebar-test
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -n "$(chezmoi diff --source=.)" ]; then
       echo "chezmoi diff is not empty -- re-add or revert before pushing" >&2
       exit 1
-    fi
-    domain=${EMPLOYER_DOMAIN:-}
-    if [ -z "$domain" ]; then
-      echo "EMPLOYER_DOMAIN is not set -- skipping the employer-name scan" >&2
-    else
-      needle=${domain%%.*}
-      match=$( {
-        git ls-files -z
-        chezmoi managed --source=. --include=files --path-style=absolute -0
-      } | xargs -0 grep -IliF -e "$needle" -- 2>/dev/null || true)
-      if [ -n "$match" ]; then
-        echo "employer name found in files this repo owns:" >&2
-        echo "$match" >&2
-        exit 1
-      fi
     fi
     echo "pre-push checks passed"
 

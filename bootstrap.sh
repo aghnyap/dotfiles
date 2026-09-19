@@ -12,7 +12,7 @@
 # because there is no other distinction: every Mac built from this repo gets
 # the same configuration, and so does every Ubuntu box. It also asks nothing
 # and needs no TTY -- not who you are, not where you work. Identity,
-# employer network config and per-project paths live outside the repo, in
+# network-specific config and per-project paths live outside the repo, in
 # ~/.gitconfig, ~/.config/zsh/local/ and each project's own workspace
 # settings.
 #
@@ -153,7 +153,7 @@ if ! git config --get user.email >/dev/null 2>&1; then
       git config --global user.name  "Your Name"
 
     The pager, the delta theme and the editor are already configured, in
-    ~/.config/git/config. Anything employer-specific -- internal host
+    ~/.config/git/config. Anything network-specific -- internal host
     rewrites, a hook templateDir -- goes in ~/.gitconfig by hand.
 EOF
 fi

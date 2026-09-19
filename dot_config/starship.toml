@@ -68,7 +68,7 @@ command_timeout = 1000
 # gcloud off. Its default format leads with the active account, so every prompt
 # in every window rendered a work email address:
 #
-#   /tmp on ☁️  someone@employer.example
+#   /tmp on ☁️  someone@example.com
 #
 # That is on screen in every screenshot, screen share and recording. The obvious
 # fix is to reformat the module to show region or project instead -- but on this

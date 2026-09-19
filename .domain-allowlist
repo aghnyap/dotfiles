@@ -1,6 +1,6 @@
 # Public domains the repo may name. A subdomain of an entry is allowed too.
 # Everything else fails `just domains` -- see domain-gate.pl. Add only public
-# project/vendor sites; never an employer, internal or personal host.
+# project/vendor sites; never a company, internal or personal host.
 # The reserved .example TLD covers placeholders like you@example.com.
 example
 example.com
