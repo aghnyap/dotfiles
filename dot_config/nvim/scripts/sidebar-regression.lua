@@ -357,11 +357,14 @@ local function run()
 
   for _, case in ipairs { 'quit', 'layout', 'sizes' } do
     local child = vim
-      .system({ vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' }, {
-        cwd = vim.fs.dirname(vim.fs.dirname(source)),
-        env = { NVIM_SIDEBAR_CASE = case },
-        text = true,
-      })
+      .system(
+        { vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' },
+        {
+          cwd = vim.fs.dirname(vim.fs.dirname(source)),
+          env = { NVIM_SIDEBAR_CASE = case },
+          text = true,
+        }
+      )
       :wait(30000)
     eq(child.code, 0, 'Child case ' .. case .. ': ' .. (child.stderr or ''))
   end
