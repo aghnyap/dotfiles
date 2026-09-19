@@ -47,7 +47,8 @@
 
 `Ctrl+j` twice from the explorer, or click into the panel
 
-- Explorer: switch source via the winbar tabs (Files / Open / Git), or:
+- Explorer: switch source via the winbar tabs (Files / Open / Git), `<`/`>`
+  to cycle while focused in the tree (neo-tree default), or:
 
 `:Neotree source=filesystem|buffers|git_status`
 
