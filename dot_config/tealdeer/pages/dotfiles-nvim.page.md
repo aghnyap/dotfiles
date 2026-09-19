@@ -47,13 +47,9 @@
 
 `Ctrl+j` twice from the explorer, or click into the panel
 
-- Explorer: switch to the Files source:
+- Explorer: switch source via the winbar tabs (Files / Open / Git), or:
 
-`<leader>ef`
-
-- Explorer: switch to the Git status source:
-
-`<leader>eg`
+`:Neotree source=filesystem|buffers|git_status`
 
 - Toggle the bottom terminal, between the sidebar and the full-height AI
   column on the right, whichever opened first. Cmd+backtick and task

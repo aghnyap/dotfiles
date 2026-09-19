@@ -185,15 +185,6 @@ return {
           ['<leader>ai'] = function()
             vim.cmd 'ClaudeCodeTreeAdd'
           end,
-          -- Source switching used to live in source_selector's winbar tabs;
-          -- that's now the permanent ' EXPLORER' label instead (see
-          -- config/autocmds.lua), so switching moved to these two keys.
-          ['<leader>ef'] = function()
-            vim.cmd 'Neotree source=filesystem'
-          end,
-          ['<leader>eg'] = function()
-            vim.cmd 'Neotree source=git_status'
-          end,
         },
       },
       filesystem = {
@@ -207,10 +198,14 @@ return {
           hide_by_name = { '.DS_Store', 'thumbs.db', '.git' },
         },
       },
-      -- No source_selector: its winbar tabs ('buffers' dropped for the
-      -- permanent OPEN EDITORS panel below; Files/Git dropped too) are
-      -- replaced by the static ' EXPLORER' label in config/autocmds.lua --
-      -- switching source is now <leader>ef/<leader>eg above.
+      source_selector = {
+        winbar = true,
+        sources = {
+          { source = 'filesystem', display_name = '\u{f07b} Files' },
+          { source = 'buffers', display_name = '\u{f15b} Open' },
+          { source = 'git_status', display_name = '\u{e725} Git' },
+        },
+      },
     },
   },
 

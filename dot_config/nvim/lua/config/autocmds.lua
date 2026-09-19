@@ -16,28 +16,6 @@ require('util.bufferlist').setup()
 require('util.shelllist').setup()
 local sidebar = require 'util.sidebar'
 
--- Permanent "EXPLORER" header on the sidebar's top window. This used to be a
--- label bufferline drew on its own tabline (a horizontal bar at the top of
--- the editor, now removed for good -- see plugins/ui.lua), which needed a
--- layout-detection workaround because that bar could vanish depending on
--- what else was open. Now that the label lives on the explorer window
--- itself -- always present in the sidebar column, nothing else drawing over
--- it -- it's just a plain winbar string set once.
-vim.api.nvim_create_autocmd({ 'FileType', 'BufWinEnter' }, {
-  group = augroup 'explorer_label',
-  callback = function(a)
-    if vim.bo[a.buf].filetype ~= 'neo-tree' then
-      return
-    end
-    sidebar.schedule(function()
-      local win = sidebar.explorer_win()
-      if win then
-        vim.wo[win].winbar = ' EXPLORER'
-      end
-    end)
-  end,
-})
-
 -- neo-tree's own `close_if_last_window` (plugins/ui.lua) never fires anymore
 -- once OPEN EDITORS/OPEN SHELLS exist: closing the last real editor window
 -- (`:q`) leaves those two plus the explorer open, so neo-tree never sees
