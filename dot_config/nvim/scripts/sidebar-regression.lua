@@ -3,6 +3,14 @@
 local api = vim.api
 local source = vim.fn.getcwd() .. '/dot_config/nvim'
 vim.opt.rtp:prepend(source)
+-- Neovim seeds the default runtimepath with the live, applied config even
+-- under `-u NONE` (`-u` only skips sourcing it). Left in, a module deleted
+-- from source but still deployed to $HOME silently falls back to the live
+-- copy instead of failing, defeating the "only the source configuration"
+-- guarantee above.
+for _, dir in ipairs { vim.fn.stdpath 'config', vim.fn.stdpath 'config' .. '/after' } do
+  vim.opt.rtp:remove(dir)
+end
 for _, name in ipairs {
   'bufferline.nvim',
   'toggleterm.nvim',
@@ -66,8 +74,6 @@ require('neo-tree').setup(tree_opts)
 vim.cmd 'runtime plugin/neo-tree.lua'
 dofile(source .. '/lua/config/autocmds.lua')
 local sidebar = require 'util.sidebar'
-local buffers = require 'util.bufferlist'
-local shells = require 'util.shelllist'
 local Terminal = require('toggleterm.terminal').Terminal
 local function file(name)
   local buf = api.nvim_create_buf(true, false)
@@ -78,33 +84,13 @@ local function panel_buf(win)
   assert(win and api.nvim_win_is_valid(win), 'Missing list window')
   return api.nvim_win_get_buf(win)
 end
-local function rows(win)
-  return vim.fn.getwininfo(win)[1].height
-end
-local function lines(win)
-  return api.nvim_buf_get_lines(panel_buf(win), 0, -1, false)
-end
-local function mapped(win, label, key)
-  api.nvim_set_current_win(win)
-  for row, line in ipairs(lines(win)) do
-    if line:find(label, 1, true) then
-      api.nvim_win_set_cursor(win, { row, 0 })
-      local mapping = vim.fn.maparg(key, 'n', false, true)
-      assert(mapping.callback, 'Missing panel mapping: ' .. key)
-      mapping.callback()
-      flush()
-      return
-    end
-  end
-  error('Missing panel entry: ' .. label)
-end
 local function column()
-  return { 'col', { { 'leaf', sidebar.explorer_win() }, { 'leaf', buffers.win() }, { 'leaf', shells.win() } } }
+  return { 'leaf', sidebar.explorer_win() }
 end
 local function check_layout(term)
   local layout = vim.fn.winlayout()
   eq(layout[1], 'row', 'Sidebar must span the full height')
-  eq(layout[2][1], column(), 'Explorer/editors/shells must form one ordered column')
+  eq(layout[2][1], column(), 'Explorer must anchor the left edge')
   if term then
     assert(
       api.nvim_win_get_position(term.window)[2] >= api.nvim_win_get_width(sidebar.explorer_win()) + 1,
@@ -141,22 +127,18 @@ local function run()
   flush()
   eq(api.nvim_get_current_win(), editor, 'Sidebar creation must preserve editor focus')
   check_layout()
-  local original = { sidebar.explorer_win(), buffers.win(), shells.win() }
-  local width = api.nvim_win_get_width(original[1])
-  eq(rows(original[2]), 2, 'Editor list must fit its inventory')
-  eq(rows(original[3]), 2, 'Empty shell list must keep its minimum height')
+  local explorer = sidebar.explorer_win()
+  local width = api.nvim_win_get_width(explorer)
   local term = Terminal:new { cmd = 'cat', direction = 'horizontal' }
-  for _, origin in ipairs { editor, original[1], original[2], original[3] } do
+  for _, origin in ipairs { editor, explorer } do
     api.nvim_set_current_win(origin)
     term:toggle()
     flush()
     check_layout(term)
     eq(api.nvim_get_current_win(), term.window, 'Terminal opening must retain focus')
-    eq(api.nvim_win_get_width(original[1]), width, 'Sidebar width changed')
+    eq(api.nvim_win_get_width(explorer), width, 'Sidebar width changed')
     eq(api.nvim_win_get_height(term.window), 15, 'Horizontal terminal height changed')
-    eq(rows(original[2]), 2, 'Opening a terminal must preserve editor-list height')
-    eq(rows(original[3]), 2, 'Opening a terminal must preserve shell-list height')
-    eq({ sidebar.explorer_win(), buffers.win(), shells.win() }, original, 'Sidebar window identities changed')
+    eq(sidebar.explorer_win(), explorer, 'Sidebar window identity changed')
     local layout = vim.fn.winlayout()
     local dimensions = vim.fn.winrestcmd()
     sidebar.layout()
@@ -167,18 +149,19 @@ local function run()
     check_layout()
   end
   -- User resizing survives opening the bottom terminal and repeated layout.
-  api.nvim_win_set_width(original[1], 36)
+  api.nvim_win_set_width(explorer, 36)
   api.nvim_set_current_win(editor)
   term:open()
   flush()
-  eq(api.nvim_win_get_width(original[1]), 36, 'Resized sidebar width must survive terminal opening')
+  eq(api.nvim_win_get_width(explorer), 36, 'Resized sidebar width must survive terminal opening')
   api.nvim_win_set_height(term.window, 10)
   sidebar.layout()
   eq(api.nvim_win_get_height(term.window), 10, 'Layout must preserve terminal resizing')
   term:close()
   flush()
   local term_buf = term.bufnr
-  mapped(shells.win(), '#toggleterm#' .. term.id, '<CR>')
+  term:open()
+  flush()
   check_layout(term)
   eq(term.bufnr, term_buf, 'Reopening must retain terminal buffer/job')
   assert(term:is_open(), 'Reopened ToggleTerm must know it is open')
@@ -192,7 +175,7 @@ local function run()
   flush()
   term:toggle()
   flush()
-  assert(not term:is_open(), 'Toggle must hide a shell selected from the list')
+  assert(not term:is_open(), 'Toggle must hide an open terminal')
 
   api.nvim_set_current_win(editor)
   vim.cmd 'vsplit'
@@ -232,28 +215,14 @@ local function run()
   eq(task.window, task_window, 'Task terminal window must survive layout')
   task:close()
   flush()
-  mapped(shells.win(), '#toggleterm#' .. task.id, 'l')
+  task:open()
+  flush()
   eq(task.bufnr, task_buf, 'Hidden task must retain its terminal buffer')
   assert(task:is_open(), 'Hidden task must reopen through its Terminal object')
   check_layout(task)
   task:shutdown()
   term:close()
   flush()
-
-  api.nvim_set_current_win(editor)
-  vim.cmd 'botright new'
-  local plain_win = api.nvim_get_current_win()
-  local job = vim.fn.jobstart({ 'cat', '-u' }, { term = true })
-  local plain_buf = api.nvim_get_current_buf()
-  vim.bo[plain_buf].bufhidden = 'hide'
-  api.nvim_win_close(plain_win, true)
-  flush()
-  mapped(shells.win(), vim.fn.exepath 'cat', '<CR>')
-  eq(api.nvim_get_current_buf(), plain_buf, 'Plain terminal must reopen in a split')
-  check_layout { window = api.nvim_get_current_win(), bufnr = plain_buf }
-  mapped(shells.win(), vim.fn.exepath 'cat', 'd')
-  assert(not api.nvim_buf_is_valid(plain_buf), 'Shell deletion must remove terminal buffer')
-  eq(vim.fn.jobwait({ job }, 0)[1], -3, 'Shell deletion must stop the job')
 
   -- Float/vertical opens retain ToggleTerm's existing behavior.
   for _, direction in ipairs { 'float', 'vertical' } do
@@ -271,91 +240,37 @@ local function run()
     flush()
   end
 
-  -- All file/shell inventories stay global, with independent local panels.
+  -- Explorer state is per-tab, independent of other tabs.
   api.nvim_set_current_win(editor)
   term:open()
   flush()
   local tab1 = api.nvim_get_current_tabpage()
-  local buf1, shell1 = panel_buf(buffers.win()), panel_buf(shells.win())
   vim.cmd 'tabnew'
   local tab2 = api.nvim_get_current_tabpage()
   api.nvim_set_current_buf(a)
   vim.cmd 'Neotree show'
-  flush() -- let Neo-tree's own asynchronous navigation finish
-  buffers.close()
-  shells.close()
-  local tree_buf = panel_buf(sidebar.explorer_win())
-  for _, group in ipairs { 'cursorlike_bufferlist', 'cursorlike_shelllist' } do
-    api.nvim_exec_autocmds('BufWinEnter', { buffer = tree_buf, group = group })
-  end
-  -- Switch before the scheduled panel creation runs.
-  api.nvim_set_current_tabpage(tab1)
   flush()
-  eq(api.nvim_get_current_tabpage(), tab1, 'Deferred creation must not steal tab focus')
-  local buf2, shell2 = panel_buf(buffers.win(tab2)), panel_buf(shells.win(tab2))
-  assert(buf1 ~= buf2 and shell1 ~= shell2, 'Each tab must own distinct scratch buffers')
-  assert(api.nvim_buf_get_name(buf1) ~= api.nvim_buf_get_name(buf2), 'Scratch names must be unique')
-  eq(lines(buffers.win(tab1)), lines(buffers.win(tab2)), 'File inventories must be global')
-  local shell_line1 = table.concat(lines(shells.win(tab1)), '\n')
-  local shell_line2 = table.concat(lines(shells.win(tab2)), '\n')
-  assert(shell_line1:find('●', 1, true) and not shell_line2:find('●', 1, true), 'Shell dots must be tab-local')
-  api.nvim_set_current_tabpage(tab2)
-  check_layout()
-  mapped(buffers.win(), 'A', 'l')
-  eq(api.nvim_get_current_buf(), a, 'Buffer selection must focus an editor')
-  local d = file 'D'
-  flush()
-  mapped(buffers.win(), 'D', 'd')
-  assert(not api.nvim_buf_is_valid(d), 'Buffer deletion mapping must delete the selected buffer')
-  eq(lines(buffers.win(tab1)), lines(buffers.win(tab2)), 'Global inventory must refresh in inactive tabs')
-  local ns = api.nvim_create_namespace 'bufferlist'
-  local function highlighted(win)
-    local buf = panel_buf(win)
-    local marks = api.nvim_buf_get_extmarks(buf, ns, 0, -1, {})
-    assert(#marks == 1, 'Expected one active editor per tab')
-    return api.nvim_buf_get_lines(buf, marks[1][2], marks[1][2] + 1, false)[1]
-  end
-  assert(highlighted(buffers.win(tab2)):find('A', 1, true), 'Tab 2 active file must be A')
-  local active2 = highlighted(buffers.win(tab2))
+  local tab2_explorer = sidebar.explorer_win(tab2)
+  assert(tab2_explorer, 'tab2 explorer must open independently')
   api.nvim_set_current_tabpage(tab1)
-  api.nvim_set_current_win(editor)
-  api.nvim_set_current_buf(c)
-  flush()
-  assert(highlighted(buffers.win(tab1)):find('C', 1, true), 'Tab 1 active file must be C')
-  eq(highlighted(buffers.win(tab2)), active2, 'Focus in tab 1 must not change tab 2 active file')
-  api.nvim_set_current_tabpage(tab2)
-  local tab2_windows = { sidebar.explorer_win(), buffers.win(), shells.win() }
-  api.nvim_set_current_tabpage(tab1)
+  check_layout(term)
   vim.cmd 'Neotree toggle'
-  api.nvim_set_current_tabpage(tab2)
   flush()
-  assert(not buffers.win(tab1) and not shells.win(tab1), 'Closing Explorer must close only its own lists')
-  eq({ sidebar.explorer_win(), buffers.win(), shells.win() }, tab2_windows, 'Other tab sidebar must survive toggle')
-  api.nvim_set_current_tabpage(tab1)
+  assert(not sidebar.explorer_win(tab1), 'Explorer must close in tab1')
+  eq(sidebar.explorer_win(tab2), tab2_explorer, 'Other tab explorer must survive toggle in tab1')
   vim.cmd 'Neotree show'
   flush()
-  api.nvim_set_current_tabpage(tab2)
-  flush()
-  assert(buffers.win(tab1) and shells.win(tab1), 'Explorer reopening must recreate both lists')
-  api.nvim_set_current_tabpage(tab1)
-  local doomed = { panel_buf(buffers.win()), panel_buf(shells.win()) }
-  -- Queue work immediately before its tab is destroyed.
-  sidebar.schedule(buffers.ensure)
-  sidebar.schedule(shells.ensure)
+  check_layout(term)
   vim.cmd 'tabclose'
   flush()
   eq(api.nvim_get_current_tabpage(), tab2, 'Closing a tab must retain the surviving tab')
-  for _, buf in ipairs(doomed) do
-    assert(not api.nvim_buf_is_valid(buf), 'Closed tab scratch buffer leaked')
-  end
-  assert(not buffers.win(tab1) and not shells.win(tab1), 'Closed tab state must be cleared')
-  eq({ sidebar.explorer_win(), buffers.win(), shells.win() }, tab2_windows, 'Surviving sidebar windows changed')
-  check_layout()
-  mapped(shells.win(), '#toggleterm#' .. term.id, 'd')
-  assert(not api.nvim_buf_is_valid(term_buf), 'ToggleTerm deletion must remove its buffer')
+  eq(sidebar.explorer_win(tab2), tab2_explorer, 'Surviving tab explorer window changed')
+
+  term:shutdown()
+  flush()
   eq(vim.o.showtabline, 0, 'Terminals/tabpages must not expose the horizontal tabline')
 
-  for _, case in ipairs { 'quit', 'close-editor', 'layout', 'sizes', 'tree-open' } do
+  for _, case in ipairs { 'quit', 'close-editor', 'layout' } do
     local child = vim
       .system(
         { vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' },
@@ -478,19 +393,23 @@ local function layout_case()
   eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Sidebar width changed')
   stable()
 
-  -- ToggleTerm first, then AI reopened from OPEN SHELLS.
+  -- ToggleTerm first, then the AI pane reopened by hand into a fresh split.
   api.nvim_win_close(ai.window, true)
   flush()
-  mapped(shells.win(), vim.fn.exepath 'cat', '<CR>') -- first cat entry is the AI buffer
+  vim.cmd(('vertical botright %dsplit'):format(math.floor(vim.o.columns * 0.35)))
+  api.nvim_win_set_buf(0, ai.bufnr)
+  sidebar.layout()
+  flush()
   ai.window = api.nvim_get_current_win()
-  eq(api.nvim_win_get_buf(ai.window), ai.bufnr, 'List must reopen the AI buffer')
+  eq(api.nvim_win_get_buf(ai.window), ai.bufnr, 'Reopened split must show the AI buffer')
   check_layout(term)
   check_ai({ ai }, term)
   stable()
-  -- ToggleTerm reopened from OPEN SHELLS while the AI pane is visible.
+  -- ToggleTerm reopened directly while the AI pane is visible.
   term:close()
   flush()
-  mapped(shells.win(), '#toggleterm#' .. term.id, '<CR>')
+  term:open()
+  flush()
   check_layout(term)
   check_ai({ ai }, term)
   -- ToggleTerm first, then a brand-new AI pane.
@@ -565,107 +484,6 @@ local function layout_case()
   eq(vim.fn.winlayout(), before, 'Floating terminal must not rearrange splits')
   float:shutdown()
   flush()
-end
-
--- ── List heights ──────────────────────────────────────────────────
-local function sizes_case()
-  for _, buf in ipairs(api.nvim_list_bufs()) do
-    vim.bo[buf].buflisted = false
-  end
-  local files = { file 'F1' }
-  api.nvim_set_current_buf(files[1])
-  local editor = api.nvim_get_current_win()
-  vim.cmd 'Neotree show'
-  flush()
-  local explorer = sidebar.explorer_win()
-  local function column_total(tab)
-    local total = 0
-    for _, w in ipairs { sidebar.explorer_win(tab), buffers.win(tab), shells.win(tab) } do
-      total = total + api.nvim_win_get_height(w)
-    end
-    return total
-  end
-  local total = column_total()
-  local function clamp(n)
-    return math.max(2, math.min(12, n))
-  end
-  local function expect(nfiles, nshells, tab, message)
-    eq(rows(buffers.win(tab)), clamp(nfiles), message .. ': OPEN EDITORS rows')
-    eq(rows(shells.win(tab)), clamp(nshells), message .. ': OPEN SHELLS rows')
-    eq(column_total(tab), total, message .. ': column height')
-  end
-  local shells_open = {}
-  local function set_files(n)
-    while #files < n do
-      files[#files + 1] = file('F' .. (#files + 1))
-    end
-    while #files > n do
-      api.nvim_buf_delete(table.remove(files), { force = true })
-    end
-  end
-  local function set_shells(n)
-    while #shells_open < n do
-      local t = Terminal:new { cmd = 'cat', direction = 'horizontal', hidden = true }
-      t:spawn()
-      shells_open[#shells_open + 1] = t
-    end
-    while #shells_open > n do
-      table.remove(shells_open):shutdown()
-    end
-  end
-  local steps = { 2, 3, 5, 12, 13, 12, 5, 3, 2 }
-  for _, n in ipairs(steps) do
-    set_files(n)
-    flush()
-    expect(n, 0, nil, n .. ' files')
-  end
-  for _, n in ipairs(steps) do
-    set_shells(n)
-    flush()
-    expect(2, n, nil, n .. ' shells')
-  end
-  -- Both inventories change in the same tick.
-  set_files(5)
-  set_shells(4)
-  flush()
-  expect(5, 4, nil, 'simultaneous')
-  set_files(13)
-  set_shells(1)
-  flush()
-  expect(13, 1, nil, 'simultaneous swap')
-  eq(explorer, sidebar.explorer_win(), 'Explorer window replaced')
-
-  -- An inactive tab follows the global inventory without taking focus.
-  local tab1 = api.nvim_get_current_tabpage()
-  vim.cmd 'tabnew'
-  local tab2 = api.nvim_get_current_tabpage()
-  vim.cmd 'Neotree show'
-  flush()
-  api.nvim_set_current_tabpage(tab1)
-  api.nvim_set_current_win(editor)
-  set_files(3)
-  set_shells(6)
-  flush()
-  eq(api.nvim_get_current_tabpage(), tab1, 'Resizing must not switch tabs')
-  eq(api.nvim_get_current_win(), editor, 'Resizing must not move focus')
-  expect(3, 6, tab1, 'active tab')
-  api.nvim_set_current_tabpage(tab2)
-  expect(3, 6, tab2, 'inactive tab')
-  vim.cmd 'tabclose'
-  flush()
-
-  -- Squeezed screens keep every pane valid, then regain the requested sizes.
-  set_files(12)
-  set_shells(12)
-  vim.o.lines = 20
-  flush()
-  for _, w in ipairs { sidebar.explorer_win(), buffers.win(), shells.win() } do
-    assert(api.nvim_win_is_valid(w) and api.nvim_win_get_height(w) >= 1, 'Pane lost on a small screen')
-  end
-  vim.o.lines = 60
-  flush()
-  total = column_total()
-  expect(12, 12, nil, 'after regaining space')
 end
 
 -- ── Escape in terminals ───────────────────────────────────────────
@@ -767,8 +585,8 @@ if case ~= 'embed' then
       api.nvim_win_close(editor, false)
       flush()
       eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Explorer must not keep the closed pane\'s columns')
-      assert(not vim.bo[last].buflisted, 'Closed file must leave OPEN EDITORS')
-      local wins = sidebar.editor_wins { buffers.win(), shells.win() }
+      assert(not vim.bo[last].buflisted, 'Closed file must be unlisted')
+      local wins = sidebar.editor_wins {}
       eq(#wins, 1, 'Closing the last file must leave an empty editor pane')
       eq(api.nvim_buf_get_name(api.nvim_win_get_buf(wins[1])), '', 'The pane left behind must be empty')
       -- Closing that empty pane is what quits.
@@ -776,8 +594,8 @@ if case ~= 'embed' then
       flush()
       error 'Closing the empty editor pane did not quit Neovim'
     elseif case == 'close-editor' then
-      -- Closing the last editor pane closes that file, not Neovim, while
-      -- OPEN EDITORS still lists others; the next file gets a fresh pane.
+      -- Closing the last editor pane closes that file, not Neovim; the next
+      -- file gets a fresh pane.
       local kept, dirty = file 'kept', file 'dirty'
       vim.bo[dirty].modified = true
       local first = file 'first'
@@ -791,46 +609,20 @@ if case ~= 'embed' then
       api.nvim_win_close(editor, false)
       flush()
       eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Explorer must not keep the closed pane\'s columns')
-      assert(not vim.bo[first].buflisted, 'Closed file must leave OPEN EDITORS')
-      local wins = sidebar.editor_wins { buffers.win(), shells.win() }
+      assert(not vim.bo[first].buflisted, 'Closed file must be unlisted')
+      local wins = sidebar.editor_wins {}
       eq(#wins, 1, 'A fresh editor pane must replace the closed one')
       local shown = api.nvim_win_get_buf(wins[1])
       assert(shown == kept or shown == dirty, 'Fresh pane must show a remaining file')
       check_layout()
       api.nvim_win_close(wins[1], false)
       flush()
-      wins = sidebar.editor_wins { buffers.win(), shells.win() }
+      wins = sidebar.editor_wins {}
       eq(#wins, 1, 'Closing again must reopen the other file')
       -- The modified file is never dropped, so closing it just reshows it.
       eq(vim.bo[dirty].buflisted, true, 'Modified file must stay listed')
     elseif case == 'layout' then
       layout_case()
-    elseif case == 'sizes' then
-      sizes_case()
-    elseif case == 'tree-open' then
-      -- Neo-tree opens into the last window entered; the lists must never be it.
-      vim.fn.writefile({ 'opened' }, temp .. '/opened.txt')
-      api.nvim_set_current_buf(file 'placeholder')
-      local editor = api.nvim_get_current_win()
-      vim.cmd 'Neotree show'
-      flush()
-      check_layout()
-      for _, panel in ipairs { buffers.win(), shells.win() } do
-        local ft = vim.bo[panel_buf(panel)].filetype
-        api.nvim_win_set_buf(editor, file('placeholder-' .. ft))
-        api.nvim_set_current_win(panel)
-        api.nvim_set_current_win(sidebar.explorer_win())
-        local row
-        for i, line in ipairs(api.nvim_buf_get_lines(0, 0, -1, false)) do
-          row = row or (line:find('opened.txt', 1, true) and i)
-        end
-        assert(row, 'Explorer must list opened.txt')
-        api.nvim_win_set_cursor(0, { row, 0 })
-        api.nvim_feedkeys(api.nvim_replace_termcodes('<CR>', true, false, true), 'x', false)
-        flush()
-        eq(vim.bo[panel_buf(panel)].filetype, ft, 'Opening from the tree replaced the ' .. ft .. ' panel')
-        eq(api.nvim_buf_get_name(api.nvim_win_get_buf(editor)), temp .. '/opened.txt', 'File must open in the editor')
-      end
     else
       run()
     end

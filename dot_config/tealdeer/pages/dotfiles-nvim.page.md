@@ -23,39 +23,27 @@
 
 `Cmd+F`
 
-- Toggle the full-height left sidebar (Explorer → OPEN EDITORS → OPEN SHELLS).
-  Each tabpage owns its panels and focus; file and shell lists include buffers
-  from all tabpages. Shell visibility dots refer to the current tabpage:
+- Toggle the full-height left sidebar (the explorer):
 
 `Cmd+B`
 
-- OPEN EDITORS: the panel under the explorer listing open file buffers.
-  Inside it, `<CR>`/`l` opens the buffer, `d` closes it:
-
-`Ctrl+j` from the explorer, or click into the panel
-
-- Close the last editor pane: closes that file (kept listed if unsaved) and
-  reopens the next one from OPEN EDITORS, or an empty pane after the last
-  file; closing that empty pane quits. `:qa` still quits outright:
-
-`<C-w>q`, `:q` or `:wq`
-
-- OPEN SHELLS: the panel under OPEN EDITORS listing every open terminal --
-  toggleterm task runners, ad hoc terminals, and the Claude/cursor-agent/
-  Codex/aider panels. Inside it, `<CR>`/`l` focuses or reopens the shell, `d`
-  kills the job and closes it:
-
-`Ctrl+j` twice from the explorer, or click into the panel
-
-- Explorer: switch source via the winbar tabs (Files / Open / Git), `<`/`>`
-  to cycle while focused in the tree (neo-tree default), or:
+- Explorer: switch source via the winbar tabs (Files / Open / Git -- Open
+  lists both file and terminal buffers), `<`/`>` to cycle while focused in
+  the tree (neo-tree default), or:
 
 `:Neotree source=filesystem|buffers|git_status`
 
+- Close the last editor pane: closes that file (kept listed if unsaved) and
+  reopens the most recently used remaining file, or an empty pane after the
+  last file; closing that empty pane quits. `:qa` still quits outright:
+
+`<C-w>q`, `:q` or `:wq`
+
 - Toggle the bottom terminal, between the sidebar and the full-height AI
   column on the right, whichever opened first. Cmd+backtick and task
-  terminals use the same layout. OPEN SHELLS reopens hidden shells with their
-  existing jobs:
+  terminals use the same layout. Re-pressing a task's own runner key
+  (`<leader>r*`, `plugins/tasks.lua`) reopens that hidden terminal with its
+  job intact -- there's no separate shell list:
 
 `Cmd+J`
 

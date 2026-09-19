@@ -12,31 +12,26 @@ local augroup = function(name)
   return vim.api.nvim_create_augroup('cursorlike_' .. name, { clear = true })
 end
 
-require('util.bufferlist').setup()
-require('util.shelllist').setup()
 local sidebar = require 'util.sidebar'
 
--- neo-tree's own `close_if_last_window` (plugins/ui.lua) never fires anymore
--- once OPEN EDITORS/OPEN SHELLS exist: closing the last real editor window
--- (`:q`) leaves those two plus the explorer open, so neo-tree never sees
--- itself as "the last window" and Neovim never exits. Replace it with a
--- general check: once nothing but the three sidebar panels remains, quit.
+-- neo-tree's own `close_if_last_window` (plugins/ui.lua) just closes the
+-- tree when it is the last window; it doesn't give Cursor-style behavior for
+-- the editor windows next to it, nor account for the AI column (agent
+-- terminal windows) as non-editor panes. Replace it with a general check.
 --
--- But only once OPEN EDITORS is empty too. Closing the last editor window
--- (`<C-w>q`, `:q`, `:wq`) closes that one file, as in Cursor: its buffer is
--- dropped from the list (unless it has unsaved changes) and the most recently
--- used remaining file reopens in a fresh editor pane. Quitting outright here
--- took every other open file with it, or -- when one of them was modified --
--- `qa` failed and left the sidebar with no editor pane to open anything into.
+-- Closing the last editor window (`<C-w>q`, `:q`, `:wq`) closes that one
+-- file, as in Cursor: its buffer is dropped (unless it has unsaved changes)
+-- and the most recently used remaining file reopens in a fresh editor pane.
+-- Quitting outright here took every other open file with it, or -- when one
+-- of them was modified -- `qa` failed and left the sidebar with no editor
+-- pane to open anything into.
 --
 -- Closing the last file leaves an empty editor pane, not an exit -- Cursor
 -- keeps its window up with no editors open. Closing that empty pane (nothing
--- left to close but the workbench) is what quits.
+-- left to close but the workbench) is what quits, once only the sidebar and
+-- AI column remain.
 --
--- The buffer-drop above used to only happen in that last-window branch: with
--- a second editor split still open, `<C-w>q` closed the window but left the
--- buffer loaded and listed, so it reopened unchanged from OPEN EDITORS. Drop
--- it unconditionally instead, any time its window closes and no other window
+-- The buffer-drop happens any time its window closes and no other window
 -- still shows it, whether or not sidebar-only quit follows.
 local function file_buffers()
   local bufs = {}
@@ -139,11 +134,6 @@ local function open_explorer()
     return
   end
   vim.cmd 'Neotree show'
-  -- keep the cursor in the editor pane, not the tree
-  sidebar.schedule(function()
-    require('util.bufferlist').ensure()
-    require('util.shelllist').ensure()
-  end)
 end
 
 if vim.v.vim_did_enter == 1 then
@@ -259,9 +249,4 @@ vim.api.nvim_create_autocmd({ 'TermOpen', 'BufWinEnter' }, {
       sidebar.schedule(sidebar.layout)
     end
   end,
-})
-
-vim.api.nvim_create_autocmd('VimResized', {
-  group = augroup 'sidebar_resize',
-  callback = sidebar.resize_all,
 })

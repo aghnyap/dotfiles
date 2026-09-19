@@ -1,22 +1,17 @@
--- Window-finding and layout helpers shared by the sidebar panels docked under
--- the explorer: util/bufferlist.lua (OPEN EDITORS) and util/shelllist.lua
--- (OPEN SHELLS). Also owns the right-hand AI column (agent_terminal buffers).
+-- Window-finding and layout helpers for the explorer sidebar. Also owns the
+-- right-hand AI column (agent_terminal buffers).
 local M = {}
-
-local SIDEBAR_FILETYPES = { ['neo-tree'] = true, bufferlist = true, shelllist = true }
-local LISTS = { 'bufferlist', 'shelllist' }
-local MIN_ROWS, MAX_ROWS = 2, 12
 
 local function is_float(win)
   local ok, cfg = pcall(vim.api.nvim_win_get_config, win)
   return not ok or cfg.relative ~= ''
 end
 
--- Is this window one of the three sidebar panels (explorer, OPEN EDITORS,
--- OPEN SHELLS)? Used to auto-quit when a real editor window closes and only
--- the sidebar is left -- see config/autocmds.lua.
+-- Is this window the sidebar (explorer)? Used to auto-quit when a real
+-- editor window closes and only the sidebar is left -- see
+-- config/autocmds.lua.
 function M.is_sidebar_win(win)
-  return SIDEBAR_FILETYPES[vim.bo[vim.api.nvim_win_get_buf(win)].filetype] == true
+  return vim.bo[vim.api.nvim_win_get_buf(win)].filetype == 'neo-tree'
 end
 
 function M.is_ai_win(win)
@@ -36,22 +31,6 @@ function M.explorer_win(tab)
   end
 end
 
-local function list_wins(tab)
-  local found = {}
-  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
-    if not is_float(w) then
-      found[vim.bo[vim.api.nvim_win_get_buf(w)].filetype] = w
-    end
-  end
-  local wins = {}
-  for _, ft in ipairs(LISTS) do
-    if found[ft] then
-      wins[#wins + 1] = { ft = ft, win = found[ft] }
-    end
-  end
-  return wins
-end
-
 -- Deferred window work belongs to the tab that requested it, even if the
 -- user switches tabs before it runs. win_call restores the caller's focus.
 function M.schedule(callback, tab)
@@ -61,90 +40,6 @@ function M.schedule(callback, tab)
       vim.api.nvim_win_call(vim.api.nvim_tabpage_get_win(tab), callback)
     end
   end)
-end
-
--- ── List sizing ──────────────────────────────────────────────────
--- Requested content rows per tab and list. Window heights are only ever an
--- output: a pass that runs while the layout is squeezed must not shrink what
--- the next, roomier pass restores.
-local requested = {}
-local pending = {}
-
-local function winbar_rows(win)
-  return vim.fn.getwininfo(win)[1].winbar
-end
-
--- nvim_win_get_height counts the winbar row; content rows exclude it.
--- Separators sit outside every window, so summing heights conserves them.
-local function apply_heights(tab)
-  local explorer = M.explorer_win(tab)
-  local lists = list_wins(tab)
-  if not explorer or #lists == 0 then
-    return
-  end
-  local want = requested[tab] or {}
-  local column = { explorer }
-  local total = vim.api.nvim_win_get_height(explorer)
-  local targets = {}
-  for i, item in ipairs(lists) do
-    column[i + 1] = item.win
-    total = total + vim.api.nvim_win_get_height(item.win)
-    targets[i] = (want[item.ft] or MIN_ROWS) + winbar_rows(item.win)
-  end
-  local fixed = {}
-  for _, item in ipairs(lists) do
-    fixed[item.win] = vim.wo[item.win].winfixheight
-    vim.wo[item.win].winfixheight = false
-  end
-  -- Top-down: each resize is absorbed by the window below it, so the last
-  -- list receives exactly what is left once the others are sized.
-  local rest = total
-  for _, height in ipairs(targets) do
-    rest = rest - height
-  end
-  local ok, err = pcall(function()
-    vim.api.nvim_win_set_height(explorer, math.max(1, rest))
-    for i = 1, #lists - 1 do
-      vim.api.nvim_win_set_height(lists[i].win, targets[i])
-    end
-  end)
-  for win, value in pairs(fixed) do
-    vim.wo[win].winfixheight = value
-  end
-  if not ok then
-    error(err, 0)
-  end
-end
-
-function M.resize_panels(tab)
-  tab = tab or vim.api.nvim_get_current_tabpage()
-  if pending[tab] then
-    return
-  end
-  pending[tab] = true
-  vim.schedule(function()
-    pending[tab] = nil
-    if not vim.api.nvim_tabpage_is_valid(tab) then
-      requested[tab] = nil
-      return
-    end
-    local ok, err = xpcall(apply_heights, debug.traceback, tab)
-    if not ok then
-      vim.notify('sidebar: list resize failed: ' .. err, vim.log.levels.ERROR)
-    end
-  end)
-end
-
-function M.request_rows(tab, ft, entries)
-  requested[tab] = requested[tab] or {}
-  requested[tab][ft] = math.max(MIN_ROWS, math.min(MAX_ROWS, entries))
-  M.resize_panels(tab)
-end
-
-function M.resize_all()
-  for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
-    M.resize_panels(tab)
-  end
 end
 
 -- ── Layout ───────────────────────────────────────────────────────
@@ -222,13 +117,7 @@ function M.layout()
   end
   local tab = vim.api.nvim_get_current_tabpage()
   local explorer = M.explorer_win(tab)
-  local column = {}
-  if explorer then
-    column[1] = explorer
-    for _, item in ipairs(list_wins(tab)) do
-      column[#column + 1] = item.win
-    end
-  end
+  local column = explorer and { explorer } or {}
   local ai, content = {}, {}
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
     if not is_float(win) and not M.is_sidebar_win(win) then
@@ -329,7 +218,6 @@ function M.layout()
   if not ok then
     error(err)
   end
-  M.resize_panels(tab)
 end
 
 -- Real editor windows: not the explorer, not any window id in `exclude`,

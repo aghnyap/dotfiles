@@ -51,10 +51,6 @@ return {
         'trouble',
         'toggleterm',
         'snacks_dashboard',
-        -- The two sidebar panels under the explorer (util/bufferlist.lua,
-        -- util/shelllist.lua): a scrollbar on a 2-12 line list is noise.
-        'bufferlist',
-        'shelllist',
       },
       width = 2,
       handlers = {
@@ -76,12 +72,12 @@ return {
   },
 
   -- ── bufferline: kept only for the Tab/Shift-Tab cycle commands ──
-  -- The horizontal tabline is replaced by the vertical OPEN EDITORS panel
-  -- docked under the explorer (util/bufferlist.lua) and never drawn
-  -- (`showtabline = 0`, permanently -- see CLAUDE.md's rationale). bufferline
-  -- itself stays loaded because BufferLineCycleNext/Prev still drive the
-  -- buffer-cycle keys -- ours (Tab/Shift-Tab, Cmd-Shift-[/]) and LazyVim's own
-  -- defaults (S-h/S-l, [b/]b, <leader>bp etc, lazyvim/plugins/ui.lua).
+  -- The horizontal tabline is never drawn (`showtabline = 0`, permanently --
+  -- see CLAUDE.md's rationale); use neo-tree's Open source for a visual
+  -- buffer list. bufferline itself stays loaded because BufferLineCycleNext/
+  -- Prev still drive the buffer-cycle keys -- ours (Tab/Shift-Tab,
+  -- Cmd-Shift-[/]) and LazyVim's own defaults (S-h/S-l, [b/]b, <leader>bp
+  -- etc, lazyvim/plugins/ui.lua).
   {
     'akinsho/bufferline.nvim',
     -- opts is a function, not a table, only so `vim.o.showtabline` gets set
@@ -158,12 +154,6 @@ return {
     'nvim-neo-tree/neo-tree.nvim',
     opts = {
       close_if_last_window = true,
-      -- Opening a file reuses the last window you were in, so without the
-      -- two panel filetypes here, clicking in OPEN EDITORS/OPEN SHELLS and
-      -- then opening from the tree loads the file into the panel itself
-      -- (util/bufferlist.lua, util/shelllist.lua). The first five are
-      -- LazyVim's own list, restated because lazy.nvim replaces lists whole.
-      open_files_do_not_replace_types = { 'terminal', 'Trouble', 'trouble', 'qf', 'Outline', 'bufferlist', 'shelllist' },
       popup_border_style = 'rounded',
       enable_git_status = true,
       enable_diagnostics = true,
