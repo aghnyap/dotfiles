@@ -8,3 +8,6 @@ nvim.log
 
 # macOS Finder metadata.
 .DS_Store
+
+# aider's own chat log, written to the cwd on every run.
+.aider.chat.history.md
