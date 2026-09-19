@@ -355,7 +355,7 @@ local function run()
   assert(not api.nvim_buf_is_valid(term_buf), 'ToggleTerm deletion must remove its buffer')
   eq(vim.o.showtabline, 0, 'Terminals/tabpages must not expose the horizontal tabline')
 
-  for _, case in ipairs { 'quit', 'layout', 'sizes' } do
+  for _, case in ipairs { 'quit', 'layout', 'sizes', 'tree-open' } do
     local child = vim
       .system(
         { vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' },
@@ -766,6 +766,30 @@ if case ~= 'embed' then
       layout_case()
     elseif case == 'sizes' then
       sizes_case()
+    elseif case == 'tree-open' then
+      -- Neo-tree opens into the last window entered; the lists must never be it.
+      vim.fn.writefile({ 'opened' }, temp .. '/opened.txt')
+      api.nvim_set_current_buf(file 'placeholder')
+      local editor = api.nvim_get_current_win()
+      vim.cmd 'Neotree show'
+      flush()
+      check_layout()
+      for _, panel in ipairs { buffers.win(), shells.win() } do
+        local ft = vim.bo[panel_buf(panel)].filetype
+        api.nvim_win_set_buf(editor, file('placeholder-' .. ft))
+        api.nvim_set_current_win(panel)
+        api.nvim_set_current_win(sidebar.explorer_win())
+        local row
+        for i, line in ipairs(api.nvim_buf_get_lines(0, 0, -1, false)) do
+          row = row or (line:find('opened.txt', 1, true) and i)
+        end
+        assert(row, 'Explorer must list opened.txt')
+        api.nvim_win_set_cursor(0, { row, 0 })
+        api.nvim_feedkeys(api.nvim_replace_termcodes('<CR>', true, false, true), 'x', false)
+        flush()
+        eq(vim.bo[panel_buf(panel)].filetype, ft, 'Opening from the tree replaced the ' .. ft .. ' panel')
+        eq(api.nvim_buf_get_name(api.nvim_win_get_buf(editor)), temp .. '/opened.txt', 'File must open in the editor')
+      end
     else
       run()
     end

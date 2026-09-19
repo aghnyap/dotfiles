@@ -16,8 +16,12 @@ return {
     opts = {
       auto_start = true,
       log_level = 'warn',
-      -- nil = use the `claude` binary from $PATH
-      terminal_cmd = nil,
+      -- The classic renderer, whatever ~/.claude/settings.json picks. The
+      -- fullscreen one draws on the alternate screen, which a Neovim
+      -- terminal keeps no scrollback for: leave terminal mode and there is
+      -- nothing above the visible page to scroll back to. --resume and
+      -- --continue are appended to this string, so they still work.
+      terminal_cmd = [[claude --settings '{"tui":"default"}']],
       terminal = {
         provider = 'snacks',
         split_side = 'right',

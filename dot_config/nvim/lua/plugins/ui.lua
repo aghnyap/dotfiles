@@ -158,6 +158,12 @@ return {
     'nvim-neo-tree/neo-tree.nvim',
     opts = {
       close_if_last_window = true,
+      -- Opening a file reuses the last window you were in, so without the
+      -- two panel filetypes here, clicking in OPEN EDITORS/OPEN SHELLS and
+      -- then opening from the tree loads the file into the panel itself
+      -- (util/bufferlist.lua, util/shelllist.lua). The first five are
+      -- LazyVim's own list, restated because lazy.nvim replaces lists whole.
+      open_files_do_not_replace_types = { 'terminal', 'Trouble', 'trouble', 'qf', 'Outline', 'bufferlist', 'shelllist' },
       popup_border_style = 'rounded',
       enable_git_status = true,
       enable_diagnostics = true,
