@@ -49,11 +49,17 @@
 
 `<leader>eg`
 
-- Toggle the bottom terminal, to the right of the sidebar even when opened
-  from a sidebar panel. Cmd+backtick and task terminals use the same layout.
-  OPEN SHELLS reopens hidden shells with their existing jobs:
+- Toggle the bottom terminal, between the sidebar and the full-height AI
+  column on the right, whichever opened first. Cmd+backtick and task
+  terminals use the same layout. OPEN SHELLS reopens hidden shells with their
+  existing jobs:
 
 `Cmd+J`
+
+- Leave terminal mode in a ToggleTerm or AI terminal with one Escape (other
+  terminals still receive Escape; use `Ctrl+\ Ctrl+n` there):
+
+`<Esc>`
 
 - Git UI (lazygit):
 

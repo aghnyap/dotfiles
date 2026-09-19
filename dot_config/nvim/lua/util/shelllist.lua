@@ -16,7 +16,6 @@ local M = {}
 local sidebar = require 'util.sidebar'
 
 local NS = vim.api.nvim_create_namespace 'shelllist'
-local MIN_HEIGHT, MAX_HEIGHT = 2, 12
 
 -- Inventories are global; window ownership, selection and focus are per tab.
 local states = {}
@@ -78,9 +77,7 @@ local function render(s)
     end
   end
 
-  if s.win and vim.api.nvim_win_is_valid(s.win) then
-    pcall(sidebar.set_panel_height, s.win, math.max(MIN_HEIGHT, math.min(MAX_HEIGHT, #lines)))
-  end
+  sidebar.request_rows(s.tab, 'shelllist', #lines)
 end
 
 local function select(s)
@@ -100,6 +97,10 @@ local function select(s)
     end)
     if term then
       term:open()
+    elseif vim.b[b].agent_terminal then
+      vim.cmd(('vertical botright %dsplit'):format(math.floor(vim.o.columns * 0.35)))
+      vim.api.nvim_win_set_buf(0, b)
+      sidebar.layout()
     else
       vim.cmd 'botright 15split'
       vim.api.nvim_win_set_buf(0, b)

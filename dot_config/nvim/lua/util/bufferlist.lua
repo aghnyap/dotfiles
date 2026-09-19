@@ -11,7 +11,6 @@
 local M = {}
 
 local NS = vim.api.nvim_create_namespace 'bufferlist'
-local MIN_HEIGHT, MAX_HEIGHT = 2, 12
 
 -- Inventories are global; window ownership, selection and focus are per tab.
 local states = {}
@@ -72,9 +71,7 @@ local function render(s)
     end
   end
 
-  if s.win and vim.api.nvim_win_is_valid(s.win) then
-    pcall(sidebar.set_panel_height, s.win, math.max(MIN_HEIGHT, math.min(MAX_HEIGHT, #lines)))
-  end
+  sidebar.request_rows(s.tab, 'bufferlist', #lines)
 end
 
 local function open_in_editor(s, bufnr)

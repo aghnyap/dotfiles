@@ -78,6 +78,9 @@ local function panel_buf(win)
   assert(win and api.nvim_win_is_valid(win), 'Missing list window')
   return api.nvim_win_get_buf(win)
 end
+local function rows(win)
+  return vim.fn.getwininfo(win)[1].height
+end
 local function lines(win)
   return api.nvim_buf_get_lines(panel_buf(win), 0, -1, false)
 end
@@ -110,6 +113,7 @@ local function check_layout(term)
     eq(api.nvim_win_get_buf(term.window), term.bufnr, 'Terminal window identity lost')
   end
 end
+local escape_case
 local function run()
   for _, buf in ipairs(api.nvim_list_bufs()) do
     vim.bo[buf].buflisted = false
@@ -139,8 +143,8 @@ local function run()
   check_layout()
   local original = { sidebar.explorer_win(), buffers.win(), shells.win() }
   local width = api.nvim_win_get_width(original[1])
-  eq(api.nvim_win_get_height(original[2]), 2, 'Editor list must fit its inventory')
-  eq(api.nvim_win_get_height(original[3]), 2, 'Empty shell list must keep its minimum height')
+  eq(rows(original[2]), 2, 'Editor list must fit its inventory')
+  eq(rows(original[3]), 2, 'Empty shell list must keep its minimum height')
   local term = Terminal:new { cmd = 'cat', direction = 'horizontal' }
   for _, origin in ipairs { editor, original[1], original[2], original[3] } do
     api.nvim_set_current_win(origin)
@@ -150,8 +154,8 @@ local function run()
     eq(api.nvim_get_current_win(), term.window, 'Terminal opening must retain focus')
     eq(api.nvim_win_get_width(original[1]), width, 'Sidebar width changed')
     eq(api.nvim_win_get_height(term.window), 15, 'Horizontal terminal height changed')
-    eq(api.nvim_win_get_height(original[2]), 2, 'Opening a terminal must preserve editor-list height')
-    eq(api.nvim_win_get_height(original[3]), 2, 'Opening a terminal must preserve shell-list height')
+    eq(rows(original[2]), 2, 'Opening a terminal must preserve editor-list height')
+    eq(rows(original[3]), 2, 'Opening a terminal must preserve shell-list height')
     eq({ sidebar.explorer_win(), buffers.win(), shells.win() }, original, 'Sidebar window identities changed')
     local layout = vim.fn.winlayout()
     local dimensions = vim.fn.winrestcmd()
@@ -351,31 +355,424 @@ local function run()
   assert(not api.nvim_buf_is_valid(term_buf), 'ToggleTerm deletion must remove its buffer')
   eq(vim.o.showtabline, 0, 'Terminals/tabpages must not expose the horizontal tabline')
 
-  local child = vim
-    .system({ vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' }, {
-      cwd = vim.fs.dirname(vim.fs.dirname(source)),
-      env = { NVIM_SIDEBAR_QUIT_TEST = '1' },
-      text = true,
-    })
-    :wait(10000)
-  eq(child.code, 0, 'Last-editor quit regression: ' .. (child.stderr or ''))
-end
-local ok, err = xpcall(function()
-  if vim.env.NVIM_SIDEBAR_QUIT_TEST == '1' then
-    api.nvim_set_current_buf(file 'last-editor')
-    local editor = api.nvim_get_current_win()
-    vim.cmd 'Neotree show'
-    flush()
-    check_layout()
-    api.nvim_win_close(editor, false)
-    flush()
-    error 'Closing the last editor did not quit Neovim'
+  for _, case in ipairs { 'quit', 'layout', 'sizes' } do
+    local child = vim
+      .system({ vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' }, {
+        cwd = vim.fs.dirname(vim.fs.dirname(source)),
+        env = { NVIM_SIDEBAR_CASE = case },
+        text = true,
+      })
+      :wait(30000)
+    eq(child.code, 0, 'Child case ' .. case .. ': ' .. (child.stderr or ''))
   end
-  run()
-end, debug.traceback)
-if not ok then
-  io.stderr:write(err .. '\n')
-  vim.cmd 'cquit 1'
+  escape_case()
 end
-print 'sidebar regressions: PASS'
-vim.cmd 'qa!'
+
+-- ── Full-height AI column ─────────────────────────────────────────
+-- A stand-in for the snacks-backed agent panes: a right vertical split whose
+-- terminal buffer carries the agent_terminal marker before TermOpen.
+local function open_ai(anchor)
+  if anchor then
+    api.nvim_set_current_win(anchor)
+    vim.cmd 'rightbelow new'
+  else
+    vim.cmd(('vertical botright %dnew'):format(math.floor(vim.o.columns * 0.35)))
+  end
+  local buf = api.nvim_get_current_buf()
+  vim.b[buf].agent_terminal = true
+  vim.bo[buf].bufhidden = 'hide'
+  local job = vim.fn.jobstart({ 'cat' }, { term = true })
+  flush()
+  return { window = api.nvim_get_current_win(), bufnr = buf, job = job }
+end
+local function full_height()
+  return vim.o.lines - vim.o.cmdheight - 1
+end
+local function leaves(node, out)
+  if node[1] == 'leaf' then
+    out[#out + 1] = node[2]
+  else
+    for _, child in ipairs(node[2]) do
+      leaves(child, out)
+    end
+  end
+  return out
+end
+local function check_ai(ais, term)
+  local layout = vim.fn.winlayout()
+  eq(layout[1], 'row', 'AI column needs a top-level row')
+  local want, trailing = {}, {}
+  for _, ai in ipairs(ais) do
+    want[ai.window] = true
+    eq(api.nvim_win_get_buf(ai.window), ai.bufnr, 'AI window identity lost')
+    eq(vim.fn.jobwait({ ai.job }, 0)[1], -1, 'AI job must keep running')
+  end
+  for i = #layout[2], 1, -1 do
+    local wins = leaves(layout[2][i], {})
+    if not want[wins[1]] then
+      break
+    end
+    for _, w in ipairs(wins) do
+      assert(want[w], 'AI column mixes in a non-AI window')
+      trailing[#trailing + 1] = w
+    end
+  end
+  eq(#trailing, #ais, 'Every AI pane must sit in the right-hand column')
+  local total = 0
+  local seen_cols = {}
+  for _, w in ipairs(trailing) do
+    local col = api.nvim_win_get_position(w)[2]
+    if not seen_cols[col] then
+      seen_cols[col] = true
+    end
+    total = total + api.nvim_win_get_height(w)
+  end
+  if #ais == 1 then
+    eq(api.nvim_win_get_height(ais[1].window), full_height(), 'AI pane must span the full height')
+  end
+  if term then
+    local left = math.huge
+    for _, w in ipairs(trailing) do
+      left = math.min(left, api.nvim_win_get_position(w)[2])
+    end
+    local tcol = api.nvim_win_get_position(term.window)[2]
+    assert(tcol + api.nvim_win_get_width(term.window) < left, 'ToggleTerm extends under the AI column')
+    eq(api.nvim_win_get_buf(term.window), term.bufnr, 'Terminal window identity lost')
+  end
+end
+local function stable()
+  local layout, dims = vim.fn.winlayout(), vim.fn.winrestcmd()
+  sidebar.layout()
+  flush()
+  eq(vim.fn.winlayout(), layout, 'Repeated layout must not rearrange')
+  eq(vim.fn.winrestcmd(), dims, 'Repeated layout must not resize')
+end
+
+local function layout_case()
+  for _, buf in ipairs(api.nvim_list_bufs()) do
+    vim.bo[buf].buflisted = false
+  end
+  api.nvim_set_current_buf(file 'A')
+  local editor = api.nvim_get_current_win()
+  vim.cmd 'Neotree show'
+  flush()
+  local width = api.nvim_win_get_width(sidebar.explorer_win())
+
+  -- AI first, then ToggleTerm.
+  local ai = open_ai()
+  local ai_width = api.nvim_win_get_width(ai.window)
+  check_ai { ai }
+  check_layout()
+  api.nvim_set_current_win(editor)
+  local term = Terminal:new { cmd = 'cat', direction = 'horizontal' }
+  term:open()
+  flush()
+  check_layout(term)
+  check_ai({ ai }, term)
+  eq(api.nvim_get_current_win(), term.window, 'ToggleTerm must keep focus')
+  eq(api.nvim_win_get_height(term.window), 15, 'ToggleTerm height changed')
+  eq(api.nvim_win_get_width(ai.window), ai_width, 'AI width changed')
+  eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Sidebar width changed')
+  stable()
+
+  -- ToggleTerm first, then AI reopened from OPEN SHELLS.
+  api.nvim_win_close(ai.window, true)
+  flush()
+  mapped(shells.win(), vim.fn.exepath 'cat', '<CR>') -- first cat entry is the AI buffer
+  ai.window = api.nvim_get_current_win()
+  eq(api.nvim_win_get_buf(ai.window), ai.bufnr, 'List must reopen the AI buffer')
+  check_layout(term)
+  check_ai({ ai }, term)
+  stable()
+  -- ToggleTerm reopened from OPEN SHELLS while the AI pane is visible.
+  term:close()
+  flush()
+  mapped(shells.win(), '#toggleterm#' .. term.id, '<CR>')
+  check_layout(term)
+  check_ai({ ai }, term)
+  -- ToggleTerm first, then a brand-new AI pane.
+  term:close()
+  api.nvim_win_close(ai.window, true)
+  flush()
+  api.nvim_set_current_win(editor)
+  term:open()
+  flush()
+  local fresh = open_ai()
+  check_layout(term)
+  check_ai({ fresh }, term)
+  vim.fn.jobstop(fresh.job)
+  api.nvim_buf_delete(fresh.bufnr, { force = true })
+  flush()
+
+  -- Multiple AI panes stay stacked together; multiple editor splits survive.
+  term:close()
+  flush()
+  api.nvim_set_current_win(editor)
+  vim.cmd 'vsplit'
+  local editor2 = api.nvim_get_current_win()
+  vim.cmd 'split'
+  local editor3 = api.nvim_get_current_win()
+  vim.cmd(('vertical botright %dsplit'):format(math.floor(vim.o.columns * 0.35)))
+  api.nvim_win_set_buf(0, ai.bufnr)
+  ai.window = api.nvim_get_current_win()
+  flush()
+  local ai2 = open_ai(ai.window)
+  eq(api.nvim_win_get_position(ai2.window)[2], api.nvim_win_get_position(ai.window)[2], 'Stacked AI setup')
+  local ai_heights = { api.nvim_win_get_height(ai.window), api.nvim_win_get_height(ai2.window) }
+  api.nvim_set_current_win(editor3)
+  term:open()
+  flush()
+  check_layout(term)
+  check_ai({ ai, ai2 }, term)
+  eq(api.nvim_win_get_position(ai2.window)[2], api.nvim_win_get_position(ai.window)[2], 'AI panes must stay stacked')
+  assert(api.nvim_win_get_position(ai2.window)[1] > api.nvim_win_get_position(ai.window)[1], 'AI order changed')
+  for i, win in ipairs { ai.window, ai2.window } do
+    assert(math.abs(api.nvim_win_get_height(win) - ai_heights[i]) <= 1, 'Stacked AI split ratio must survive')
+  end
+  eq(api.nvim_get_current_win(), term.window, 'Focus moved')
+  for _, win in ipairs { editor, editor2, editor3 } do
+    assert(api.nvim_win_is_valid(win), 'Editor split lost')
+    assert(api.nvim_win_get_position(win)[1] < api.nvim_win_get_position(term.window)[1], 'Editor below ToggleTerm')
+  end
+  eq(
+    api.nvim_win_get_position(editor3)[2],
+    api.nvim_win_get_position(editor2)[2],
+    'Horizontal editor split arrangement changed'
+  )
+  assert(api.nvim_win_get_position(editor2)[2] > api.nvim_win_get_position(editor)[2], 'Vertical editor split changed')
+  stable()
+
+  -- Explorer hidden: the AI boundary still holds.
+  term:close()
+  api.nvim_win_close(ai2.window, true)
+  vim.cmd 'Neotree close'
+  flush()
+  assert(not sidebar.explorer_win(), 'Explorer should be hidden')
+  api.nvim_set_current_win(editor)
+  term:open()
+  flush()
+  check_ai({ ai }, term)
+  assert(api.nvim_win_get_position(term.window)[2] == 0, 'ToggleTerm should start at the left edge')
+  stable()
+  -- Floating terminals never rearrange splits.
+  local before = vim.fn.winlayout()
+  local float = Terminal:new { cmd = 'cat', direction = 'float' }
+  float:open()
+  flush()
+  eq(vim.fn.winlayout(), before, 'Floating terminal must not rearrange splits')
+  float:shutdown()
+  flush()
+end
+
+-- ── List heights ──────────────────────────────────────────────────
+local function sizes_case()
+  for _, buf in ipairs(api.nvim_list_bufs()) do
+    vim.bo[buf].buflisted = false
+  end
+  local files = { file 'F1' }
+  api.nvim_set_current_buf(files[1])
+  local editor = api.nvim_get_current_win()
+  vim.cmd 'Neotree show'
+  flush()
+  local explorer = sidebar.explorer_win()
+  local function column_total(tab)
+    local total = 0
+    for _, w in ipairs { sidebar.explorer_win(tab), buffers.win(tab), shells.win(tab) } do
+      total = total + api.nvim_win_get_height(w)
+    end
+    return total
+  end
+  local total = column_total()
+  local function clamp(n)
+    return math.max(2, math.min(12, n))
+  end
+  local function expect(nfiles, nshells, tab, message)
+    eq(rows(buffers.win(tab)), clamp(nfiles), message .. ': OPEN EDITORS rows')
+    eq(rows(shells.win(tab)), clamp(nshells), message .. ': OPEN SHELLS rows')
+    eq(column_total(tab), total, message .. ': column height')
+  end
+  local shells_open = {}
+  local function set_files(n)
+    while #files < n do
+      files[#files + 1] = file('F' .. (#files + 1))
+    end
+    while #files > n do
+      api.nvim_buf_delete(table.remove(files), { force = true })
+    end
+  end
+  local function set_shells(n)
+    while #shells_open < n do
+      local t = Terminal:new { cmd = 'cat', direction = 'horizontal', hidden = true }
+      t:spawn()
+      shells_open[#shells_open + 1] = t
+    end
+    while #shells_open > n do
+      table.remove(shells_open):shutdown()
+    end
+  end
+  local steps = { 2, 3, 5, 12, 13, 12, 5, 3, 2 }
+  for _, n in ipairs(steps) do
+    set_files(n)
+    flush()
+    expect(n, 0, nil, n .. ' files')
+  end
+  for _, n in ipairs(steps) do
+    set_shells(n)
+    flush()
+    expect(2, n, nil, n .. ' shells')
+  end
+  -- Both inventories change in the same tick.
+  set_files(5)
+  set_shells(4)
+  flush()
+  expect(5, 4, nil, 'simultaneous')
+  set_files(13)
+  set_shells(1)
+  flush()
+  expect(13, 1, nil, 'simultaneous swap')
+  eq(explorer, sidebar.explorer_win(), 'Explorer window replaced')
+
+  -- An inactive tab follows the global inventory without taking focus.
+  local tab1 = api.nvim_get_current_tabpage()
+  vim.cmd 'tabnew'
+  local tab2 = api.nvim_get_current_tabpage()
+  vim.cmd 'Neotree show'
+  flush()
+  api.nvim_set_current_tabpage(tab1)
+  api.nvim_set_current_win(editor)
+  set_files(3)
+  set_shells(6)
+  flush()
+  eq(api.nvim_get_current_tabpage(), tab1, 'Resizing must not switch tabs')
+  eq(api.nvim_get_current_win(), editor, 'Resizing must not move focus')
+  expect(3, 6, tab1, 'active tab')
+  api.nvim_set_current_tabpage(tab2)
+  expect(3, 6, tab2, 'inactive tab')
+  vim.cmd 'tabclose'
+  flush()
+
+  -- Squeezed screens keep every pane valid, then regain the requested sizes.
+  set_files(12)
+  set_shells(12)
+  vim.o.lines = 20
+  flush()
+  for _, w in ipairs { sidebar.explorer_win(), buffers.win(), shells.win() } do
+    assert(api.nvim_win_is_valid(w) and api.nvim_win_get_height(w) >= 1, 'Pane lost on a small screen')
+  end
+  vim.o.lines = 60
+  flush()
+  total = column_total()
+  expect(12, 12, nil, 'after regaining space')
+end
+
+-- ── Escape in terminals ───────────────────────────────────────────
+-- Real key input needs a separate UI-less Neovim driven over RPC: typeahead
+-- is not processed while this script is running.
+escape_case = function()
+  local chan = vim.fn.jobstart({ vim.v.progpath, '--embed', '--headless', '-u', 'NONE', '-i', 'NONE' }, {
+    rpc = true,
+    cwd = vim.fs.dirname(vim.fs.dirname(source)),
+    env = { NVIM_SIDEBAR_CASE = 'embed' },
+  })
+  local function lua(code, ...)
+    return vim.rpcrequest(chan, 'nvim_exec_lua', code, { ... })
+  end
+  local function mode()
+    return vim.rpcrequest(chan, 'nvim_get_mode').mode
+  end
+  local function wait_mode(want)
+    vim.wait(3000, function()
+      return mode() == want
+    end, 20)
+    return mode()
+  end
+  lua('dofile(...)', source .. '/scripts/sidebar-regression.lua')
+  local open = {
+    toggleterm = [[
+      _G.t = require('toggleterm.terminal').Terminal:new { cmd = 'cat', direction = 'horizontal' }
+      _G.t:open()
+    ]],
+    task = [[
+      _G.t = require('toggleterm.terminal').Terminal:new {
+        cmd = 'cat', direction = 'horizontal', close_on_exit = false, hidden = true,
+      }
+      _G.t:open()
+    ]],
+    agent = [[
+      vim.cmd 'vertical botright new'
+      vim.b.agent_terminal = true
+      vim.fn.jobstart({ 'cat' }, { term = true })
+      vim.cmd 'startinsert'
+    ]],
+    plain = [[
+      vim.cmd 'botright new'
+      vim.fn.jobstart({ 'cat' }, { term = true })
+      vim.cmd 'startinsert'
+    ]],
+  }
+  for _, kind in ipairs { 'toggleterm', 'task', 'agent', 'plain' } do
+    lua(open[kind])
+    eq(wait_mode 't', 't', kind .. ' must start in terminal mode')
+    vim.rpcrequest(chan, 'nvim_input', '<Esc>')
+    if kind == 'plain' then
+      vim.wait(300)
+      eq(mode(), 't', 'Plain terminals must keep sending Escape to the job')
+      vim.rpcrequest(chan, 'nvim_input', [[<C-\><C-n>]])
+      eq(wait_mode 'nt', 'nt', 'plain: leave terminal mode')
+    else
+      eq(wait_mode 'nt', 'nt', kind .. ': one Escape must enter Normal mode')
+      vim.rpcrequest(chan, 'nvim_input', ':let g:esc_ok = "' .. kind .. '"<CR>')
+      vim.wait(3000, function()
+        return lua 'return vim.g.esc_ok' == kind
+      end, 20)
+      eq(lua 'return vim.g.esc_ok', kind, kind .. ': :commands must run after Escape')
+      local before = lua 'return vim.api.nvim_get_current_win()'
+      vim.rpcrequest(chan, 'nvim_input', '<C-w>p')
+      vim.wait(3000, function()
+        return lua 'return vim.api.nvim_get_current_win()' ~= before
+      end, 20)
+      assert(lua 'return vim.api.nvim_get_current_win()' ~= before, kind .. ': window navigation after Escape')
+    end
+    if kind == 'toggleterm' then
+      -- ToggleTerm's mode persistence still restores Normal mode on reopen.
+      lua 'vim.api.nvim_set_current_win(_G.t.window); _G.t:close(); _G.t:open()'
+      vim.wait(300)
+      eq(wait_mode 'nt', 'nt', 'ToggleTerm must restore the persisted mode')
+    end
+    if _G.t then
+      lua 'if _G.t then _G.t:close() end _G.t = nil'
+    end
+    lua 'vim.cmd "stopinsert"; vim.cmd "only!"'
+  end
+  vim.fn.jobstop(chan)
+end
+
+local case = vim.env.NVIM_SIDEBAR_CASE
+if case ~= 'embed' then
+  local ok, err = xpcall(function()
+    if case == 'quit' then
+      api.nvim_set_current_buf(file 'last-editor')
+      local editor = api.nvim_get_current_win()
+      vim.cmd 'Neotree show'
+      flush()
+      check_layout()
+      api.nvim_win_close(editor, false)
+      flush()
+      error 'Closing the last editor did not quit Neovim'
+    elseif case == 'layout' then
+      layout_case()
+    elseif case == 'sizes' then
+      sizes_case()
+    else
+      run()
+    end
+  end, debug.traceback)
+  if not ok then
+    io.stderr:write(err .. '\n')
+    vim.cmd 'cquit 1'
+  end
+  if not case then
+    print 'sidebar regressions: PASS'
+  end
+  vim.cmd 'qa!'
+end

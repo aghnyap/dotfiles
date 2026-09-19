@@ -202,3 +202,19 @@ vim.api.nvim_create_autocmd('TermOpen', {
     end
   end,
 })
+
+-- Agent terminals own the full-height right column; see util/sidebar.lua.
+-- TermOpen covers the first open, BufWinEnter every later reopen.
+vim.api.nvim_create_autocmd({ 'TermOpen', 'BufWinEnter' }, {
+  group = augroup 'agent_column',
+  callback = function(ev)
+    if vim.b[ev.buf].agent_terminal then
+      sidebar.schedule(sidebar.layout)
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd('VimResized', {
+  group = augroup 'sidebar_resize',
+  callback = sidebar.resize_all,
+})

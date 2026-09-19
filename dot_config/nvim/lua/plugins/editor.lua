@@ -26,6 +26,13 @@ return {
       shell = vim.o.shell,
       float_opts = { border = 'rounded' },
       on_open = function(term)
+        -- Nothing run in ToggleTerm here is a TUI that needs a raw Escape.
+        vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], {
+          buffer = term.bufnr,
+          silent = true,
+          nowait = true,
+          desc = 'Exit terminal mode',
+        })
         if term.direction == 'horizontal' then
           require('util.sidebar').layout()
         end
