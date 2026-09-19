@@ -1,0 +1,10 @@
+# Repo-local noise only. What chezmoi must not manage in $HOME belongs in
+# .chezmoiignore.tmpl instead; this file only keeps stray artifacts out of git.
+
+# Neovim falls back to a log file in the working directory when its state dir
+# is not writable (sandboxed or headless runs), e.g. `just nvim-sidebar-test`.
+nvim.log
+*.log
+
+# macOS Finder metadata.
+.DS_Store

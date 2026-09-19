@@ -85,16 +85,48 @@ nvim-sidebar-test:
     XDG_STATE_HOME="$scratch/state" XDG_CACHE_HOME="$scratch/cache" NVIM_LOG_FILE="$scratch/nvim.log" \
       nvim --headless -u NONE -i NONE -l dot_config/nvim/scripts/sidebar-regression.lua
 
+# Fail on any domain or email host not on .domain-allowlist, in tracked
+# files and in the $HOME targets chezmoi manages (templates render there).
+# See domain-gate.pl for what counts as a domain.
+# Gate: every hostname in owned files must be on .domain-allowlist.
+domains:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    { git ls-files -z; chezmoi managed --source=. --include=files --path-style=absolute -0; } \
+      | perl domain-gate.pl .domain-allowlist \
+      || { echo "unlisted domain(s) above -- remove them, or add a public one to .domain-allowlist" >&2; exit 1; }
+
 # Everything to run before pushing to the public remote: the commit checks,
-# plus proof the source and $HOME have not drifted, plus the employer-domain
-# grep from CLAUDE.md's verification section.
-pre-push: check
-    @test -z "$(chezmoi diff --source=. )" || { echo "chezmoi diff is not empty -- re-add or revert before pushing" >&2; exit 1; }
-    @domain=$(git config user.email | cut -d@ -f2); \
-    if [ -z "$domain" ]; then echo "no git user.email set -- skipping the employer-domain check" >&2; exit 0; fi; \
-    match=$(grep -rIl -iF "${domain%%.*}" ~/.config ~/Library/Application\ Support/Code 2>/dev/null); \
-    if [ -n "$match" ]; then echo "employer-domain match found in managed config:" >&2; echo "$match" >&2; exit 1; fi
-    @echo "pre-push checks passed"
+# proof the source and $HOME have not drifted, the domain allowlist gate, and
+# an employer-name scan. The employer name comes from EMPLOYER_DOMAIN,
+# exported from an unmanaged ~/.config/zsh/local/*.zsh -- never from git's
+# user.email, which may be a personal address, and never from this repo,
+# which must not name an employer. That scan also catches the bare name in
+# paths and prose, where the domain gate only sees hostnames.
+# Run before every push: check + domains + drift + employer-name scan.
+pre-push: check domains
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -n "$(chezmoi diff --source=.)" ]; then
+      echo "chezmoi diff is not empty -- re-add or revert before pushing" >&2
+      exit 1
+    fi
+    domain=${EMPLOYER_DOMAIN:-}
+    if [ -z "$domain" ]; then
+      echo "EMPLOYER_DOMAIN is not set -- skipping the employer-name scan" >&2
+    else
+      needle=${domain%%.*}
+      match=$( {
+        git ls-files -z
+        chezmoi managed --source=. --include=files --path-style=absolute -0
+      } | xargs -0 grep -IliF -e "$needle" -- 2>/dev/null || true)
+      if [ -n "$match" ]; then
+        echo "employer name found in files this repo owns:" >&2
+        echo "$match" >&2
+        exit 1
+      fi
+    fi
+    echo "pre-push checks passed"
 
 # Applied-machine "does it actually look and feel right" verification --
 # what bootstrap.sh used to check before it was narrowed to three

@@ -31,7 +31,8 @@ is a `justfile` recipe, not a command typed by hand:
 ```sh
 just --list      # every recipe
 just check       # audit + gitleaks -- run before every commit
-just pre-push    # check + drift + employer-domain scan -- run before every push
+just domains     # every hostname must be on .domain-allowlist
+just pre-push    # check + domains + drift + employer-name scan -- run before every push
 just diff        # what `chezmoi apply` would change, read-only
 just dry-run     # diff + which run_onchange scripts would fire, read-only
 just apply       # applies to $HOME -- confirms first, never run unannounced
@@ -315,6 +316,8 @@ not. These are not bugs — do not "fix" them:
 | `run_onchange_after_macos-defaults.sh` | The only thing here that reaches outside `$HOME`. Keyboard (press-and-hold off, fast repeat), Finder, screenshots. Machine behaviour only — no Dock, no wallpaper, nothing that is taste. Keyboard settings need a logout. macOS-only |
 | `bootstrap.sh` | Installs Homebrew (or `apt` on Ubuntu), `chezmoi`, and `just` — nothing else. `.chezmoiignore`d, so it is not a target |
 | `audit.sh` | Non-mutating source-contract checks (syntax, AI budgets, key ownership, templates, Brewfile scope, gitleaks). Run via `just audit`; also `.chezmoiignore`d |
+| `domain-gate.pl` + `.domain-allowlist` | `just domains`: fails on any URL host, email host, or bare `*.com`/`*.io`/`*.internal`-style name not on the allowlist. Add only public vendor/project domains there. The employer name is never listed anywhere in the repo; set `EMPLOYER_DOMAIN` in `~/.config/zsh/local/*.zsh` so `just pre-push` scans for it. `domain-gate.pl` is `.chezmoiignore`d |
+| `.gitignore` | Stray repo artifacts only (`*.log`, `.DS_Store`); what must stay out of `$HOME` goes in `.chezmoiignore.tmpl` |
 | `justfile` | Task runner for repo maintenance — see the recipes listed at the top of this file. `.chezmoiignore`d, same reason as `bootstrap.sh`/`audit.sh`: it is repo tooling, not a dotfile for `$HOME` |
 | `dot_config/tealdeer/pages/` | Custom `tldr` pages documenting this repo's own commands and aliases — the first place to add a new one, per the Hard rules above |
 | `INSTALL.md` | The same bootstrap, written for a human |
