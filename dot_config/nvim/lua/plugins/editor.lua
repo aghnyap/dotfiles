@@ -25,6 +25,11 @@ return {
       close_on_exit = true,
       shell = vim.o.shell,
       float_opts = { border = 'rounded' },
+      on_open = function(term)
+        if term.direction == 'horizontal' then
+          require('util.sidebar').layout()
+        end
+      end,
     },
   },
 

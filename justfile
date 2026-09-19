@@ -76,6 +76,15 @@ plugins:
 # Everything to run before committing.
 check: audit leaks
 
+# Sidebar and buffer cycling regressions against source and installed plugins.
+nvim-sidebar-test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    scratch=$(mktemp -d)
+    trap 'rm -rf "$scratch"' EXIT
+    XDG_STATE_HOME="$scratch/state" XDG_CACHE_HOME="$scratch/cache" NVIM_LOG_FILE="$scratch/nvim.log" \
+      nvim --headless -u NONE -i NONE -l dot_config/nvim/scripts/sidebar-regression.lua
+
 # Everything to run before pushing to the public remote: the commit checks,
 # plus proof the source and $HOME have not drifted, plus the employer-domain
 # grep from CLAUDE.md's verification section.

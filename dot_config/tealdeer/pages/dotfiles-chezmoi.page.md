@@ -47,3 +47,7 @@
 - Render a custom tealdeer page for a syntax check:
 
 `just tldr-test`
+
+- Check Neovim sidebar layout and buffer cycling against source (uses installed plugins):
+
+`just nvim-sidebar-test`

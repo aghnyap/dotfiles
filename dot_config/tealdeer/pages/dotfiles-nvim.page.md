@@ -23,11 +23,35 @@
 
 `Cmd+F`
 
-- Toggle the explorer sidebar:
+- Toggle the full-height left sidebar (Explorer → OPEN EDITORS → OPEN SHELLS).
+  Each tabpage owns its panels and focus; file and shell lists include buffers
+  from all tabpages. Shell visibility dots refer to the current tabpage:
 
 `Cmd+B`
 
-- Toggle the bottom terminal:
+- OPEN EDITORS: the panel under the explorer listing open file buffers.
+  Inside it, `<CR>`/`l` opens the buffer, `d` closes it:
+
+`Ctrl+j` from the explorer, or click into the panel
+
+- OPEN SHELLS: the panel under OPEN EDITORS listing every open terminal --
+  toggleterm task runners, ad hoc terminals, and the Claude/cursor-agent/
+  Codex/aider panels. Inside it, `<CR>`/`l` focuses or reopens the shell, `d`
+  kills the job and closes it:
+
+`Ctrl+j` twice from the explorer, or click into the panel
+
+- Explorer: switch to the Files source:
+
+`<leader>ef`
+
+- Explorer: switch to the Git status source:
+
+`<leader>eg`
+
+- Toggle the bottom terminal, to the right of the sidebar even when opened
+  from a sidebar panel. Cmd+backtick and task terminals use the same layout.
+  OPEN SHELLS reopens hidden shells with their existing jobs:
 
 `Cmd+J`
 
