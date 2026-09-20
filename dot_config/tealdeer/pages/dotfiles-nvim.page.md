@@ -33,6 +33,12 @@
 
 `:Neotree source=filesystem|buffers|git_status`
 
+- In the Open source, kill a terminal entry (stops its job first, unlike
+  neo-tree's own `d`/`bd`, which errors on a running job and leaves it
+  stuck) or delete an ordinary buffer entry:
+
+`d` or `bd` (cursor on the entry, in the Open source)
+
 - Close the last editor pane: closes that file (kept listed if unsaved) and
   reopens the most recently used remaining file, or an empty pane after the
   last file; closing that empty pane quits. `:qa` still quits outright:

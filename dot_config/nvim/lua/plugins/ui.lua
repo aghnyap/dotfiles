@@ -158,6 +158,43 @@ return {
       enable_git_status = true,
       enable_diagnostics = true,
       sort_case_insensitive = true,
+      commands = {
+        -- The buffers source's built-in "d"/"bd" (buffer_delete) deletes with
+        -- force=false, which throws E948 "Job still running" on any terminal
+        -- buffer with a live job -- toggleterm task terminals, agent
+        -- terminals, all of them. The entry just sits there.
+        --
+        -- A raw nvim_buf_delete on a terminal buffer only wipes the buffer;
+        -- the split showing it stays open and falls back to whatever buffer
+        -- #1 is, since the window itself was never closed. Route through
+        -- toggleterm's own Terminal:shutdown() when the buffer belongs to
+        -- one -- it closes the window (nvim_win_close) before deleting the
+        -- buffer, same as toggling the terminal off normally. Only a plain
+        -- `:terminal` buffer (not toggleterm-managed) falls back to the
+        -- manual jobstop+delete.
+        kill_buffer = function(state)
+          local node = state.tree:get_node()
+          if not node or node.type == 'message' then
+            return
+          end
+          local buf = node.extra.bufnr
+          if vim.bo[buf].buftype == 'terminal' then
+            local ok, terminal = pcall(require, 'toggleterm.terminal')
+            local term = ok and terminal.find(function(t)
+              return t.bufnr == buf
+            end)
+            if term then
+              term:shutdown()
+            else
+              pcall(vim.fn.jobstop, vim.bo[buf].channel)
+              vim.api.nvim_buf_delete(buf, { force = true })
+            end
+          else
+            vim.api.nvim_buf_delete(buf, { force = false, unload = false })
+          end
+          require('neo-tree.sources.manager').refresh 'buffers'
+        end,
+      },
       window = {
         position = 'left',
         width = 30,
@@ -186,6 +223,25 @@ return {
           hide_dotfiles = false,
           hide_gitignored = true,
           hide_by_name = { '.DS_Store', 'thumbs.db', '.git' },
+        },
+      },
+      buffers = {
+        window = {
+          mappings = {
+            ['d'] = 'kill_buffer',
+            ['bd'] = 'kill_buffer',
+            -- The global 'l'/'<cr>' -> 'open' (window.mappings above, plus
+            -- neo-tree's own default) always opens via `:edit`/`:buffer` in
+            -- the closest content window -- for a buffer already visible in
+            -- another window (a toggleterm split, a file already open
+            -- side-by-side), that duplicates the display there instead of
+            -- switching focus to the window that already has it. 'open_drop'
+            -- runs `:drop`, which jumps to an existing window showing that
+            -- buffer when there is one, and only falls back to opening it
+            -- when there isn't.
+            ['l'] = 'open_drop',
+            ['<cr>'] = 'open_drop',
+          },
         },
       },
       source_selector = {

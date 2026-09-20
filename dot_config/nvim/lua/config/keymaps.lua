@@ -222,6 +222,14 @@ map('n', '<D-\\>', '<cmd>vsplit<cr>', { desc = 'Split editor right' })
 map('n', '<leader>|', function()
   if vim.bo.buftype == 'terminal' then
     vim.cmd 'vnew | terminal'
+    -- Plain :terminal, not ToggleTerm -- editor.lua's on_open never sees it,
+    -- so without this Esc goes to the job instead of leaving terminal mode.
+    vim.keymap.set('t', '<Esc>', [[<C-\><C-n>]], {
+      buffer = true,
+      silent = true,
+      nowait = true,
+      desc = 'Exit terminal mode',
+    })
   else
     vim.cmd 'vnew'
   end

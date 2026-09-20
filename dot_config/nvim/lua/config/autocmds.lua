@@ -62,8 +62,16 @@ end
 vim.api.nvim_create_autocmd('WinClosed', {
   group = augroup 'quit_on_sidebar_only',
   callback = function(a)
-    local tab = vim.api.nvim_win_get_tabpage(tonumber(a.match))
     local closed = a.buf
+    -- Terminal windows sit outside this file-vs-sidebar logic entirely: a
+    -- closed terminal must never be replaced by a file buffer, and closing
+    -- the last one should just close its area, not fall through to `qa`.
+    -- Plain vim window-close semantics (focus another terminal if one is
+    -- left in that split, otherwise the split disappears) already do that.
+    if vim.bo[closed].buftype == 'terminal' then
+      return
+    end
+    local tab = vim.api.nvim_win_get_tabpage(tonumber(a.match))
     local was_file = vim.bo[closed].buftype == '' and vim.api.nvim_buf_get_name(closed) ~= ''
     -- The closing window still holds its columns here; after it closes they
     -- belong to the explorer.
@@ -248,5 +256,24 @@ vim.api.nvim_create_autocmd({ 'TermOpen', 'BufWinEnter' }, {
     if vim.b[ev.buf].agent_terminal then
       sidebar.schedule(sidebar.layout)
     end
+  end,
+})
+
+-- When a terminal's own job exits (toggleterm's close_on_exit force-deletes
+-- the buffer, same as typing `exit`), neo-tree's buffers source does NOT
+-- auto-refresh: its refresh_events handler only reacts when
+-- `utils.is_real_file(afile)` is true, and that helper is hardcoded to
+-- return false for buftype == 'terminal'. Without this, a closed terminal's
+-- dead entry sits in the Open list until something unrelated forces a
+-- redraw. vim.schedule so this runs after toggleterm's own buf_delete.
+vim.api.nvim_create_autocmd('TermClose', {
+  group = augroup 'terminal_close_refresh',
+  callback = function()
+    vim.schedule(function()
+      local ok, manager = pcall(require, 'neo-tree.sources.manager')
+      if ok then
+        manager.refresh 'buffers'
+      end
+    end)
   end,
 })
