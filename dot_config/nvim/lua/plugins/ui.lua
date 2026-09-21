@@ -153,7 +153,8 @@ return {
   {
     'nvim-neo-tree/neo-tree.nvim',
     opts = {
-      close_if_last_window = true,
+      -- config/autocmds.lua owns last-window behavior, including terminals.
+      close_if_last_window = false,
       popup_border_style = 'rounded',
       enable_git_status = true,
       enable_diagnostics = true,
@@ -177,7 +178,10 @@ return {
           if not node or node.type == 'message' then
             return
           end
-          local buf = node.extra.bufnr
+          local buf = node.extra and node.extra.bufnr
+          if not buf or not vim.api.nvim_buf_is_valid(buf) then
+            return
+          end
           if vim.bo[buf].buftype == 'terminal' then
             local ok, terminal = pcall(require, 'toggleterm.terminal')
             local term = ok and terminal.find(function(t)
@@ -193,6 +197,28 @@ return {
             vim.api.nvim_buf_delete(buf, { force = false, unload = false })
           end
           require('neo-tree.sources.manager').refresh 'buffers'
+        end,
+        -- 'open_drop' still mirrors a terminal buffer into a fresh split
+        -- instead of focusing it: get_appropriate_window() (utils/init.lua)
+        -- skips any window whose buftype is in open_files_do_not_replace_types
+        -- (default includes "terminal") before :drop ever runs, so if the
+        -- only other window is that terminal, neo-tree decides there is no
+        -- usable window and force-splits the same bufnr right there --
+        -- two panes showing the same job. Check for an existing window on
+        -- this exact bufnr ourselves, in any tab, before falling back to
+        -- open_drop's normal behaviour.
+        focus_or_open = function(state, toggle_directory)
+          local node = state.tree:get_node()
+          if not node or node.type == 'message' then
+            return
+          end
+          local buf = node.extra and node.extra.bufnr
+          local winid = buf and vim.fn.win_findbuf(buf)[1]
+          if winid then
+            vim.api.nvim_set_current_win(winid)
+          else
+            require('neo-tree.sources.common.commands').open_drop(state, toggle_directory)
+          end
         end,
       },
       window = {
@@ -230,17 +256,21 @@ return {
           mappings = {
             ['d'] = 'kill_buffer',
             ['bd'] = 'kill_buffer',
+            -- Override LazyVim's current-buffer delete while selecting entries.
+            ['<leader>bd'] = 'kill_buffer',
             -- The global 'l'/'<cr>' -> 'open' (window.mappings above, plus
             -- neo-tree's own default) always opens via `:edit`/`:buffer` in
             -- the closest content window -- for a buffer already visible in
             -- another window (a toggleterm split, a file already open
             -- side-by-side), that duplicates the display there instead of
-            -- switching focus to the window that already has it. 'open_drop'
-            -- runs `:drop`, which jumps to an existing window showing that
-            -- buffer when there is one, and only falls back to opening it
-            -- when there isn't.
-            ['l'] = 'open_drop',
-            ['<cr>'] = 'open_drop',
+            -- switching focus to the window that already has it.
+            -- 'focus_or_open' jumps to an existing window showing that
+            -- buffer when there is one (including a terminal split, which
+            -- plain 'open_drop' cannot -- see its definition above), and
+            -- only falls back to opening it when there isn't.
+            ['l'] = 'focus_or_open',
+            ['<cr>'] = 'focus_or_open',
+            ['<2-LeftMouse>'] = 'focus_or_open',
           },
         },
       },

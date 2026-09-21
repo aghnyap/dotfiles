@@ -62,7 +62,10 @@ end
 vim.api.nvim_create_autocmd('WinClosed', {
   group = augroup 'quit_on_sidebar_only',
   callback = function(a)
-    local closed = a.buf
+    -- WinClosed's buffer can be the current buffer (e.g. the Open list),
+    -- not the buffer in the window being closed by a terminal's handler.
+    local closing_win = tonumber(a.match)
+    local closed = vim.api.nvim_win_get_buf(closing_win)
     -- Terminal windows sit outside this file-vs-sidebar logic entirely: a
     -- closed terminal must never be replaced by a file buffer, and closing
     -- the last one should just close its area, not fall through to `qa`.
@@ -71,7 +74,7 @@ vim.api.nvim_create_autocmd('WinClosed', {
     if vim.bo[closed].buftype == 'terminal' then
       return
     end
-    local tab = vim.api.nvim_win_get_tabpage(tonumber(a.match))
+    local tab = vim.api.nvim_win_get_tabpage(closing_win)
     local was_file = vim.bo[closed].buftype == '' and vim.api.nvim_buf_get_name(closed) ~= ''
     -- The closing window still holds its columns here; after it closes they
     -- belong to the explorer.
@@ -259,20 +262,16 @@ vim.api.nvim_create_autocmd({ 'TermOpen', 'BufWinEnter' }, {
   end,
 })
 
--- When a terminal's own job exits (toggleterm's close_on_exit force-deletes
--- the buffer, same as typing `exit`), neo-tree's buffers source does NOT
--- auto-refresh: its refresh_events handler only reacts when
--- `utils.is_real_file(afile)` is true, and that helper is hardcoded to
--- return false for buftype == 'terminal'. Without this, a closed terminal's
--- dead entry sits in the Open list until something unrelated forces a
--- redraw. vim.schedule so this runs after toggleterm's own buf_delete.
-vim.api.nvim_create_autocmd('TermClose', {
-  group = augroup 'terminal_close_refresh',
+-- Neo-tree delays file events twice and filters out terminal events. Refresh
+-- the Open source after buffer mutations settle, using its own coalescing and
+-- per-tab updates. Do not load the explorer just because a buffer changed.
+vim.api.nvim_create_autocmd({ 'BufAdd', 'BufDelete', 'BufFilePost', 'TermOpen', 'TermClose' }, {
+  group = augroup 'open_list_refresh',
   callback = function()
     vim.schedule(function()
-      local ok, manager = pcall(require, 'neo-tree.sources.manager')
-      if ok then
-        manager.refresh 'buffers'
+      local buffers = package.loaded['neo-tree.sources.buffers']
+      if buffers then
+        buffers.buffers_changed()
       end
     end)
   end,

@@ -29,6 +29,11 @@ vim.o.hidden = true
 vim.o.swapfile = false
 vim.o.laststatus = 3
 vim.o.shell = '/bin/sh'
+vim.g.mapleader = ' '
+-- LazyVim's global buffer-delete action: Open-list mappings must override it.
+vim.keymap.set('n', '<leader>bd', function()
+  dofile(vim.fn.stdpath 'data' .. '/lazy/snacks.nvim/lua/snacks/bufdelete.lua').delete()
+end)
 local temp = vim.fn.tempname()
 vim.fn.mkdir(temp, 'p')
 temp = assert(vim.uv.fs_realpath(temp))
@@ -165,6 +170,25 @@ local function run()
   check_layout(term)
   eq(term.bufnr, term_buf, 'Reopening must retain terminal buffer/job')
   assert(term:is_open(), 'Reopened ToggleTerm must know it is open')
+  -- Exercise the installed buffer-local handlers, including mouse activation.
+  for _, key in ipairs { '<2-LeftMouse>', '<CR>', 'l' } do
+    vim.cmd 'Neotree buffers focus'
+    flush()
+    local state = require('neo-tree.sources.manager').get_state 'buffers'
+    require('neo-tree.ui.renderer').focus_node(state, api.nvim_buf_get_name(term.bufnr))
+    eq(state.tree:get_node().extra.bufnr, term.bufnr, 'Select the terminal entry')
+    local wins = vim.fn.win_findbuf(term.bufnr)
+    local layout = vim.fn.winlayout()
+    local mapping = vim.fn.maparg(key, 'n', false, true)
+    assert(type(mapping.callback) == 'function', 'Missing tree handler: ' .. key)
+    mapping.callback()
+    flush()
+    eq(api.nvim_get_current_win(), term.window, key .. ' must focus the existing terminal pane')
+    eq(vim.fn.win_findbuf(term.bufnr), wins, key .. ' must not duplicate the terminal buffer')
+    eq(vim.fn.winlayout(), layout, key .. ' must preserve the pane layout')
+  end
+  vim.cmd 'Neotree filesystem show'
+  flush()
   api.nvim_set_current_win(editor)
   api.nvim_set_current_buf(c)
   flush()
@@ -270,7 +294,7 @@ local function run()
   flush()
   eq(vim.o.showtabline, 0, 'Terminals/tabpages must not expose the horizontal tabline')
 
-  for _, case in ipairs { 'quit', 'close-editor', 'layout' } do
+  for _, case in ipairs { 'quit', 'close-editor', 'layout', 'refresh', 'delete-terminal', 'delete-agent', 'last-terminal' } do
     local child = vim
       .system(
         { vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' },
@@ -282,8 +306,89 @@ local function run()
       )
       :wait(30000)
     eq(child.code, 0, 'Child case ' .. case .. ': ' .. (child.stderr or ''))
+    if case == 'refresh' or case == 'delete-terminal' or case == 'delete-agent' or case == 'last-terminal' then
+      assert((child.stdout or ''):find('case completed', 1, true), case .. ' exited before completing its checks')
+    end
   end
   escape_case()
+end
+
+local function refresh_case()
+  api.nvim_set_current_buf(file 'base-file')
+  local editor = api.nvim_get_current_win()
+  vim.cmd 'Neotree buffers show'
+  flush()
+  local state = require('neo-tree.sources.manager').get_state 'buffers'
+  local function listed(buf)
+    for _, node in pairs(state.tree.nodes.by_id) do
+      if node.extra and node.extra.bufnr == buf then
+        return true
+      end
+    end
+    return false
+  end
+  api.nvim_set_current_win(editor)
+  vim.cmd.edit(temp .. '/new-file')
+  local buf = api.nvim_get_current_buf()
+  flush()
+  assert(listed(buf), 'New files must appear without manually refreshing the Open list')
+  eq(state.tree:get_node().extra.bufnr, buf, 'Open list must follow the active file')
+  api.nvim_buf_delete(buf, { force = true })
+  flush()
+  assert(not listed(buf), 'Deleted files must disappear without manually refreshing the Open list')
+  local term = Terminal:new { cmd = 'cat', direction = 'horizontal' }
+  term:open()
+  flush()
+  assert(listed(term.bufnr), 'New terminals must appear without manually refreshing the Open list')
+  local terminal_buf = term.bufnr
+  term:shutdown()
+  flush()
+  assert(not listed(terminal_buf), 'Deleted terminals must disappear from the Open list')
+end
+
+local function delete_terminal_case(last, agent)
+  local kept = file 'kept-file'
+  local editor = api.nvim_get_current_win()
+  api.nvim_set_current_buf(kept)
+  local other = Terminal:new { cmd = 'cat', direction = 'horizontal', hidden = true }
+  other:open()
+  if last then
+    other:close()
+  end
+  local target_buf, target_job
+  if agent then
+    vim.cmd 'botright vnew'
+    vim.b.agent_terminal = true
+    target_buf = api.nvim_get_current_buf()
+    target_job = vim.fn.jobstart({ 'cat' }, { term = true })
+  else
+    local target = Terminal:new { cmd = 'cat', direction = 'horizontal' }
+    target:open()
+    target_buf, target_job = target.bufnr, target.job_id
+  end
+  if last then
+    -- Leave a hidden file and terminal, with only the target and tree visible.
+    api.nvim_win_set_buf(editor, api.nvim_create_buf(false, true))
+    api.nvim_win_close(editor, true)
+  end
+  vim.cmd 'Neotree buffers focus'
+  flush()
+  local explorer = api.nvim_get_current_win()
+  local state = require('neo-tree.sources.manager').get_state 'buffers'
+  require('neo-tree.ui.renderer').focus_node(state, api.nvim_buf_get_name(target_buf))
+  eq(state.tree:get_node().extra.bufnr, target_buf, 'Select only the target terminal')
+  vim.fn.maparg('<leader>bd', 'n', false, true).callback()
+  flush()
+  assert(api.nvim_win_is_valid(explorer), 'Deleting a terminal must preserve Neo-tree')
+  assert(api.nvim_buf_is_valid(kept) and vim.bo[kept].buflisted, 'Deleting a terminal must preserve open files')
+  assert(api.nvim_buf_is_valid(other.bufnr), 'Deleting a terminal must preserve other terminals')
+  eq(vim.fn.jobwait({ other.job_id }, 0), { -1 }, 'Other terminal jobs must keep running')
+  assert(not api.nvim_buf_is_valid(target_buf), 'Only the selected terminal buffer must be deleted')
+  assert(vim.fn.jobwait({ target_job }, 0)[1] ~= -1, 'The selected terminal job must stop')
+  if not last then
+    eq(api.nvim_win_get_buf(editor), kept, 'The file pane must remain open')
+    assert(other:is_open(), 'The other terminal pane must remain open')
+  end
 end
 
 -- ── Full-height AI column ─────────────────────────────────────────
@@ -621,6 +726,12 @@ if case ~= 'embed' then
       eq(#wins, 1, 'Closing again must reopen the other file')
       -- The modified file is never dropped, so closing it just reshows it.
       eq(vim.bo[dirty].buflisted, true, 'Modified file must stay listed')
+    elseif case == 'refresh' then
+      refresh_case()
+      io.stdout:write('case completed\n')
+    elseif case == 'delete-terminal' or case == 'delete-agent' or case == 'last-terminal' then
+      delete_terminal_case(case == 'last-terminal', case == 'delete-agent')
+      io.stdout:write('case completed\n')
     elseif case == 'layout' then
       layout_case()
     else
