@@ -170,15 +170,21 @@ local function run()
   check_layout(term)
   eq(term.bufnr, term_buf, 'Reopening must retain terminal buffer/job')
   assert(term:is_open(), 'Reopened ToggleTerm must know it is open')
-  -- The Open list labels a terminal with its command rather than the whole
-  -- term://<cwd>//<pid>:<cmd> buffer name -- toggleterm's own <id>:<cmd> for
-  -- the terminals it owns, a bare command for the ones it does not (the agent
-  -- panes). See terminal_title in config/autocmds.lua.
+  -- A terminal is named and labelled by the command it runs, not by the whole
+  -- term://<cwd>//<pid>:<cmd> string -- toggleterm's own <id>:<cmd> for the
+  -- terminals it owns, a bare command for the ones it does not (the agent
+  -- panes). The term:// head and the ;#toggleterm#<id> tail must survive, or
+  -- neo-tree stops seeing a terminal and toggleterm stops recognising its own.
+  -- See terminal_name in config/autocmds.lua.
   do
+    local name = api.nvim_buf_get_name(term.bufnr)
+    eq(name, 'term://' .. temp .. '//cat;#toggleterm#' .. term.id, 'Terminal buffer name must be shortened')
+    eq(select(2, require('toggleterm.terminal').identify(name)), term, 'toggleterm must still identify the buffer')
     vim.cmd 'Neotree buffers focus'
     flush()
     local state = require('neo-tree.sources.manager').get_state 'buffers'
-    require('neo-tree.ui.renderer').focus_node(state, api.nvim_buf_get_name(term.bufnr))
+    require('neo-tree.ui.renderer').focus_node(state, name)
+    eq(state.tree:get_node().extra.bufnr, term.bufnr, 'Open list must still list the renamed terminal')
     eq(state.tree:get_node().name, term.id .. ':cat', 'Open list must label a toggleterm entry <id>:<cmd>')
     -- A throwaway split, not the editor window: deleting a terminal buffer
     -- closes whatever window is showing it, and `editor` is needed below.
@@ -188,6 +194,11 @@ local function run()
     local bare_job = vim.fn.jobstart({ 'cat' }, { term = true })
     flush()
     eq(vim.b[bare].term_title, 'cat', 'A terminal toggleterm does not own must be labelled by command alone')
+    -- No toggleterm id to keep it unique, so the pid stays.
+    assert(
+      api.nvim_buf_get_name(bare):match('^term://' .. vim.pesc(temp) .. '//%d+:cat$'),
+      'Unowned terminal name must keep its pid: ' .. api.nvim_buf_get_name(bare)
+    )
     vim.fn.jobstop(bare_job)
     api.nvim_buf_delete(bare, { force = true })
     if api.nvim_win_is_valid(bare_win) then

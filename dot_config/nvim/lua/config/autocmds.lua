@@ -229,33 +229,43 @@ vim.schedule(function()
   end
 end)
 
--- Neo-tree's Open list labels a terminal entry with `b:term_title`, falling
--- back to the directory chunk of the buffer name
--- (neo-tree/sources/buffers/lib/items.lua), and Neovim seeds term_title with
--- the entire `term://<cwd>//<pid>:<cmd>` name -- so every entry reads as that
--- rather than as the command it is running. Shorten it to toggleterm's own
--- `<id>:<cmd>` convention (its config.lua name_formatter default), dropping
--- the id for terminals toggleterm does not own.
+-- Neovim names a terminal buffer `term://<cwd>//<pid>:<cmd>`, and toggleterm
+-- appends `;#toggleterm#<id>`, so a plain shell reads as
+-- `term://~/dotfiles//70954:/bin/zsh;#toggleterm#1` everywhere a buffer name
+-- surfaces: the statusline, `:ls`, and -- via `b:term_title`, which Neovim
+-- seeds with that same string -- neo-tree's Open list
+-- (neo-tree/sources/buffers/lib/items.lua). Shorten both to the command that
+-- is actually running, under toggleterm's own `<id>:<cmd>` convention (its
+-- config.lua name_formatter default).
 --
--- Renaming the buffer instead would be the wrong fix twice over: buffer names
--- must be unique, which several terminals running one agent would collide on,
--- and toggleterm's identify() parses the `;#toggleterm#<id>` suffix back out
--- of the name to find which terminal a buffer belongs to.
+-- Two parts of the name are load-bearing and stay:
+--   * the `term://<cwd>//` head -- neo-tree only treats a buffer as a terminal
+--     when the name starts with `term://`, and it filters the entry against
+--     the tree root using the directory between there and the next `//`.
+--   * the `;#toggleterm#<id>` tail -- toggleterm's identify() reads the
+--     terminal's id back out of it to map a buffer to its Terminal.
+-- What goes is the pid and the command's own leading path and arguments. The
+-- id keeps a toggleterm name unique; anything toggleterm does not own (the
+-- agent panes) keeps the pid for that, since two agents can share a command.
 --
--- A program that emits an OSC 0/2 title still overrides this afterwards, as
--- it would in any terminal.
-local function terminal_title(buf)
-  local cmd = vim.api.nvim_buf_get_name(buf):match '//%d+:(.*)$'
-  if not cmd then
+-- A program that emits an OSC 0/2 title still overrides term_title
+-- afterwards, as it would in any terminal.
+local function terminal_name(buf)
+  local dir, pid, cmd = vim.api.nvim_buf_get_name(buf):match '^term://(.*)//(%d+):(.*)$'
+  if not dir then
     return nil
   end
+  local id = cmd:match ';#toggleterm#(%d+)$'
   cmd = cmd:gsub(';#toggleterm#%d+$', '')
   local argv0 = vim.fn.fnamemodify(cmd:match '^%S+' or cmd, ':t')
   if argv0 == '' then
     return nil
   end
-  local id = vim.b[buf].toggle_number
-  return id and (id .. ':' .. argv0) or argv0
+  local head = 'term://' .. dir .. '//'
+  if id then
+    return id .. ':' .. argv0, head .. argv0 .. ';#toggleterm#' .. id
+  end
+  return argv0, head .. pid .. ':' .. argv0
 end
 
 -- Terminal buffers: no gutter. Agent terminals opt in to single Escape so it
@@ -269,9 +279,13 @@ vim.api.nvim_create_autocmd('TermOpen', {
     vim.opt_local.signcolumn = 'no'
     vim.opt_local.cursorline = false
 
-    local title = terminal_title(ev.buf)
+    local title, name = terminal_name(ev.buf)
     if title then
       vim.b[ev.buf].term_title = title
+      -- Renaming is best-effort: a name that is somehow already taken raises
+      -- E95, and losing the whole TermOpen handler over a cosmetic rename
+      -- would cost the gutter and Escape settings above.
+      pcall(vim.api.nvim_buf_set_name, ev.buf, name)
     end
 
     if vim.b[ev.buf].agent_terminal then
