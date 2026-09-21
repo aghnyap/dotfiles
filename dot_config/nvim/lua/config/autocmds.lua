@@ -229,6 +229,35 @@ vim.schedule(function()
   end
 end)
 
+-- Neo-tree's Open list labels a terminal entry with `b:term_title`, falling
+-- back to the directory chunk of the buffer name
+-- (neo-tree/sources/buffers/lib/items.lua), and Neovim seeds term_title with
+-- the entire `term://<cwd>//<pid>:<cmd>` name -- so every entry reads as that
+-- rather than as the command it is running. Shorten it to toggleterm's own
+-- `<id>:<cmd>` convention (its config.lua name_formatter default), dropping
+-- the id for terminals toggleterm does not own.
+--
+-- Renaming the buffer instead would be the wrong fix twice over: buffer names
+-- must be unique, which several terminals running one agent would collide on,
+-- and toggleterm's identify() parses the `;#toggleterm#<id>` suffix back out
+-- of the name to find which terminal a buffer belongs to.
+--
+-- A program that emits an OSC 0/2 title still overrides this afterwards, as
+-- it would in any terminal.
+local function terminal_title(buf)
+  local cmd = vim.api.nvim_buf_get_name(buf):match '//%d+:(.*)$'
+  if not cmd then
+    return nil
+  end
+  cmd = cmd:gsub(';#toggleterm#%d+$', '')
+  local argv0 = vim.fn.fnamemodify(cmd:match '^%S+' or cmd, ':t')
+  if argv0 == '' then
+    return nil
+  end
+  local id = vim.b[buf].toggle_number
+  return id and (id .. ':' .. argv0) or argv0
+end
+
 -- Terminal buffers: no gutter. Agent terminals opt in to single Escape so it
 -- returns to Neovim Normal mode without sending an interrupt/cancel to the
 -- agent. Other terminal buffers deliberately receive Escape unchanged.
@@ -239,6 +268,11 @@ vim.api.nvim_create_autocmd('TermOpen', {
     vim.opt_local.relativenumber = false
     vim.opt_local.signcolumn = 'no'
     vim.opt_local.cursorline = false
+
+    local title = terminal_title(ev.buf)
+    if title then
+      vim.b[ev.buf].term_title = title
+    end
 
     if vim.b[ev.buf].agent_terminal then
       vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', {

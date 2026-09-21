@@ -170,6 +170,31 @@ local function run()
   check_layout(term)
   eq(term.bufnr, term_buf, 'Reopening must retain terminal buffer/job')
   assert(term:is_open(), 'Reopened ToggleTerm must know it is open')
+  -- The Open list labels a terminal with its command rather than the whole
+  -- term://<cwd>//<pid>:<cmd> buffer name -- toggleterm's own <id>:<cmd> for
+  -- the terminals it owns, a bare command for the ones it does not (the agent
+  -- panes). See terminal_title in config/autocmds.lua.
+  do
+    vim.cmd 'Neotree buffers focus'
+    flush()
+    local state = require('neo-tree.sources.manager').get_state 'buffers'
+    require('neo-tree.ui.renderer').focus_node(state, api.nvim_buf_get_name(term.bufnr))
+    eq(state.tree:get_node().name, term.id .. ':cat', 'Open list must label a toggleterm entry <id>:<cmd>')
+    -- A throwaway split, not the editor window: deleting a terminal buffer
+    -- closes whatever window is showing it, and `editor` is needed below.
+    vim.cmd 'botright vnew'
+    local bare_win = api.nvim_get_current_win()
+    local bare = api.nvim_get_current_buf()
+    local bare_job = vim.fn.jobstart({ 'cat' }, { term = true })
+    flush()
+    eq(vim.b[bare].term_title, 'cat', 'A terminal toggleterm does not own must be labelled by command alone')
+    vim.fn.jobstop(bare_job)
+    api.nvim_buf_delete(bare, { force = true })
+    if api.nvim_win_is_valid(bare_win) then
+      api.nvim_win_close(bare_win, true)
+    end
+    flush()
+  end
   -- Exercise the installed buffer-local handlers, including mouse activation.
   for _, key in ipairs { '<2-LeftMouse>', '<CR>', 'l' } do
     vim.cmd 'Neotree buffers focus'
