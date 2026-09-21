@@ -38,7 +38,12 @@ local temp = vim.fn.tempname()
 vim.fn.mkdir(temp, 'p')
 temp = assert(vim.uv.fs_realpath(temp))
 vim.cmd.cd(temp)
-vim.cmd.argadd(temp .. '/A') -- suppress the no-argument startup explorer
+if not (vim.env.NVIM_SIDEBAR_CASE or ''):match '^startup' then
+  vim.cmd.argadd(temp .. '/A') -- suppress the no-argument startup explorer
+elseif vim.env.NVIM_SIDEBAR_CASE == 'startup-content' then
+  api.nvim_buf_set_lines(0, 0, -1, false, { 'keep this scratch text' })
+  vim.bo.modified = false
+end
 local errors = {}
 vim.notify = function(msg, level)
   if level == vim.log.levels.ERROR then
@@ -339,7 +344,21 @@ local function run()
   flush()
   eq(vim.o.showtabline, 0, 'Terminals/tabpages must not expose the horizontal tabline')
 
-  for _, case in ipairs { 'quit', 'close-editor', 'layout', 'refresh', 'delete-terminal', 'delete-agent', 'last-terminal' } do
+  for _, case in ipairs {
+    'quit',
+    'close-editor',
+    'layout',
+    'refresh',
+    'delete-terminal',
+    'delete-agent',
+    'last-terminal',
+    'focused-terminal',
+    'focused-agent',
+    'empty-terminal',
+    'startup',
+    'startup-content',
+    'scratch-cleanup',
+  } do
     local child = vim
       .system(
         { vim.v.progpath, '--headless', '-u', 'NONE', '-i', 'NONE', '-l', source .. '/scripts/sidebar-regression.lua' },
@@ -351,7 +370,7 @@ local function run()
       )
       :wait(30000)
     eq(child.code, 0, 'Child case ' .. case .. ': ' .. (child.stderr or ''))
-    if case == 'refresh' or case == 'delete-terminal' or case == 'delete-agent' or case == 'last-terminal' then
+    if case ~= 'close-editor' and case ~= 'layout' then
       assert((child.stdout or ''):find('case completed', 1, true), case .. ' exited before completing its checks')
     end
   end
@@ -391,7 +410,7 @@ local function refresh_case()
   assert(not listed(terminal_buf), 'Deleted terminals must disappear from the Open list')
 end
 
-local function delete_terminal_case(last, agent)
+local function delete_terminal_case(last, agent, focused)
   local kept = file 'kept-file'
   local editor = api.nvim_get_current_win()
   api.nvim_set_current_buf(kept)
@@ -416,14 +435,19 @@ local function delete_terminal_case(last, agent)
     api.nvim_win_set_buf(editor, api.nvim_create_buf(false, true))
     api.nvim_win_close(editor, true)
   end
+  local target_win = api.nvim_get_current_win()
   vim.cmd 'Neotree buffers focus'
   flush()
   local explorer = api.nvim_get_current_win()
   local state = require('neo-tree.sources.manager').get_state 'buffers'
   require('neo-tree.ui.renderer').focus_node(state, api.nvim_buf_get_name(target_buf))
   eq(state.tree:get_node().extra.bufnr, target_buf, 'Select only the target terminal')
+  if focused then
+    api.nvim_set_current_win(target_win)
+  end
   vim.fn.maparg('<leader>bd', 'n', false, true).callback()
   flush()
+  assert(not api.nvim_win_is_valid(target_win), 'Deleting a terminal must close its pane without a replacement buffer')
   assert(api.nvim_win_is_valid(explorer), 'Deleting a terminal must preserve Neo-tree')
   assert(api.nvim_buf_is_valid(kept) and vim.bo[kept].buflisted, 'Deleting a terminal must preserve open files')
   assert(api.nvim_buf_is_valid(other.bufnr), 'Deleting a terminal must preserve other terminals')
@@ -433,6 +457,92 @@ local function delete_terminal_case(last, agent)
   if not last then
     eq(api.nvim_win_get_buf(editor), kept, 'The file pane must remain open')
     assert(other:is_open(), 'The other terminal pane must remain open')
+  end
+end
+
+local function empty_terminal_case()
+  local editor = api.nvim_get_current_win()
+  local term = Terminal:new { cmd = 'cat', direction = 'horizontal' }
+  term:open()
+  local buf, win, job = term.bufnr, term.window, term.job_id
+  vim.cmd 'Neotree buffers show'
+  api.nvim_win_close(editor, true)
+  for _, info in ipairs(vim.fn.getbufinfo { buflisted = 1 }) do
+    if info.bufnr ~= buf then
+      api.nvim_buf_delete(info.bufnr, { force = true })
+    end
+  end
+  flush() -- Let editor-close callbacks settle before deleting the terminal.
+  api.nvim_set_current_win(win)
+  vim.fn.maparg('<leader>bd', 'n', false, true).callback()
+  flush()
+  assert(not api.nvim_win_is_valid(win), 'Last terminal pane must close')
+  assert(not api.nvim_buf_is_valid(buf), 'Last terminal buffer must be deleted')
+  assert(vim.fn.jobwait({ job }, 0)[1] ~= -1, 'Last terminal job must stop')
+  eq(#api.nvim_tabpage_list_wins(0), 1, 'Only the explorer must remain')
+  for _, info in ipairs(vim.fn.getbufinfo { buflisted = 1 }) do
+    assert(info.name ~= '' or vim.bo[info.bufnr].buftype ~= '', 'Terminal deletion must not create [No Name]')
+  end
+end
+
+local function scratch_cleanup_case()
+  local anchor = file 'anchor'
+  local function hide_scratch()
+    local buf = api.nvim_create_buf(true, false)
+    api.nvim_set_current_buf(buf)
+    api.nvim_set_current_buf(anchor)
+    return buf
+  end
+  local empty = hide_scratch()
+  flush()
+  assert(not api.nvim_buf_is_valid(empty), 'Hidden empty scratch must be removed')
+
+  local named = hide_scratch()
+  api.nvim_buf_set_name(named, temp .. '/newly-named')
+  flush()
+  assert(api.nvim_buf_is_valid(named), 'Cleanup must recheck whether the scratch acquired a filename')
+
+  local filled = hide_scratch()
+  api.nvim_buf_set_lines(filled, 0, -1, false, { 'keep this text' })
+  vim.bo[filled].modified = false
+  flush()
+  assert(api.nvim_buf_is_valid(filled), 'Cleanup must preserve nonempty buffers even when unmodified')
+
+  local dirty = hide_scratch()
+  api.nvim_buf_set_lines(dirty, 0, -1, false, { 'unsaved text' })
+  flush()
+  assert(api.nvim_buf_is_valid(dirty) and vim.bo[dirty].modified, 'Cleanup must preserve unsaved text')
+
+  local shown = hide_scratch()
+  local tab = api.nvim_get_current_tabpage()
+  vim.cmd 'tabnew'
+  api.nvim_set_current_buf(shown)
+  local other_win = api.nvim_get_current_win()
+  api.nvim_set_current_tabpage(tab)
+  flush()
+  assert(api.nvim_buf_is_valid(shown), 'Cleanup must preserve scratch buffers displayed in another tab')
+  eq(api.nvim_win_get_buf(other_win), shown, "Cleanup must not replace another tab's buffer")
+end
+
+local function startup_case(content)
+  if vim.v.vim_did_enter == 0 then
+    api.nvim_exec_autocmds('VimEnter', {})
+  end
+  flush()
+  assert(sidebar.explorer_win(), 'No-argument startup must open the explorer')
+  local editors = sidebar.editor_wins {}
+  if content then
+    eq(#editors, 1, 'Startup must preserve a nonempty scratch pane')
+    eq(
+      api.nvim_buf_get_lines(api.nvim_win_get_buf(editors[1]), 0, -1, false),
+      { 'keep this scratch text' },
+      'Startup must preserve scratch text'
+    )
+  else
+    eq(#editors, 0, 'No-argument startup must leave no placeholder pane')
+    for _, info in ipairs(vim.fn.getbufinfo { buflisted = 1 }) do
+      assert(info.name ~= '' or vim.bo[info.bufnr].buftype ~= '', 'Startup must leave no listed [No Name] buffer')
+    end
   end
 end
 
@@ -721,7 +831,13 @@ end
 local case = vim.env.NVIM_SIDEBAR_CASE
 if case ~= 'embed' then
   local ok, err = xpcall(function()
-    if case == 'quit' then
+    if case == 'startup' or case == 'startup-content' then
+      startup_case(case == 'startup-content')
+      io.stdout:write 'case completed\n'
+    elseif case == 'scratch-cleanup' then
+      scratch_cleanup_case()
+      io.stdout:write 'case completed\n'
+    elseif case == 'quit' then
       api.nvim_set_current_buf(file 'last-editor')
       -- The argument buffer counts as an open file; it must not keep Neovim up.
       vim.cmd('bwipeout ' .. vim.fn.bufnr(temp .. '/A'))
@@ -729,20 +845,24 @@ if case ~= 'embed' then
       vim.cmd 'Neotree show'
       flush()
       check_layout()
-      -- Closing the last file leaves an empty pane, as Cursor does.
+      -- Closing the last file closes its pane: no placeholder buffer is left
+      -- behind, so the Open list never grows an undismissable [No Name].
       local last = api.nvim_get_current_buf()
-      local width = api.nvim_win_get_width(sidebar.explorer_win())
       api.nvim_win_close(editor, false)
       flush()
-      eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Explorer must not keep the closed pane\'s columns')
       assert(not vim.bo[last].buflisted, 'Closed file must be unlisted')
-      local wins = sidebar.editor_wins {}
-      eq(#wins, 1, 'Closing the last file must leave an empty editor pane')
-      eq(api.nvim_buf_get_name(api.nvim_win_get_buf(wins[1])), '', 'The pane left behind must be empty')
-      -- Closing that empty pane is what quits.
-      api.nvim_win_close(wins[1], false)
-      flush()
-      error 'Closing the empty editor pane did not quit Neovim'
+      eq(#sidebar.editor_wins {}, 0, 'Closing the last file must leave no editor pane')
+      for _, info in ipairs(vim.fn.getbufinfo { buflisted = 1 }) do
+        assert(
+          not (vim.bo[info.bufnr].buftype == '' and info.name == ''),
+          'No empty placeholder buffer may be left listed: ' .. info.bufnr
+        )
+      end
+      local wins = api.nvim_tabpage_list_wins(0)
+      eq(#wins, 1, 'The explorer must be the only window left')
+      assert(sidebar.is_sidebar_win(wins[1]), 'The surviving window must be the explorer')
+      eq(api.nvim_win_get_width(wins[1]), vim.o.columns, "The explorer must take the closed pane's columns")
+      io.stdout:write 'case completed\n'
     elseif case == 'close-editor' then
       -- Closing the last editor pane closes that file, not Neovim; the next
       -- file gets a fresh pane.
@@ -758,7 +878,7 @@ if case ~= 'embed' then
       local width = api.nvim_win_get_width(sidebar.explorer_win())
       api.nvim_win_close(editor, false)
       flush()
-      eq(api.nvim_win_get_width(sidebar.explorer_win()), width, 'Explorer must not keep the closed pane\'s columns')
+      eq(api.nvim_win_get_width(sidebar.explorer_win()), width, "Explorer must not keep the closed pane's columns")
       assert(not vim.bo[first].buflisted, 'Closed file must be unlisted')
       local wins = sidebar.editor_wins {}
       eq(#wins, 1, 'A fresh editor pane must replace the closed one')
@@ -773,10 +893,23 @@ if case ~= 'embed' then
       eq(vim.bo[dirty].buflisted, true, 'Modified file must stay listed')
     elseif case == 'refresh' then
       refresh_case()
-      io.stdout:write('case completed\n')
-    elseif case == 'delete-terminal' or case == 'delete-agent' or case == 'last-terminal' then
-      delete_terminal_case(case == 'last-terminal', case == 'delete-agent')
-      io.stdout:write('case completed\n')
+      io.stdout:write 'case completed\n'
+    elseif case == 'empty-terminal' then
+      empty_terminal_case()
+      io.stdout:write 'case completed\n'
+    elseif
+      case == 'delete-terminal'
+      or case == 'delete-agent'
+      or case == 'last-terminal'
+      or case == 'focused-terminal'
+      or case == 'focused-agent'
+    then
+      delete_terminal_case(
+        case == 'last-terminal',
+        case == 'delete-agent' or case == 'focused-agent',
+        case:match '^focused'
+      )
+      io.stdout:write 'case completed\n'
     elseif case == 'layout' then
       layout_case()
     else

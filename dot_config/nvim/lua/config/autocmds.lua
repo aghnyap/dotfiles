@@ -26,13 +26,19 @@ local sidebar = require 'util.sidebar'
 -- of them was modified -- `qa` failed and left the sidebar with no editor
 -- pane to open anything into.
 --
--- Closing the last file leaves an empty editor pane, not an exit -- Cursor
--- keeps its window up with no editors open. Closing that empty pane (nothing
--- left to close but the workbench) is what quits, once only the sidebar and
--- AI column remain.
+-- Closing the last file closes its pane outright: the explorer (and the AI
+-- column, when one is up) takes the columns back and Neovim stays open with
+-- nothing to edit. This used to open an empty `botright vnew` pane instead,
+-- so the sidebar's Open list grew a `[No Name]#1` entry that could not be
+-- dismissed -- closing it was the only way to quit. A window has to hold
+-- some buffer, so there is no third option here: either the placeholder
+-- buffer occupies the columns or the remaining windows do.
+--
+-- Nothing in this handler quits any more. Neovim exits the ordinary way,
+-- when its last window closes -- that is now the explorer itself.
 --
 -- The buffer-drop happens any time its window closes and no other window
--- still shows it, whether or not sidebar-only quit follows.
+-- still shows it.
 local function file_buffers()
   local bufs = {}
   for _, info in ipairs(vim.fn.getbufinfo { buflisted = 1 }) do
@@ -46,13 +52,13 @@ local function file_buffers()
   return bufs
 end
 
--- `buf` nil opens an empty, unnamed buffer instead. `width` is the explorer's
--- width from before the editor closed: by the time this runs, Neovim has
--- handed the closed pane's columns to the explorer, so reading it here would
--- restore the expanded width and leave the new pane a sliver at the edge.
+-- `width` is the explorer's width from before the editor closed: by the time
+-- this runs, Neovim has handed the closed pane's columns to the explorer, so
+-- reading it here would restore the expanded width and leave the new pane a
+-- sliver at the edge.
 local function reopen_editor(buf, width)
   local explorer = sidebar.explorer_win()
-  vim.cmd(buf and ('botright vertical sbuffer ' .. buf) or 'botright vnew')
+  vim.cmd('botright vertical sbuffer ' .. buf)
   if explorer and width then
     vim.api.nvim_win_set_width(explorer, width)
   end
@@ -60,7 +66,7 @@ local function reopen_editor(buf, width)
 end
 
 vim.api.nvim_create_autocmd('WinClosed', {
-  group = augroup 'quit_on_sidebar_only',
+  group = augroup 'reflow_on_sidebar_only',
   callback = function(a)
     -- WinClosed's buffer can be the current buffer (e.g. the Open list),
     -- not the buffer in the window being closed by a terminal's handler.
@@ -86,7 +92,7 @@ vim.api.nvim_create_autocmd('WinClosed', {
         and vim.api.nvim_buf_is_valid(closed)
         and vim.bo[closed].buflisted
         and not vim.bo[closed].modified
-        and vim.fn.bufwinid(closed) == -1
+        and #vim.fn.win_findbuf(closed) == 0
       then
         pcall(vim.cmd, 'bdelete ' .. closed)
       end
@@ -113,15 +119,45 @@ vim.api.nvim_create_autocmd('WinClosed', {
       local remaining = file_buffers()
       if #remaining > 0 then
         reopen_editor(remaining[1].bufnr, width)
-      elseif was_file then
-        reopen_editor(nil, width)
       elseif vim.api.nvim_buf_is_valid(closed) and vim.bo[closed].modified then
-        -- Unsaved scratch text: `qa` would fail on it, so show it again.
+        -- Unsaved scratch text: nothing else holds it and nothing would ever
+        -- bring it back, so show it again rather than lose it.
         reopen_editor(closed, width)
-      else
-        vim.cmd 'qa'
       end
     end, tab)
+  end,
+})
+
+local function empty_scratch(buf)
+  if
+    not vim.api.nvim_buf_is_loaded(buf)
+    or vim.bo[buf].buftype ~= ''
+    or not vim.bo[buf].buflisted
+    or vim.bo[buf].modified
+    or vim.api.nvim_buf_get_name(buf) ~= ''
+  then
+    return false
+  end
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  return #lines == 1 and lines[1] == ''
+end
+
+-- Drop empty startup/`:enew` buffers after their last window disappears,
+-- so they do not linger as [No Name] entries in the Open list.
+vim.api.nvim_create_autocmd('BufHidden', {
+  group = augroup 'drop_empty_scratch',
+  callback = function(ev)
+    if not empty_scratch(ev.buf) then
+      return
+    end
+    -- Deleting the buffer from inside its own BufHidden is too early: the
+    -- window that dropped it may still be settling onto its replacement.
+    -- Recheck its contents and every tab after the queued events settle.
+    vim.schedule(function()
+      if empty_scratch(ev.buf) and #vim.fn.win_findbuf(ev.buf) == 0 then
+        pcall(vim.api.nvim_buf_delete, ev.buf, {})
+      end
+    end)
   end,
 })
 
@@ -144,7 +180,25 @@ local function open_explorer()
   if vim.fn.argc() > 0 then
     return
   end
+  local startup = vim.api.nvim_get_current_win()
+  local buf = vim.api.nvim_win_get_buf(startup)
   vim.cmd 'Neotree show'
+  -- Same rule as closing the last file: no placeholder pane. `Neotree show`
+  -- splits the tree off and leaves Neovim's startup buffer in its own window
+  -- beside it, which is the `[No Name]#1` the Open list used to open with.
+  -- Close that window once the tree is actually up -- the explorer takes the
+  -- columns and the BufHidden handler above drops the buffer.
+  sidebar.schedule(function()
+    if
+      sidebar.explorer_win()
+      and #vim.api.nvim_tabpage_list_wins(0) > 1
+      and vim.api.nvim_win_is_valid(startup)
+      and vim.api.nvim_win_get_buf(startup) == buf
+      and empty_scratch(buf)
+    then
+      pcall(vim.api.nvim_win_close, startup, false)
+    end
+  end)
 end
 
 if vim.v.vim_did_enter == 1 then
@@ -278,6 +332,10 @@ vim.api.nvim_create_autocmd('TermOpen', {
     vim.opt_local.relativenumber = false
     vim.opt_local.signcolumn = 'no'
     vim.opt_local.cursorline = false
+
+    vim.keymap.set('n', '<leader>bd', function()
+      require('util.terminal').delete(ev.buf)
+    end, { buffer = ev.buf, desc = 'Close terminal' })
 
     local title, name = terminal_name(ev.buf)
     if title then

@@ -43,9 +43,17 @@
 
 `d`, `bd`, or `<Space>bd` (cursor on the entry, in the Open source)
 
+- Close the focused terminal pane and stop its job, without leaving a
+  replacement `[No Name]` buffer (first leave terminal input mode):
+
+`<Space>bd`
+
 - Close the last editor pane: closes that file (kept listed if unsaved) and
-  reopens the most recently used remaining file, or an empty pane after the
-  last file; closing that empty pane quits. `:qa` still quits outright:
+  reopens the most recently used remaining file. After the last file the pane
+  just closes and the explorer takes the width, without creating a `[No Name]`
+  placeholder. Starting in a folder also opens just the explorer. Empty,
+  unnamed buffers are removed once hidden; buffers with text are preserved.
+  Quit with `:qa`, or by closing the explorer itself:
 
 `<C-w>q`, `:q` or `:wq`
 

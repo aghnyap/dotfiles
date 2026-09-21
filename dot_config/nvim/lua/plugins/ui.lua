@@ -160,19 +160,8 @@ return {
       enable_diagnostics = true,
       sort_case_insensitive = true,
       commands = {
-        -- The buffers source's built-in "d"/"bd" (buffer_delete) deletes with
-        -- force=false, which throws E948 "Job still running" on any terminal
-        -- buffer with a live job -- toggleterm task terminals, agent
-        -- terminals, all of them. The entry just sits there.
-        --
-        -- A raw nvim_buf_delete on a terminal buffer only wipes the buffer;
-        -- the split showing it stays open and falls back to whatever buffer
-        -- #1 is, since the window itself was never closed. Route through
-        -- toggleterm's own Terminal:shutdown() when the buffer belongs to
-        -- one -- it closes the window (nvim_win_close) before deleting the
-        -- buffer, same as toggling the terminal off normally. Only a plain
-        -- `:terminal` buffer (not toggleterm-managed) falls back to the
-        -- manual jobstop+delete.
+        -- Use the same terminal deletion as <leader>bd inside its pane:
+        -- close the window and stop the job, leaving no replacement buffer.
         kill_buffer = function(state)
           local node = state.tree:get_node()
           if not node or node.type == 'message' then
@@ -183,16 +172,7 @@ return {
             return
           end
           if vim.bo[buf].buftype == 'terminal' then
-            local ok, terminal = pcall(require, 'toggleterm.terminal')
-            local term = ok and terminal.find(function(t)
-              return t.bufnr == buf
-            end)
-            if term then
-              term:shutdown()
-            else
-              pcall(vim.fn.jobstop, vim.bo[buf].channel)
-              vim.api.nvim_buf_delete(buf, { force = true })
-            end
+            require('util.terminal').delete(buf)
           else
             vim.api.nvim_buf_delete(buf, { force = false, unload = false })
           end
