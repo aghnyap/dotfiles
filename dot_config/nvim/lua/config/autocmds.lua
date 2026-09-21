@@ -285,7 +285,21 @@ vim.api.nvim_create_autocmd('TermOpen', {
       -- Renaming is best-effort: a name that is somehow already taken raises
       -- E95, and losing the whole TermOpen handler over a cosmetic rename
       -- would cost the gutter and Escape settings above.
-      pcall(vim.api.nvim_buf_set_name, ev.buf, name)
+      local old_name = vim.api.nvim_buf_get_name(ev.buf)
+      if pcall(vim.api.nvim_buf_set_name, ev.buf, name) then
+        -- Renaming creates an unloaded, unlisted buffer for the old name.
+        -- Neo-tree treats every term:// name as a terminal, even that stub.
+        local old_buf = vim.fn.bufnr(old_name)
+        if
+          old_buf ~= -1
+          and old_buf ~= ev.buf
+          and not vim.api.nvim_buf_is_loaded(old_buf)
+          and not vim.bo[old_buf].buflisted
+          and vim.bo[old_buf].buftype == ''
+        then
+          vim.api.nvim_buf_delete(old_buf, {})
+        end
+      end
     end
 
     if vim.b[ev.buf].agent_terminal then

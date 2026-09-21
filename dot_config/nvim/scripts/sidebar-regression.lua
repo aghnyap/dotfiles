@@ -179,6 +179,14 @@ local function run()
   do
     local name = api.nvim_buf_get_name(term.bufnr)
     eq(name, 'term://' .. temp .. '//cat;#toggleterm#' .. term.id, 'Terminal buffer name must be shortened')
+    local function check_terminal_entries()
+      for _, buf in ipairs(api.nvim_list_bufs()) do
+        if api.nvim_buf_get_name(buf):match '^term://' then
+          eq(vim.bo[buf].buftype, 'terminal', 'Renaming must not leave a phantom terminal entry')
+        end
+      end
+    end
+    check_terminal_entries()
     eq(select(2, require('toggleterm.terminal').identify(name)), term, 'toggleterm must still identify the buffer')
     vim.cmd 'Neotree buffers focus'
     flush()
@@ -194,6 +202,7 @@ local function run()
     local bare_job = vim.fn.jobstart({ 'cat' }, { term = true })
     flush()
     eq(vim.b[bare].term_title, 'cat', 'A terminal toggleterm does not own must be labelled by command alone')
+    check_terminal_entries()
     -- No toggleterm id to keep it unique, so the pid stays.
     assert(
       api.nvim_buf_get_name(bare):match('^term://' .. vim.pesc(temp) .. '//%d+:cat$'),
